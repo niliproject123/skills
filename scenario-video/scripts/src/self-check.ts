@@ -87,6 +87,14 @@ async function probe(page: Page): Promise<Probe> {
     return api.probe();
   }, OVERLAY_GLOBAL);
 }
+interface RingBox { hidden: boolean; x: number; y: number; width: number; height: number; following: boolean }
+async function ringOf(page: Page): Promise<RingBox | null> {
+  return page.evaluate((name) => {
+    const api = (window as unknown as Record<string, { ringBox(): RingBox | null } | undefined>)[name];
+    if (!api) throw new Error('the overlay is not on this page');
+    return api.ringBox();
+  }, OVERLAY_GLOBAL);
+}
 async function raiseCard(page: Page, slide: unknown, on: boolean): Promise<void> {
   await page.evaluate(([name, it, raise]) => {
     const api = (window as unknown as Record<string, { card(slide: unknown, on: boolean): void } | undefined>)[name as string];
@@ -167,6 +175,38 @@ async function main(): Promise<void> {
   await recorder.guideBeforeFill(dana, field, 'full-name');
   await field.fill('ישראל ישראלי');
   await dana.waitForTimeout(1_500); // the last action's result on screen, for the clip's tail
+
+  // A panel that slides in (a CSS animation from the moment it is added, as a side panel does): the
+  // ring follows it and lands where it stops, not where it was when it was pointed at; and it is
+  // hidden the moment the panel leaves the page.
+  await dana.evaluate(() => {
+    const style = document.createElement('style');
+    style.textContent = '@keyframes check-slide-in { from { transform: translateX(-420px); } to { transform: none; } }';
+    document.head.appendChild(style);
+    const panel = document.createElement('div');
+    panel.setAttribute('data-testid', 'sliding');
+    panel.textContent = 'פאנל שנפתח';
+    panel.style.cssText = 'position:fixed;top:120px;left:60px;width:300px;height:200px;background:#eef;animation:check-slide-in .6s ease-out;';
+    document.body.appendChild(panel);
+  });
+  const sliding = dana.getByTestId('sliding');
+  await recorder.guideShowing(dana, sliding, 'the sliding panel', 'פאנל שנפתח', 1_000);
+  const movingAtFirst = await ringOf(dana);
+  await dana.waitForFunction(() => document.querySelector('[data-testid="sliding"]')?.getAnimations().length === 0, undefined, { timeout: 5_000 });
+  await dana.waitForTimeout(100); // one more frame for the follower to settle
+  const stopped = await ringOf(dana);
+  const panelBox = await sliding.boundingBox();
+  check('a moving element is followed while it moves', movingAtFirst?.following === true, JSON.stringify(movingAtFirst));
+  check(
+    'the ring lands where the sliding panel stops',
+    panelBox !== null && stopped !== null && Math.abs(stopped.x - panelBox.x) < 2 && Math.abs(stopped.y - panelBox.y) < 2 && Math.abs(stopped.width - panelBox.width) < 2,
+    `panel ${JSON.stringify(panelBox)} · ring ${JSON.stringify(stopped)}`,
+  );
+  check('the follower stops once the element is still', stopped?.following === false, JSON.stringify(stopped));
+  await dana.evaluate(() => document.querySelector('[data-testid="sliding"]')?.remove());
+  await dana.waitForTimeout(100); // the removal is seen by a mutation observer, on the next task
+  const gone = await ringOf(dana);
+  check('the ring is hidden when the element leaves the page', gone?.hidden === true, JSON.stringify(gone));
 
   recorder.guideStep('עומר בודק');
   await recorder.guideBeforePress(omer, omer.getByTestId('first'), 'כפתור ראשון');

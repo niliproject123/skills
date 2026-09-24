@@ -186,6 +186,31 @@ export function overlayScript(look: Look): string {
     parts.strip.hidden = !shown.step && !shown.caption && !shown.who && !shown.subtitle && !shown.sides.length;
   };
 
+  // --- the ring on a moving element (follow) ------------------------------------------------
+  const following = { frame: 0, gone: null };
+  const stopFollowing = () => {
+    if (following.frame) cancelAnimationFrame(following.frame);
+    following.frame = 0;
+    if (following.gone) following.gone.disconnect();
+    following.gone = null;
+  };
+  // Moving: a CSS animation or transition running on the element or on any box around it — the
+  // browser's own list (getAnimations), so it holds for any page and any stylesheet.
+  const isMoving = (element) => {
+    for (let node = element; node && node.getAnimations; node = node.parentElement) {
+      if (node.getAnimations().some((one) => one.playState === 'running')) return true;
+    }
+    return false;
+  };
+  // The ring's own transition is off while it follows: a lagging ring is the thing being fixed.
+  const placeRing = (p, x, y, width, height) => {
+    p.pointer.hidden = false; p.ring.hidden = false;
+    p.ring.style.transition = following.frame ? 'none' : '';
+    p.pointer.style.left = (x + width / 2) + 'px'; p.pointer.style.top = (y + height / 2) + 'px';
+    p.ring.style.left = (x - 4) + 'px'; p.ring.style.top = (y - 4) + 'px';
+    p.ring.style.width = (width + 8) + 'px'; p.ring.style.height = (height + 8) + 'px';
+  };
+
   // The card's own clock, read back by the self-check: the hold is measured, not assumed.
   const cardClock = { shownAtMs: 0, hiddenAtMs: 0 };
   // A heading can be a full sentence. At 54px one of those runs off the frame, so the sheet is
@@ -260,10 +285,40 @@ export function overlayScript(look: Look): string {
     },
     point(x, y, width, height) {
       const p = build(); if (!p) return;
-      p.pointer.hidden = false; p.ring.hidden = false;
-      p.pointer.style.left = (x + width / 2) + 'px'; p.pointer.style.top = (y + height / 2) + 'px';
-      p.ring.style.left = (x - 4) + 'px'; p.ring.style.top = (y - 4) + 'px';
-      p.ring.style.width = (width + 8) + 'px'; p.ring.style.height = (height + 8) + 'px';
+      stopFollowing();
+      placeRing(p, x, y, width, height);
+    },
+    // The pointer and ring on an element (not on numbers measured once). Measured now; and while the
+    // element or a box around it is animating or in transition — a panel sliding in, a card growing —
+    // measured again every frame until the movement ends, so the ring lands where the element
+    // stops. An element that is not moving is measured once, exactly as point() does. The ring is
+    // hidden the moment the element leaves the page, so an empty frame is never left on screen.
+    follow(element) {
+      const p = build(); if (!p || !element) return;
+      stopFollowing();
+      const place = () => { const r = element.getBoundingClientRect(); placeRing(p, r.x, r.y, r.width, r.height); };
+      place();
+      if (isMoving(element)) {
+        const step = () => {
+          following.frame = 0;
+          if (!element.isConnected) return;
+          place();
+          if (isMoving(element)) following.frame = requestAnimationFrame(step);
+        };
+        following.frame = requestAnimationFrame(step);
+      }
+      following.gone = new MutationObserver(() => {
+        if (element.isConnected) return;
+        p.ring.hidden = true; p.pointer.hidden = true;
+        stopFollowing();
+      });
+      following.gone.observe(document.documentElement, { childList: true, subtree: true });
+    },
+    // Numbers only, for the self-check.
+    ringBox() {
+      const p = build(); if (!p) return null;
+      return { hidden: p.ring.hidden, x: parseFloat(p.ring.style.left) + 4, y: parseFloat(p.ring.style.top) + 4,
+        width: parseFloat(p.ring.style.width) - 8, height: parseFloat(p.ring.style.height) - 8, following: !!following.frame };
     },
     // Numbers only, for the self-check — the one way into a closed shadow root. It adds nothing.
     probe() {

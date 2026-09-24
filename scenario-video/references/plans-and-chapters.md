@@ -36,6 +36,23 @@ chapterApproval: { approvedBy: 'Dana Levi', approvedOn: '2026-09-23' },
 - **Approval is required.** Show the chapters and notes to the user before recording; `make.ts`
   refuses a plan with chapters and no `chapterApproval`.
 
+## Tour films
+A tour walks a screen or an area and changes nothing. What worked:
+- **Two passes**: first every tab or area, a slide each; then one slide ("one item from each") and
+  one real item per area — pointed at with `person.show`, its panel opened and shown, closed.
+- **Slide lines**: the two phrases go into `slideNotes` (unlabelled, one per line), with
+  `people: []` — a tour has no cast, and the `people` line is labelled as a cast.
+- **The last check**: every call the browser made was a read. A tour that wrote anything corrupts
+  the next run's starting position.
+- **Captions from the data**: an item's caption is built from named columns of its row on this run
+  (never typed into the scenario), with ids, keys and seed marks left out. A panel's caption is its
+  own section names joined with ` · `.
+
+## Wording the slides
+Two phrases: what it is **for**, and **why** a person comes to it. The idea, not an inventory of
+the screen; plain words, not filler. Show them to the user and get approval — every slide line is
+a sentence put in the product's mouth.
+
 ## Captions
 Built-in words: `Click “{name}”` / `Fill in “{name}”` (en), `לוחצים על ״{name}״` /
 `ממלאים את ״{name}״` (he). A shape of label gets a rule:

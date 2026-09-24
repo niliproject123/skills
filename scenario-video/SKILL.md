@@ -29,6 +29,12 @@ Look for `.claude/scenario-video.config.json` at the repository root.
   reference: `references/settings.md`. Passwords are never written into it — only the name of the
   environment variable holding each one.
 
+### 1b. The app's code (first use)
+
+Go through `references/app-setup.md` with the user: which of its items the app already has
+(test ids on controls, rows and panels; state to wait on; a token sign-in; a seed; reads and writes
+told apart), and propose the code change for each it lacks. A film is only as stable as these.
+
 ### 2. Tools in the repository (first use)
 
 Copy this skill's `scripts/` (without `node_modules`) to the settings' `folders.tools`
@@ -40,7 +46,9 @@ recording. Suggest adding `<tools>/node_modules` and `<output folder>` to `.giti
 
 ### 3. The story → chapters, approved
 
-Ask for (or read) the story: who does what, in which order, what the viewer should come away with.
+Ask the video questions in `references/questionnaire.md` ("The videos you want"): a tour or a
+story, who watches, how deep, the slide wording, the length. Then read the story: who does what, in
+which order, what the viewer should come away with.
 Propose:
 - the **people** (from the settings) and whether it is one video per person or one film that follows
   the story across everybody (the settings' `videoShape` is the default);
@@ -94,6 +102,10 @@ npm --prefix <tools> run video -- <name> --build-only <that folder>
 ```
 
 A caption change or a chapter change is burnt into the recording — that needs a new recording.
+
+To check how one moment looks after a change (a caption, a slide, the ring on a panel), record
+**only that part** — `SCENARIO_PARTS=<part>` — never the whole film, and never by pulling frames
+out of a full recording. Record the whole film once the parts look right.
 
 ## Rules that hold throughout
 

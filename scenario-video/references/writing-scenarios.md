@@ -48,6 +48,27 @@ error ends the run (`FATAL`), and the rest of the parts do not run.
 - **Report**: `scenario-report.md` in the recording folder — failed checks, every browser error,
   parts ran / skipped / not reached, the watchdog's samples.
 
+## Showing without pressing
+`person.show(target, caption, holdMs)` points at something and names it without clicking — a row
+the film stops on, a panel that opened, a chart. Target the whole thing the viewer sees (the panel,
+not a label inside it). The caption is yours: write what the viewer should take from it.
+
+## Moving elements
+Nothing to do. The pointer and ring follow an element while it — or a box around it — is animating
+or in transition, and settle where it stops; an element that is not moving is measured once. When
+the element leaves the page, the ring goes with it. Never wait on a particular animation or class
+name for the pointer's sake.
+
+## Captions a viewer can read
+The caption comes from the control's visible words. When those words are not what a viewer should
+read — a person card that shows initials, a checkbox, a bare number, an id — pass `what`, or use
+`person.show` with a caption before the press.
+
+## Checking how one moment looks
+Never record the whole film to look at one frame. Run only that part with recording on —
+`SCENARIO_PARTS=<part> npm --prefix <tools> run video -- <name>` — and look at the few seconds it
+cuts, or take a screenshot in the scenario at that moment. Record the whole film once, at the end.
+
 ## Watching without pressing
 `person.watch(caption, holdMs, async () => { … })` for something that must be seen — a report
 scrolling, an animation. The cut keeps `holdMs` of it instead of the usual two seconds.

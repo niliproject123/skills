@@ -43,3 +43,46 @@ shows, so the user mostly confirms. Field names are in `settings.md`.
 13. Anything on screen that must not be seen — emails, phone numbers, specific fields?
     (`masking.patterns`: `email`, `phone`; `masking.fields`: CSS selectors blurred)
 14. Browser window size for the recording? (`viewport`, default 1440 × 900)
+
+---
+
+# The videos you want — asked for every new video
+
+The settings above are asked once. These are asked each time a video is planned, in one message,
+with a proposed answer for each. The answers shape the plan and the chapters, which the user then
+approves (`plans-and-chapters.md`).
+
+## What kind of film
+1. **A tour or a story?**
+   - **Tour** — a walk through a screen or an area: what is there and what it is for. Nothing is
+     changed; the film ends by proving it (every call was a read — `app-setup.md` §5).
+   - **Story (process)** — a piece of work from start to end, across the people who do it: a
+     request opened, reviewed, approved. Things change, and the film says what moved and who moved
+     it.
+2. **Who watches it?** A new user, an administrator, a customer, the team itself. It decides the
+   words on the slides and how much is explained.
+3. **One film, or one per person?** (the settings' `videoShape` is the default)
+
+## For a tour
+4. **How deep?** Only the tabs or areas · the areas, then one real item from each (the item
+   pointed at, its panel opened) · every item. One item each is usually right: a viewer learns what
+   an item looks like from one of them.
+5. **In which order?** The order the screen draws them, or grouped by what they are for.
+
+## For a story
+6. **The steps and the people** — who does what, in which order, and where it starts from (the
+   seed).
+7. **What must the viewer notice** at each step — a status moving, a clock starting, something the
+   system deliberately does not do by itself.
+
+## The words
+8. **The slide lines.** Two short phrases per slide: what the step or area is **for**, and **why**
+   a person comes to it. The idea, not a list of what is on the screen. Written plainly, the way a
+   colleague would say it — no filler, no marketing tone. Propose them; the user approves them
+   before anything is recorded.
+9. **Captions** — the words on each action. Built from what the viewer reads on screen; say which
+   controls should be captioned differently (a card that shows initials, a checkbox, a number).
+10. **Length.** A target length per film (a tour of fifteen areas with one item each is about three
+    minutes). Longer films are split by area or by step.
+11. **Anything to leave out** — checks a test does that a viewer should not see, repeated actions,
+    areas that are not ready.

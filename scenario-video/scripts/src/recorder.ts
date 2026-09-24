@@ -247,13 +247,20 @@ async function titleCardIfNew(page: Page, state: PageState): Promise<void> {
   await page.waitForTimeout(CARD_FADE_MS);
 }
 
+/**
+ * The caption, then the pointer and ring on the element itself — the overlay follows it while it is
+ * animating and hides the ring when it leaves the page (`overlay.ts` `follow`). Measuring a box here
+ * once was wrong for anything that slides or grows: the ring stayed where the element was mid-move.
+ */
 async function pointAt(page: Page, control: Locator, caption: string): Promise<void> {
-  const box = await control.boundingBox().catch((thrown: unknown) => {
-    problem(`no box for the control captioned "${caption}" — the pointer stays where it was: ${firstLineOf(thrown)}`);
-    return null;
-  });
   await callOverlay(page, `the caption "${caption}"`, 'caption', caption);
-  if (box) await callOverlay(page, `the pointer for "${caption}"`, 'point', box.x, box.y, box.width, box.height);
+  await drawOn(page, `the pointer for "${caption}"`, () =>
+    control.evaluate((element, name) => {
+      const api = (window as unknown as Record<string, { follow(element: Element): void } | undefined>)[name];
+      if (!api) throw new Error('the overlay is not on this page');
+      api.follow(element);
+    }, OVERLAY_GLOBAL),
+  );
 }
 
 /** A selector, not a name: what a scenario that presses by test id or CSS passes as `what`. */
@@ -345,6 +352,21 @@ export async function guideWatching(page: Page, what: string, caption: string, h
   await titleCardIfNew(page, state);
   record(page, 'watch', what, caption, holdMs);
   await callOverlay(page, `the caption "${caption}"`, 'caption', caption);
+}
+
+/**
+ * Something on screen is pointed at and named, not pressed — a row the film stops on, a panel that
+ * opened, a chart. The pointer and ring as for a press, and `holdMs` of film behind them, like a
+ * `watch`. It returns at once; the caller does the waiting. Name the element the viewer sees as the
+ * thing — the whole panel, not a label inside it.
+ */
+export async function guideShowing(page: Page, element: Locator, what: string, caption: string, holdMs: number): Promise<void> {
+  if (!isRecordingGuide()) return;
+  const state = pages.get(page);
+  if (!state?.who) return;
+  await titleCardIfNew(page, state);
+  record(page, 'watch', what, caption, holdMs);
+  await pointAt(page, element, caption);
 }
 
 /**

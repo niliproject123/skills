@@ -22,7 +22,7 @@ import { appAddressOf, loadSettings, localeOf, personNamed, type VideoSettings }
 import { firstLineOf, VideoError } from '../errors';
 import { Logger } from '../log';
 import {
-  finishGuideRecording, guideContextOptions, guideStep, guideWatching, isRecordingGuide, nameGuidePage, noteGuidePageOpened,
+  finishGuideRecording, guideContextOptions, guideShowing, guideStep, guideWatching, isRecordingGuide, nameGuidePage, noteGuidePageOpened,
   prepareGuideContext, recordingFolder,
 } from '../recorder';
 import { controlsFor, describeTarget, type Target } from './controls';
@@ -55,6 +55,13 @@ export interface Person {
    * shown, `during` runs, and the cut keeps `holdMs` of it.
    */
   watch: (caption: string, holdMs: number, during: () => Promise<void>) => Promise<void>;
+  /**
+   * Something pointed at and named, not pressed — a row the film stops on, a panel that opened. It
+   * waits for the target to be visible, draws the pointer, ring and caption on it (the ring follows
+   * it while it is still moving), and holds `holdMs` of film. Target the whole thing the viewer
+   * sees — the panel, not a label inside it.
+   */
+  show: (target: Target, caption: string, holdMs: number) => Promise<void>;
 }
 
 export interface Scenario {
@@ -188,6 +195,14 @@ async function run<World>(definition: ScenarioDefinition<World>): Promise<number
         await nameOnce();
         await guideWatching(page, caption, caption, holdMs);
         await during();
+      }),
+      show: acted(async (target: Target, caption: string, holdMs: number) => {
+        await nameOnce();
+        const element = controls.locate(target).first();
+        await element.waitFor({ state: 'visible' });
+        await guideShowing(page, element, caption, caption, holdMs);
+        if (isRecordingGuide()) await page.waitForTimeout(holdMs); // pacing: what is shown is read
+        log(shownAs, `showed ${describeTarget(target)} — ${caption}`);
       }),
     };
   };

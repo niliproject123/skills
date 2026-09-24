@@ -32,3 +32,8 @@ run: { command: ['npx', 'playwright', 'test', 'invite.spec', '--workers=1'] },
 - Several people in one test: open a second context from `browser`, call the recorder's
   `guideContextOptions`, `prepareGuideContext`, `noteGuidePageOpened` and `nameGuidePage` on it
   (see `src/hook/playwright-test.ts` for the order), or write a scenario instead.
+
+## When not to hook
+A test that grades every control — each search twice, refusals pressed on purpose, every "more"
+opened — makes a film that is mostly checks, and `leaveOut` rules cannot rescue it. Write a short
+scenario for the film instead (a tour, `plans-and-chapters.md`), and leave the test as it is.
