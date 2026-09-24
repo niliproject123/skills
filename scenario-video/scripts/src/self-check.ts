@@ -270,6 +270,7 @@ async function main(): Promise<void> {
   check('the video log carries the chapter', /\| שלב שלישי:.*\| סטטוס: הוגש לבדיקה \| אין מעבר אוטומטי/.test(videoLog));
 
   // The one-phrase guard, after the log was written so it does not disturb the count above.
+  say('self-check', 'the next ERROR is provoked on purpose: a side note too long for the strip — the check after it proves it is reported');
   recorder.useRecordingPlan({ ...recordingPlan, chapters: [{ step: writtenPattern(/^בדיקת אורך$/), people: [], sideNotes: ['הערת צד ארוכה מדי שאינה נקראת במבט אחד על הרצועה'], slideNotes: [] }] });
   recorder.guideStep('בדיקת אורך');
   const noted = readFileSync(join(folder, recorder.PROBLEMS_FILE), 'utf8');

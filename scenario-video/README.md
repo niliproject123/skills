@@ -52,7 +52,7 @@ start data, length. Details: [`references/questionnaire.md`](references/question
    notes ("Invitation expires in 7 days").
 2. **Approved chapters.** You approve or change them. The approval is recorded in the plan — the
    tools refuse to record chapters nobody approved.
-3. **Seed.** Claude asks what data the story needs and uses or drafts a seed command that creates
+3. **Seed.** The start data was in the approved proposal; Claude uses or drafts a seed command that creates
    it for one run id (`Team <run id>`).
 4. **Test.** Claude writes `guide-videos/invite-a-teammate.scenario.ts` (or hooks your existing
    test) and `guide-videos/invite-a-teammate.plan.ts`.

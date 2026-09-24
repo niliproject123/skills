@@ -14,14 +14,14 @@
     "signedInWhen": "[data-testid=\"user-menu\"]"
   },
   "people": [
-    { "name": "Dana", "username": "dana@example.com", "passwordVariable": "DANA_PASSWORD" },
-    { "name": "Omer", "username": "omer@example.com", "passwordVariable": "OMER_PASSWORD" }
+    { "name": "Dana", "username": "dana@example.com", "passwordVariable": "GUIDE_PASSWORD_DANA" },
+    { "name": "Omer", "username": "omer@example.com", "passwordVariable": "GUIDE_PASSWORD_OMER" }
   ],
   "seed": { "command": "node guide-videos/seed.mjs --run {runId}" },
   "locators": { "testIdAttribute": "data-testid" },
   "folders": { "scenarios": "guide-videos", "tools": "guide-videos/tools", "output": "guide-videos/output" },
   "captions": { "language": "en", "direction": "ltr" },
-  "videoShape": "per-person",
+  "videoShape": "per-scenario",
   "branding": { "logo": null, "font": null, "colours": {} },
   "masking": { "fields": [], "patterns": ["email", "phone"] },
   "viewport": { "width": 1440, "height": 900 }

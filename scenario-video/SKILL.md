@@ -1,6 +1,6 @@
 ---
 name: scenario-video
-description: Make guide videos of a web app from a Playwright browser run — a title card per step, a caption per action, a moving pointer, each person's recording cut down to their own actions, with .srt subtitles and a video log of what was kept and cut. Hebrew and other right-to-left languages are first-class. Use when the user asks for a guide video, walkthrough, tutorial or demo video of their web app, or wants to turn a user story or an existing Playwright test into a video.
+description: Make guide videos of a web app from a Playwright browser run — a title card per step, a caption per action, a moving pointer, each person's recording cut down to their own actions, with .srt subtitles and a video log of what was kept and cut. Hebrew and other right-to-left languages are first-class. Use it whenever the user wants any video of their web app being used — a guide, walkthrough, tutorial, demo, product tour, onboarding or training video, a screen recording of a flow, "record how X works", סרטון הדרכה — or wants to turn a user story or an existing Playwright test into a video, even if they don't say "guide video".
 ---
 
 # scenario-video — guide videos from browser tests
@@ -35,9 +35,9 @@ already says.
 ### 1b. The app's code (first use)
 
 Check `references/app-setup.md` against the code yourself (test ids on controls, rows and panels;
-state to wait on; a token sign-in; a seed; reads and writes told apart). Report only what this
-video needs and the app lacks, as one list with the proposed change for each, and ask once whether
-to make them. A film is only as stable as these.
+state to wait on; a token sign-in; a seed; reads and writes told apart). Put what the app lacks
+into **the same message as the settings table** — one list, the proposed change for each — so the
+user answers settings and code changes in one reply. A film is only as stable as these.
 
 ### 2. Tools in the repository (first use)
 

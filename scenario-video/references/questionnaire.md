@@ -10,7 +10,9 @@ asked. A question is asked only when the repository gives no answer and no sensi
 
 Fill every field of `.claude/scenario-video.config.json` yourself (`settings.md`), then show it as
 a short table: field · value · where it came from (`package.json`, `src/api/auth.ts`, default).
-End with the few open questions, if any, and "Correct anything that's wrong."
+Below it, in the same message, the app-code changes the videos need (`app-setup.md`) — one line
+each. End with the few open questions, if any, and "Correct anything that's wrong, and say which
+code changes to make."
 
 ### Where each answer comes from
 
