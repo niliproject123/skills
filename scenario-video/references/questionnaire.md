@@ -1,88 +1,90 @@
-# First-use questionnaire
+# Asking the user — as little as possible
 
-Asked once per repository; the answers go to `.claude/scenario-video.config.json` and are reused.
-Ask in one message, grouped as below. For each question, propose an answer from what the repo
-shows, so the user mostly confirms. Field names are in `settings.md`.
-
-## The app
-1. How is the app started locally? (`app.startCommand`)
-2. At which address is it opened in the browser? (`app.address`)
-3. Which address answers 2xx when it is up — a health endpoint, or the home page? (`app.healthCheck`)
-4. Does it call other addresses of its own (an api on another port)? Their 4xx/5xx answers count
-   as errors during a recording. (`app.otherAddresses`)
-
-## Signing in
-5. How does a user sign in? (`signIn.method`)
-   - **a form in the UI** — which page, the username and password fields, the submit button, and
-     something visible once signed in;
-   - **a token from an api call** — the call (address, method, body with `{username}` and
-     `{password}`), where the token is in the answer, and where the app keeps it (localStorage,
-     sessionStorage or a cookie, and its key);
-   - **none**.
-6. Which accounts appear in videos? For each: the name shown on screen, the username, and the
-   environment variable that holds the password. (`people`) Passwords are never written to the file.
-
-## Data
-7. Is there a seed command that prepares data for one run, given a run id? If not, the skill helps
-   write one (`references/seeding.md`). (`seed.command`, `null` for none)
-
-## Finding controls
-8. Do controls carry a test id attribute (`data-testid`, `data-test`, `data-cy`, …)? Which one?
-   (`locators.testIdAttribute`) Without one, scenarios find controls by role, label and text — say
-   plainly that these break when the wording changes.
-
-## Output
-9. Where do scenarios, the tools and the videos go? (`folders.scenarios`, `folders.tools`,
-   `folders.output` — defaults `guide-videos`, `guide-videos/tools`, `guide-videos/output`)
-10. Caption language and direction? (`captions.language` — `he` and `en` have built-in words;
-    another language brings its own `captions.words`; `captions.direction` — `rtl` or `ltr`)
-11. One video per person, or one film per scenario that follows everybody? And who are the
-    people? (`videoShape`)
-12. Branding for the title cards: a logo file, a font, colours? (`branding` — all optional; the
-    default look is a dark slate card with white text)
-13. Anything on screen that must not be seen — emails, phone numbers, specific fields?
-    (`masking.patterns`: `email`, `phone`; `masking.fields`: CSS selectors blurred)
-14. Browser window size for the recording? (`viewport`, default 1440 × 900)
+The user answers **two messages** in total: one confirming the settings (first use only), one
+approving the video proposal (every video). Everything the repository can answer is read, not
+asked. A question is asked only when the repository gives no answer and no sensible default exists.
 
 ---
 
-# The videos you want — asked for every new video
+## A. Settings — first use in a repository
 
-The settings above are asked once. These are asked each time a video is planned, in one message,
-with a proposed answer for each. The answers shape the plan and the chapters, which the user then
-approves (`plans-and-chapters.md`).
+Fill every field of `.claude/scenario-video.config.json` yourself (`settings.md`), then show it as
+a short table: field · value · where it came from (`package.json`, `src/api/auth.ts`, default).
+End with the few open questions, if any, and "Correct anything that's wrong."
 
-## What kind of film
-1. **A tour or a story?**
-   - **Tour** — a walk through a screen or an area: what is there and what it is for. Nothing is
-     changed; the film ends by proving it (every call was a read — `app-setup.md` §5).
-   - **Story (process)** — a piece of work from start to end, across the people who do it: a
-     request opened, reviewed, approved. Things change, and the film says what moved and who moved
-     it.
-2. **Who watches it?** A new user, an administrator, a customer, the team itself. It decides the
-   words on the slides and how much is explained.
-3. **One film, or one per person?** (the settings' `videoShape` is the default)
+### Where each answer comes from
 
-## For a tour
-4. **How deep?** Only the tabs or areas · the areas, then one real item from each (the item
-   pointed at, its panel opened) · every item. One item each is usually right: a viewer learns what
-   an item looks like from one of them.
-5. **In which order?** The order the screen draws them, or grouped by what they are for.
+| field | read it from | if not found |
+|---|---|---|
+| `app.startCommand`, `app.address` | `package.json` scripts, vite / next / webpack config, `.env*` ports | ask |
+| `app.healthCheck` | a `/health` or `/api/health` route in the server code | the app's address |
+| `app.otherAddresses` | the api base url in the client code or `.env*` | `[]` |
+| `signIn` | the login page and the auth call (`localStorage.setItem`, cookie code, an existing e2e login helper) | ask |
+| `people` | seed files, fixtures, existing e2e tests | ask |
+| `people[].passwordVariable` | propose a descriptive name per person: `GUIDE_PASSWORD_DANA` | — |
+| `seed.command` | an existing seed script taking an id or a flag | `null`, and offer to write one (step 4) |
+| `locators.testIdAttribute` | grep the components for `data-testid` / `data-test` / `data-cy` | `null`, and say plainly that role/text locators break when wording changes |
+| `captions.language`, `direction` | `<html lang dir>`, the i18n setup, the UI's own text | `en`, `ltr` |
+| `branding.logo` | a logo in `public/` or `assets/` | `null` (default dark card) |
+| `branding.font`, `colours` | — | default look |
+| `masking.patterns` | — | `["email", "phone"]` |
+| `masking.fields` | — | `[]` |
+| `folders.*` | — | `guide-videos`, `guide-videos/tools`, `guide-videos/output` |
+| `videoShape` | — | `per-scenario` |
+| `viewport` | — | 1440 × 900 |
 
-## For a story
-6. **The steps and the people** — who does what, in which order, and where it starts from (the
-   seed).
-7. **What must the viewer notice** at each step — a status moving, a clock starting, something the
-   system deliberately does not do by itself.
+### Questions that are actually asked
+Only those marked "ask" above that came up empty — usually none, at most three. Then one line of
+instruction, never a question: "Set these password variables in your environment:
+`GUIDE_PASSWORD_DANA`, …" — the passwords never go into the file.
 
-## The words
-8. **The slide lines.** Two short phrases per slide: what the step or area is **for**, and **why**
-   a person comes to it. The idea, not a list of what is on the screen. Written plainly, the way a
-   colleague would say it — no filler, no marketing tone. Propose them; the user approves them
-   before anything is recorded.
-9. **Captions** — the words on each action. Built from what the viewer reads on screen; say which
-   controls should be captioned differently (a card that shows initials, a checkbox, a number).
-10. **Length.** A target length per film (a tour of fifteen areas with one item each is about three
-    minutes). Longer films are split by area or by step.
-11. **Anything to leave out** — checks a test does that a viewer should not see, repeated actions,
-    areas that are not ready.
+---
+
+## B. The video proposal — every new video
+
+Read the story (the user's words, the existing test, the screens it touches) and write **one
+proposal**. The user approves or corrects it in one reply. Ask a separate question only when the
+story leaves something truly open (usually: who watches).
+
+### The proposal, in this order
+
+1. **Kind** — a *tour* (walks a screen, changes nothing, ends by proving every call was a read —
+   `app-setup.md` §5) or a *story* (work from start to end, across the people who do it).
+2. **Who watches** — a new user, an administrator, a customer, the team. It sets the wording.
+3. **Films** — one film following everybody, or one per person, and who the people are.
+4. **Steps** — each one a title card. For each: its title, and two short slide lines — what the
+   step is **for**, and **why** a person comes to it. Plain words, the way a colleague says it;
+   no filler, no marketing tone. For a tour: the areas, then one real item from each (the usual
+   depth), unless the story says otherwise.
+5. **What's on screen** — see below. Always shown, so the user can add or remove items.
+6. **Start data** — what the seed must create for the first step to make sense (`seeding.md`).
+7. **Left out** — checks a test does that a viewer should not see, repeated actions.
+8. **Length** — the expected length per film; above about three minutes, propose a split.
+
+End with: "Approve, or tell me what to change." The approval covers the chapters and slide lines;
+record it in the plan's `chapterApproval` (who, date).
+
+### What's on screen (item 5)
+
+Show the user exactly what each overlay will carry, filled with this video's real values:
+
+```
+Title card (3s, at each step)     Strip (bottom, the whole step)
+  logo (if set)                     whose screen: Dana
+  subtitle: Team settings           subtitle: Team settings
+  title: Dana invites a teammate    side notes: Invitation expires in 7 days
+  people: Dana · Omer               step: Dana invites a teammate
+  side notes: …                     caption: Click “Invite”
+  card notes: Only an owner can invite
+  whose screen: Dana
+```
+
+Then ask: "Anything else you want on screen, or anything to take off?"
+
+- **Extra text** (a status, a deadline, a warning, a product version, a date) goes into the
+  chapter's `sideNotes` (card and strip, ≤ 44 characters) or `slideNotes` (card only). No code
+  change.
+- **An item removed**, or **a new kind of item** (a step counter "2 / 5", a progress bar, a clock,
+  a watermark): the overlay cannot do that yet. Say so plainly, propose the change to
+  `scripts/src/overlay.ts` (and its settings field and self-check), and make it only after the user
+  agrees — never fake it with a note.

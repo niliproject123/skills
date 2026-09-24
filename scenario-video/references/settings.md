@@ -7,7 +7,7 @@ Every field is required unless marked optional; a missing or wrong field stops t
 |---|---|
 | `app.address` | Where the app opens: `http://localhost:5173`. `APP_ADDRESS` overrides it for one run. |
 | `app.healthCheck` | Must answer 2xx before a recording starts. |
-| `app.startCommand` | Printed when the health check fails. The tools never start the app. |
+| `app.startCommand` | Printed when the health check fails. The tools never start the app; Claude runs it only after the user agrees. |
 | `app.otherAddresses` | The app's other origins; their 4xx/5xx answers are browser errors. `[]` for none. |
 | `signIn.method` | `none` · `form` · `token` |
 | `signIn.page`, `usernameField`, `passwordField`, `submit`, `signedInWhen` | `form` only. Selectors; `signedInWhen` is visible once signed in. |

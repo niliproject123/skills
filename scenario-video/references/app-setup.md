@@ -53,7 +53,8 @@ was a GET". An app that writes on a GET cannot make that promise, and the film s
 
 ## 7. Where the app runs
 - A start command, an address and a health check that answers 2xx when the app is up
-  (`app.startCommand`, `app.address`, `app.healthCheck`). The tools never start the app.
+  (`app.startCommand`, `app.address`, `app.healthCheck`). The tools never start the app; Claude
+  starts it with `startCommand` only after the user agrees.
 - A second copy of the app per branch or per developer helps: a recording is minutes of a real
   browser against a real database, and nobody else should be writing to it meanwhile.
 

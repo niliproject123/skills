@@ -3,7 +3,9 @@
 A recording starts from known data, or the video shows whatever the database happened to hold.
 The seed is the project's own command; the skill helps write it when there is none.
 
-## What to ask the user
+## What to find out
+Read these from the story and the code, and put them in the video proposal (`questionnaire.md`
+part B, "Start data"); ask only what neither tells you.
 - Which people must exist, and with which roles?
 - Which records must exist, and in which state, for the first step to make sense?
 - What must **not** exist (a pending invitation that would change the screen)?

@@ -22,18 +22,22 @@ Look for `.claude/scenario-video.config.json` at the repository root.
 
 - **Present:** read it, say in one line what it holds, and ask only if something this video needs
   is missing (a person, a seed).
-- **Absent:** run the questionnaire in `references/questionnaire.md` — ask the questions, in one
-  message, grouped; propose an answer for each from what you can read in the repo (package.json
-  scripts, a Playwright config, the login page, `data-testid` usage). Write the file from
-  `templates/scenario-video.config.example.json`, show it, and let the user correct it. Field
-  reference: `references/settings.md`. Passwords are never written into it — only the name of the
-  environment variable holding each one.
+- **Absent:** fill it yourself from the repository — `references/questionnaire.md` part A says
+  where each answer is read from and which defaults apply. Write it from
+  `templates/scenario-video.config.example.json` and show it as one table (value · where it came
+  from) with the few questions the repo could not answer — usually none. The user corrects it in
+  one reply. Field reference: `references/settings.md`. Passwords are never written into it — only
+  the name of the environment variable holding each one.
+
+The user's time goes into the video, not into setup: never ask what a file in the repository
+already says.
 
 ### 1b. The app's code (first use)
 
-Go through `references/app-setup.md` with the user: which of its items the app already has
-(test ids on controls, rows and panels; state to wait on; a token sign-in; a seed; reads and writes
-told apart), and propose the code change for each it lacks. A film is only as stable as these.
+Check `references/app-setup.md` against the code yourself (test ids on controls, rows and panels;
+state to wait on; a token sign-in; a seed; reads and writes told apart). Report only what this
+video needs and the app lacks, as one list with the proposed change for each, and ask once whether
+to make them. A film is only as stable as these.
 
 ### 2. Tools in the repository (first use)
 
@@ -46,24 +50,21 @@ recording. Suggest adding `<tools>/node_modules` and `<output folder>` to `.giti
 
 ### 3. The story → chapters, approved
 
-Ask the video questions in `references/questionnaire.md` ("The videos you want"): a tour or a
-story, who watches, how deep, the slide wording, the length. Then read the story: who does what, in
-which order, what the viewer should come away with.
-Propose:
-- the **people** (from the settings) and whether it is one video per person or one film that follows
-  the story across everybody (the settings' `videoShape` is the default);
-- the **steps** — each becomes a title card, with its title in the caption language;
-- optional **chapters** with side notes (one phrase each, ≤ 44 characters, shown on the strip) and
-  card notes (longer, on the title card only) — `references/plans-and-chapters.md`.
+Read the story — who does what, in which order, what the viewer should come away with — and write
+**one proposal** (`references/questionnaire.md` part B) instead of asking questions: the kind (tour
+or story), who watches, the films and people, the steps with their slide lines, **what each overlay
+shows** (filled with this video's values — the user may add or remove items), the start data, what
+is left out, the length. Chapters and notes: `references/plans-and-chapters.md`.
 
-**Show the proposed chapters and notes to the user and get explicit approval before recording.**
-Chapters are words put in the product's mouth. Record the approval in the plan's `chapterApproval`
-(who, date) — `make.ts` refuses to record chapters without it.
+**Get explicit approval of the proposal before recording.** Chapters are words put in the product's
+mouth. Record the approval in the plan's `chapterApproval` (who, date) — `make.ts` refuses to
+record chapters without it. If the user wants something on screen the overlay cannot draw, say so
+and propose the tools change; make it only once they agree.
 
 ### 4. Test data — a seed
 
-Ask what data the story needs to start from (accounts, a record in a given state). If the settings
-already name a seed command, check it covers that. Otherwise help write one in the project's stack —
+The start data was part of the approved proposal. If the settings already name a seed command,
+check it covers that. Otherwise help write one in the project's stack —
 its api, its existing seed script with a flag, or its database client — from
 `templates/seed.example.mjs` and `references/seeding.md`. Every row it creates carries the run id;
 any failure exits non-zero. `make.ts` runs it before each recording with `{runId}` replaced and
@@ -82,7 +83,19 @@ Then the plan: `<scenarios folder>/<name>.plan.ts` from `templates/example.plan.
 
 ### 6. Record and cut
 
-The app must be running (the settings' `startCommand`; the tools never start it). Then:
+The app must be running and answer its health check. The recording tools never start it; you may,
+after asking:
+
+1. Request the health check. If it answers 2xx, go on.
+2. If not, tell the user it is not running and ask: "Start it with `<startCommand>`?" Also say if
+   the port is already taken by another process (another session's server, say) — then ask what to
+   do rather than start a second copy or stop the other one.
+3. On yes: start it in the background, wait for the health check (not a fixed sleep), and report
+   every error and warning in its output. If it does not come up, report its output and stop.
+4. Leave it running after the recording and say so. Stop only a server you started, and only after
+   asking.
+
+Then:
 
 ```
 npm --prefix <tools> run video -- <name>
@@ -112,6 +125,6 @@ out of a full recording. Record the whole film once the parts look right.
 - Never call an error fine. A browser error, a recording problem, a failed check — report it.
 - No silent fallbacks: every failure in the tools is a named error (`[code] message`); pass it on.
 - Never use the Playwright MCP browser tools for this; the recording is made by the scripts.
-- Do not push, deploy or start/stop the user's servers unless asked.
+- Do not push or deploy. Start or stop a server only after the user agrees (step 6).
 - Hebrew / right to left: set `captions.language` and `captions.direction` — see
   `references/hebrew-rtl.md`. Title card, strip, subtitles and caption checks all follow it.

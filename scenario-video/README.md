@@ -24,10 +24,11 @@ Needs Node.js 20+. On first use in a repository the skill copies `scripts/` into
 tsx) and the self-check. If Chromium for that Playwright version is missing:
 `npx --prefix guide-videos/tools playwright install chromium`.
 
-## First-run questionnaire
+## First-run settings
 
-The first time, Claude asks — and saves the answers to `.claude/scenario-video.config.json`, reused
-by every later video:
+The first time, Claude reads the answers from the repository itself (package.json, the login code,
+seeds, test ids…), writes `.claude/scenario-video.config.json`, and shows it as one table to
+correct — asking only what the repository cannot answer. It covers:
 
 - how to start the app, its address, its health check;
 - how a user signs in (a UI form, an api token written into storage, or none) and which accounts
@@ -40,7 +41,8 @@ by every later video:
 - branding for the title cards (logo, font, colours);
 - what to mask on screen (emails, phone numbers, fields).
 
-Full list: [`references/questionnaire.md`](references/questionnaire.md). Every field:
+Each video after that is one proposal to approve — steps, slide lines, what the overlays show,
+start data, length. Details: [`references/questionnaire.md`](references/questionnaire.md). Every field:
 [`references/settings.md`](references/settings.md).
 
 ## Example flow
@@ -127,7 +129,8 @@ for an English look. Details: [`references/hebrew-rtl.md`](references/hebrew-rtl
 
 - Web apps only, Chromium only (masking uses the CSS highlight registry, Chromium 105+).
 - Captions only — no narration or voice-over, no music.
-- The tools never start or stop the app; it must be running and pass its health check.
+- The tools never start or stop the app. When it is down, Claude asks before starting it with
+  `app.startCommand`, and stops only a server it started, after asking.
 - The seed is the project's command; the tools do not clean seeded data up or reset a database.
 - An existing Playwright test is hooked with four small changes and runs with `--workers=1`;
   several people inside one existing test need the recorder calls by hand.
@@ -142,7 +145,7 @@ for an English look. Details: [`references/hebrew-rtl.md`](references/hebrew-rtl
 scenario-video/
   SKILL.md                 the workflow Claude follows
   README.md                this file
-  references/              questionnaire, settings, scenarios, existing tests, plans and chapters, seeding, RTL
+  references/              what to ask, settings, scenarios, existing tests, plans and chapters, seeding, RTL
   templates/               settings, scenario, plan, seed, existing-test examples
   scripts/                 the tools copied into a repository
     src/make.ts            record + cut (the `video` command)
