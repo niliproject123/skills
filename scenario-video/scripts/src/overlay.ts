@@ -65,6 +65,8 @@ export const OVERLAY_GLOBAL = '__scenarioVideoOverlay';
 export const STORAGE_PREFIX = 'scenario-video.';
 /** The card's fade, in the stylesheet below; `recorder.ts` waits exactly this long after a fade out. */
 export const CARD_FADE_SECONDS = 0.35;
+/** How long a click label stands before it fades — past the pointer's rest and the click itself. */
+export const CLICK_LABEL_MS = 1_600;
 
 function styleFor(look: Look): string {
   const c = look.colours;
@@ -110,6 +112,14 @@ function styleFor(look: Look): string {
     `.ring { position: fixed; border: 3px solid ${c.pointer}; border-radius: 8px; pointer-events: none;`,
     `  z-index: 2147483646; box-shadow: 0 0 0 4px ${tint(c.pointer, 25)}; transition: all .3s ease; }`,
     '.ring[hidden] { display: none; }',
+    // The click label: the pressed control's words, big, one line, above the control (below it when
+    // there is no room above). Placed and clamped into the frame by clickLabel() below.
+    `.click-label { position: fixed; left: 0; top: 0; background: ${c.strip}; color: ${c.text};`,
+    `  font: 800 44px/1.2 ${look.font}; direction: ${look.direction}; padding: 12px 30px; border-radius: 16px;`,
+    `  border: 3px solid ${c.pointer}; box-shadow: 0 8px 30px rgba(0,0,0,.4); white-space: nowrap;`,
+    '  max-width: 90vw; overflow: hidden; text-overflow: ellipsis; pointer-events: none; z-index: 2147483647;',
+    '  opacity: 0; transform: scale(.85); transition: opacity .2s ease, transform .2s ease; }',
+    '.click-label.on { opacity: 1; transform: none; }',
   ].join('\n');
 }
 
@@ -131,6 +141,7 @@ export function overlayScript(look: Look): string {
     maskStyle: maskStyleFor(look),
     global: OVERLAY_GLOBAL,
     prefix: STORAGE_PREFIX,
+    clickLabelMs: CLICK_LABEL_MS,
   };
   return String.raw`
 (() => {
@@ -149,7 +160,7 @@ export function overlayScript(look: Look): string {
     host.style.cssText = 'position:fixed;top:0;left:0;width:0;height:0;pointer-events:none;z-index:2147483647;';
     const root = host.attachShadow({ mode: 'closed' });
     root.innerHTML = '<style>' + SETTINGS.style + '</style>' +
-      '<div class="ring" hidden></div><div class="pointer" hidden></div>' +
+      '<div class="ring" hidden></div><div class="pointer" hidden></div><div class="click-label"></div>' +
       '<div class="strip" hidden><span class="who"></span><span class="subtitle"></span>' +
       '<span class="sides"></span><span class="step"></span><span class="caption"></span></div>' +
       '<div class="card"><div class="sheet"><img class="logo" hidden alt=""><div class="subtitle"></div><div class="title"></div>' +
@@ -162,6 +173,7 @@ export function overlayScript(look: Look): string {
       card: q('.card'), sheet: q('.card .sheet'), logo: q('.card .logo'), cardSubtitle: q('.card .subtitle'),
       cardTitle: q('.card .title'), cardPeople: q('.card .people'), cardSides: q('.card .sides'),
       cardNotes: q('.card .notes'), cardWho: q('.card .who'), pointer: q('.pointer'), ring: q('.ring'),
+      clickLabel: q('.click-label'),
     };
     if (LOOK.logo) { parts.logo.src = LOOK.logo; parts.logo.hidden = false; }
     redraw();
@@ -221,6 +233,21 @@ export function overlayScript(look: Look): string {
     const tooTall = () => p.sheet.getBoundingClientRect().height > window.innerHeight * 0.9;
     while (size > 22 && tooTall()) { size -= 3; p.cardTitle.style.fontSize = size + 'px'; }
     return size;
+  };
+
+  // --- the click label: the pressed control's words, big, for a moment ------------------------
+  // Its own clock and count, read back by the self-check: shown once per step, not on every press.
+  const clickLabelState = { timer: 0, shown: 0, lastText: '' };
+  const placeClickLabel = (p, element) => {
+    const gap = 18;
+    const control = element.getBoundingClientRect();
+    const label = p.clickLabel.getBoundingClientRect();
+    const roomAbove = control.top - gap - label.height >= 8;
+    const top = roomAbove ? control.top - gap - label.height : Math.min(control.bottom + gap, window.innerHeight - label.height - 8);
+    const centred = control.left + control.width / 2 - label.width / 2;
+    const left = Math.max(8, Math.min(centred, window.innerWidth - label.width - 8));
+    p.clickLabel.style.left = left + 'px';
+    p.clickLabel.style.top = Math.max(8, top) + 'px';
   };
 
   // --- masking: painted over, never changed -------------------------------------------------
@@ -313,6 +340,30 @@ export function overlayScript(look: Look): string {
         stopFollowing();
       });
       following.gone.observe(document.documentElement, { childList: true, subtree: true });
+    },
+    // The control's words, big, just above it (below when there is no room), then faded out.
+    // Measured at the scale it stands at, so the fade-in's zoom does not throw the clamping off.
+    clickLabel(element, text) {
+      const p = build(); if (!p || !element) return;
+      if (clickLabelState.timer) clearTimeout(clickLabelState.timer);
+      p.clickLabel.textContent = text;
+      p.clickLabel.style.transition = 'none';
+      p.clickLabel.classList.add('on');
+      placeClickLabel(p, element);
+      p.clickLabel.classList.remove('on');
+      void p.clickLabel.offsetWidth;
+      p.clickLabel.style.transition = '';
+      p.clickLabel.classList.add('on');
+      clickLabelState.shown += 1;
+      clickLabelState.lastText = text;
+      clickLabelState.timer = setTimeout(() => { p.clickLabel.classList.remove('on'); clickLabelState.timer = 0; }, SETTINGS.clickLabelMs);
+    },
+    // Numbers only, for the self-check.
+    clickLabelBox() {
+      const p = build(); if (!p) return null;
+      const r = p.clickLabel.getBoundingClientRect();
+      return { on: p.clickLabel.classList.contains('on'), text: clickLabelState.lastText, shown: clickLabelState.shown,
+        x: r.x, y: r.y, width: r.width, height: r.height, fontSizePx: parseFloat(getComputedStyle(p.clickLabel).fontSize) };
     },
     // Numbers only, for the self-check.
     ringBox() {

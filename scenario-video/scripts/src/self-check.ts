@@ -61,6 +61,11 @@ const recordingPlan: RecordingPlan = {
     slideNotes: ['אין מעבר אוטומטי — אדם לוחץ'],
   }],
   captionRules: [],
+  // A rule with its own words for one control in one step, then the first press of every step.
+  clickLabels: [
+    { step: writtenPattern(/^עומר בודק$/), what: writtenPattern(/^כפתור (שני)$/), say: 'הכפתור ה$1', firstInStep: false },
+    { step: null, what: writtenPattern(/./), say: null, firstInStep: true },
+  ],
 };
 
 const ADDRESS = 'http://scenario-video-self-check.invalid/';
@@ -93,6 +98,14 @@ async function ringOf(page: Page): Promise<RingBox | null> {
     const api = (window as unknown as Record<string, { ringBox(): RingBox | null } | undefined>)[name];
     if (!api) throw new Error('the overlay is not on this page');
     return api.ringBox();
+  }, OVERLAY_GLOBAL);
+}
+interface ClickLabelBox { on: boolean; text: string; shown: number; x: number; y: number; width: number; height: number; fontSizePx: number }
+async function clickLabelOf(page: Page): Promise<ClickLabelBox | null> {
+  return page.evaluate((name) => {
+    const api = (window as unknown as Record<string, { clickLabelBox(): ClickLabelBox | null } | undefined>)[name];
+    if (!api) throw new Error('the overlay is not on this page');
+    return api.clickLabelBox();
   }, OVERLAY_GLOBAL);
 }
 async function raiseCard(page: Page, slide: unknown, on: boolean): Promise<void> {
@@ -168,8 +181,19 @@ async function main(): Promise<void> {
   const box = await bottom.boundingBox();
   const under = box ? await dana.evaluate(([x, y]) => document.elementFromPoint(x as number, y as number)?.getAttribute('data-testid') ?? 'nothing', [box.x + box.width / 2, box.y + box.height / 2] as const) : 'no box';
   check('the strip is not what elementFromPoint finds over a control', under === 'bottom', `found ${under}`);
+  const label = await clickLabelOf(dana);
+  check('the first press of a step draws its click label with the words on the control', label?.on === true && label.text === 'כפתור ראשון' && label.shown === 1, JSON.stringify(label));
+  check('the click label is big', (label?.fontSizePx ?? 0) >= 40, `${label?.fontSizePx}px`);
+  check(
+    'the click label stands inside the frame and off the control',
+    label !== null && firstBox !== null && label.x >= 0 && label.y >= 0 && label.x + label.width <= viewport.width && label.y + label.height <= viewport.height &&
+      (label.y >= firstBox.y + firstBox.height || label.y + label.height <= firstBox.y),
+    `label ${JSON.stringify(label)} · control ${JSON.stringify(firstBox)}`,
+  );
   await first.click();
   await recorder.guideBeforePress(dana, dana.getByTestId('second'), 'כפתור שני');
+  const secondLabel = await clickLabelOf(dana);
+  check('a later press in the same step draws no click label', secondLabel?.shown === 1 && secondLabel.text === 'כפתור ראשון', JSON.stringify(secondLabel));
   await dana.getByTestId('second').click();
   const field = dana.getByLabel('שם מלא');
   await recorder.guideBeforeFill(dana, field, 'full-name');
@@ -210,12 +234,16 @@ async function main(): Promise<void> {
 
   recorder.guideStep('עומר בודק');
   await recorder.guideBeforePress(omer, omer.getByTestId('first'), 'כפתור ראשון');
+  const omerLabel = await clickLabelOf(omer);
+  check('a new step draws the click label again, on that person’s page', omerLabel?.on === true && omerLabel.shown === 1 && omerLabel.text === 'כפתור ראשון', JSON.stringify(omerLabel));
   await omer.getByTestId('first').click();
   await omer.reload();
   check('the step title is drawn again after a reload', await omer.evaluate((key) => sessionStorage.getItem(key) === 'עומר בודק', `${STORAGE_PREFIX}step`));
   const undeclared = await probe(omer);
   check('a step with no chapter draws no side note', undeclared.stripSidesHtml === '', undeclared.stripSidesHtml);
   await recorder.guideBeforePress(omer, omer.getByTestId('second'), 'כפתור שני');
+  const ownWords = await clickLabelOf(omer);
+  check('a rule with its own words labels a later press, with $1 filled in', ownWords?.on === true && ownWords.text === 'הכפתור השני', JSON.stringify(ownWords));
   await omer.getByTestId('second').click();
   await omer.waitForTimeout(1_000); // the last action's result on screen
 

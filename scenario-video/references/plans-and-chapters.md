@@ -60,6 +60,16 @@ Built-in words: `Click “{name}”` / `Fill in “{name}”` (en), `לוחצי�
 The video log flags a caption that reads like a developer word — a selector, a camelCase or
 snake_case identifier, or Latin text in a Hebrew caption — so it gets a rule or a real label.
 
+## Click labels
+A click label is a press's words drawn big on screen, just above the control (below when there is
+no room), for 1.6 seconds. The skill draws none on its own: the plan's `clickLabels` rules say which
+presses get one, and the first matching rule decides.
+- `{ what: /./, firstInStep: true }` — the first press of every step, per person;
+- `{ step: /^Cycle/, what: /^Total$/ }` — one control in one step, every time it is pressed;
+- `say: 'Show the $1'` — the label's own words (`$1` is `what`'s first group); absent, the control's
+  own words. `what` matches the words the caption is built from.
+Drawn during recording — a change needs a new recording.
+
 ## After a plan change
 Rules (`leaveOut`, `keepAtMost`, `steps`, `who`) re-cut without recording: `--build-only <folder>`.
 Captions, chapters and the look are drawn during the recording — they need a new recording.

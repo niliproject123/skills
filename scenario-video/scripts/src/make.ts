@@ -27,7 +27,7 @@ import { appAddressOf, loadSettings, SETTINGS_FILE_VARIABLE, type LoadedSettings
 import { firstLineOf, VideoError } from './errors';
 import { Logger } from './log';
 import { DEFAULT_COLOURS, DEFAULT_FONT, type Look } from './overlay';
-import { captionRulesWritten, chaptersWritten, checkPlan, writeRecordingPlan, type GuidePlan } from './plan';
+import { captionRulesWritten, chaptersWritten, checkPlan, clickLabelsWritten, writeRecordingPlan, type GuidePlan } from './plan';
 import { RECORDING_FOLDER_VARIABLE } from './recorder';
 
 const log = new Logger('scenario-video');
@@ -169,6 +169,7 @@ async function main(): Promise<void> {
       look: lookOf(loaded, words.people),
       chapters: chaptersWritten(plan),
       captionRules: captionRulesWritten(plan),
+      clickLabels: clickLabelsWritten(plan),
     });
     const command = commandOf(plan, loaded);
     const startedAt = new Date().toISOString();

@@ -92,6 +92,26 @@ export interface GuidePlan {
    */
   chapterApproval?: { approvedBy: string; approvedOn: string };
   captionRules?: readonly CaptionRule[];
+  /**
+   * Which presses get a click label: the words drawn big on screen just above the control, for a
+   * moment. The first matching rule decides. No rule, no label — the skill labels nothing on its own.
+   */
+  clickLabels?: readonly ClickLabelRule[];
+}
+
+/**
+ * A click label for a shape of press. `{ what: /./, firstInStep: true }`: the first press of every
+ * step. `{ step: /^Cycle/, what: /^Total$/, say: 'Show total' }`: one control, own words.
+ */
+export interface ClickLabelRule {
+  /** The step, by the scenario's title for it. Absent: every step. */
+  step?: RegExp;
+  /** The press, by the words the caption is built from (the control's words, else the scenario's). */
+  what: RegExp;
+  /** The label's words; `$1` is the first group of `what`. Absent: the control's own words. */
+  say?: string;
+  /** Only the first press this rule matches in each step, per person. */
+  firstInStep?: boolean;
 }
 
 // --- the recording plan: what the recorder inside the scenario's process reads ------------------
@@ -118,6 +138,14 @@ export interface RecordingPlan {
   look: Look;
   chapters: ChapterWritten[];
   captionRules: CaptionRuleWritten[];
+  clickLabels: ClickLabelRuleWritten[];
+}
+
+export interface ClickLabelRuleWritten {
+  step: WrittenPattern | null;
+  what: WrittenPattern;
+  say: string | null;
+  firstInStep: boolean;
 }
 
 export const writtenPattern = (pattern: RegExp): WrittenPattern => ({ source: pattern.source, flags: pattern.flags });
@@ -134,6 +162,15 @@ export function chaptersWritten(plan: GuidePlan): ChapterWritten[] {
 
 export function captionRulesWritten(plan: GuidePlan): CaptionRuleWritten[] {
   return (plan.captionRules ?? []).map((rule) => ({ kind: rule.kind, match: writtenPattern(rule.match), say: rule.say }));
+}
+
+export function clickLabelsWritten(plan: GuidePlan): ClickLabelRuleWritten[] {
+  return (plan.clickLabels ?? []).map((rule) => ({
+    step: rule.step ? writtenPattern(rule.step) : null,
+    what: writtenPattern(rule.what),
+    say: rule.say ?? null,
+    firstInStep: rule.firstInStep ?? false,
+  }));
 }
 
 export function writeRecordingPlan(folder: string, recordingPlan: RecordingPlan): void {

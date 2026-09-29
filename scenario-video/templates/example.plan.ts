@@ -45,4 +45,6 @@ export const plan: GuidePlan = {
   // refuses to record chapters with no approval.
   chapterApproval: { approvedBy: 'Dana Levi', approvedOn: '2026-09-23' },
   captionRules: [{ kind: 'press', match: /^Tab (.+)$/, say: 'Open the “$1” tab' }],
+  // Which presses get their words big on screen for a moment. None unless a rule asks.
+  clickLabels: [{ what: /./, firstInStep: true }],
 };

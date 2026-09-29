@@ -7,7 +7,8 @@
 //   • each page is named after the person using it (`nameGuidePage`), and its video's start time
 //     is noted (`noteGuidePageOpened`) so an event can be placed on that person's video;
 //   • a step shows a title card the first time a person acts in it; each press points at the
-//     control and captions it; each fill captions the field — then the scenario's own action goes on;
+//     control and captions it (and draws a big click label when a plan's `clickLabels` rule
+//     matches it); each fill captions the field — then the scenario's own action goes on;
 //   • every one of those is appended to `timeline.jsonl`, and every page to `pages.jsonl`, as it
 //     happens — a run that dies half-way still leaves the part it recorded.
 //
@@ -88,6 +89,8 @@ interface PageState {
   who: string | null;
   openedAt: number;
   titledStep: string;
+  /** Per click-label rule (by its place in the plan), the step it last labelled on this page. */
+  labelledSteps: Map<number, string>;
 }
 
 interface CardContent {
@@ -156,7 +159,7 @@ export async function prepareGuideContext(context: BrowserContext): Promise<void
 export function noteGuidePageOpened(page: Page): void {
   if (!isRecordingGuide()) return;
   pagesOpened += 1;
-  pages.set(page, { id: `${process.pid}-${pagesOpened}`, who: null, openedAt: Date.now(), titledStep: '' });
+  pages.set(page, { id: `${process.pid}-${pagesOpened}`, who: null, openedAt: Date.now(), titledStep: '', labelledSteps: new Map() });
 }
 
 /** Overlay calls go through here: a page that navigated away mid-call is written down, never hidden. */
@@ -325,7 +328,37 @@ export async function guideBeforePress(page: Page, control: Locator, what: strin
   const caption = captionForPress(name, plan().words, plan().captionRules);
   record(page, 'press', name, caption);
   await pointAt(page, control, caption);
+  await clickLabelIfAsked(page, state, control, name);
   await page.waitForTimeout(POINT_MS); // pacing: the pointer's travel, then a beat on the control
+}
+
+/**
+ * The plan's `clickLabels` rules: the first one matching this press decides, and draws its words (or
+ * the control's own words) big on screen. No rule matches, no label — the skill adds none on its own.
+ */
+async function clickLabelIfAsked(page: Page, state: PageState, control: Locator, name: string): Promise<void> {
+  const rules = plan().clickLabels;
+  const index = rules.findIndex((rule) => (!rule.step || patternFrom(rule.step).test(currentStep)) && patternFrom(rule.what).test(name));
+  const rule = rules[index];
+  if (!rule) return;
+  if (rule.firstInStep) {
+    if (state.labelledSteps.get(index) === currentStep) return;
+    state.labelledSteps.set(index, currentStep);
+  }
+  const groups = patternFrom(rule.what).exec(name) ?? [];
+  const said = rule.say?.replace(/\$(\d)/g, (_all, group: string) => groups[Number(group)] ?? '');
+  const words = shortCaption(said ?? ((await textOf(control)) || name));
+  if (!words) {
+    problem(`the press "${name}" in the step "${currentStep}" matched a click label rule and has no words to label — no click label is drawn`);
+    return;
+  }
+  await drawOn(page, `the click label "${words}"`, () =>
+    control.evaluate((element, [global, text]) => {
+      const api = (window as unknown as Record<string, { clickLabel(element: Element, text: string): void } | undefined>)[global as string];
+      if (!api) throw new Error('the overlay is not on this page');
+      api.clickLabel(element, text as string);
+    }, [OVERLAY_GLOBAL, words] as const),
+  );
 }
 
 /** Before the scenario fills a field: the title card if new, and the field's caption. */
