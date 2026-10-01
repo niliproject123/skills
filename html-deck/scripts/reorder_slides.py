@@ -23,6 +23,14 @@ import re
 import sys
 from pathlib import Path
 
+# A Windows console is cp1252, and a deck title is not: without this the script dies while
+# printing the title it just read off the wire. Decks are Hebrew, Arabic, Greek more often than not.
+if hasattr(sys.stdout, 'reconfigure'):
+    sys.stdout.reconfigure(encoding='utf-8')
+if hasattr(sys.stderr, 'reconfigure'):
+    sys.stderr.reconfigure(encoding='utf-8')
+
+
 HERE = Path(__file__).resolve().parent
 SECTION = re.compile(r'<section class="slide.*?</section>\n', re.S)
 TITLE = re.compile(r'<h1[^>]*>(.*?)</h1>', re.S)

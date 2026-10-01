@@ -19,6 +19,14 @@ import io, json, os, re, shutil, sys, time
 from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 from urllib.parse import urlparse, parse_qs
 
+# A Windows console is cp1252, and a deck title is not: without this the script dies while
+# printing the title it just read off the wire. Decks are Hebrew, Arabic, Greek more often than not.
+if hasattr(sys.stdout, 'reconfigure'):
+    sys.stdout.reconfigure(encoding='utf-8')
+if hasattr(sys.stderr, 'reconfigure'):
+    sys.stderr.reconfigure(encoding='utf-8')
+
+
 ASSETS = os.path.dirname(os.path.abspath(__file__))
 DECKS = os.path.abspath(sys.argv[1]) if len(sys.argv) > 1 else os.getcwd()
 BAK_DIR = os.path.join(DECKS, ".bak")

@@ -37,6 +37,14 @@ import sys
 import urllib.error
 import urllib.request
 
+# A Windows console is cp1252, and a deck title is not: without this the script dies while
+# printing the title it just read off the wire. Decks are Hebrew, Arabic, Greek more often than not.
+if hasattr(sys.stdout, 'reconfigure'):
+    sys.stdout.reconfigure(encoding='utf-8')
+if hasattr(sys.stderr, 'reconfigure'):
+    sys.stderr.reconfigure(encoding='utf-8')
+
+
 EMU_IN = 914400
 SLIDE_W = int(13.3333 * EMU_IN)          # 16:9, the shape of a .slide
 SLIDE_H = int(7.5 * EMU_IN)

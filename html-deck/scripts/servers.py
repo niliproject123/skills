@@ -25,12 +25,22 @@ one it came from until it is stamped. That is reported as ambiguous rather than 
 import os, re, sys, json, hashlib, subprocess
 import urllib.request
 
+# A Windows console is cp1252, and a deck title is not: without this the script dies while
+# printing the title it just read off the wire. Decks are Hebrew, Arabic, Greek more often than not.
+if hasattr(sys.stdout, 'reconfigure'):
+    sys.stdout.reconfigure(encoding='utf-8')
+if hasattr(sys.stderr, 'reconfigure'):
+    sys.stderr.reconfigure(encoding='utf-8')
+
+
 LO, HI = 8890, 8920
-PROBE = ('screens.html', 'flow.html')
 TITLE = re.compile(r'<title>([^<]*)</title>')
 SERVE = re.compile(r'serve\.py"?\s+"?([^"]+?)"?\s+(\d+)\s*$')
 SKIP = {'.git', 'node_modules', '.bak', '__pycache__', '.venv'}
-ROOT = 'C:/dev/gouda'
+# The deck names are whatever is on disk, never a list written here. A hard-coded pair of
+# names reported every other project's live viewer as "nothing answering" -- which is the
+# one verdict that gets a reader's window killed, and it was wrong.
+ROOT = os.environ.get('DECK_ROOT') or os.getcwd()
 
 
 def ps(script):
@@ -75,11 +85,19 @@ def digest(text):
 
 def hash_folder(base):
     decks = {}
-    for name in PROBE:
+    try:
+        names = sorted(n for n in os.listdir(base) if n.lower().endswith('.html'))
+    except Exception:
+        return decks
+    for name in names:
         path = os.path.join(base, name)
         if os.path.isfile(path):
             try:
-                decks[name] = digest(open(path, encoding='utf-8').read())
+                # newline='' keeps CRLF intact. Without it python translates the line
+                # endings away, the disk hash never equals the hash of the same file on
+                # the wire, and every live viewer in a CRLF checkout is reported as an
+                # orphan to be killed. 580 of those endings in the deck that found this.
+                decks[name] = digest(open(path, encoding='utf-8', newline='').read())
             except Exception:
                 pass
     return decks
@@ -111,10 +129,23 @@ def deck_folders(root, extra=()):
     return found
 
 
-def answering(port):
-    """Fetch each deck from the port. -> {deck name: (hash, title, bytes)}"""
+def alive(port):
+    """Is anything answering there at all, whatever it is serving?"""
+    try:
+        urllib.request.urlopen('http://127.0.0.1:%d/' % port, timeout=3).read()
+        return True
+    except Exception:
+        return False
+
+
+def answering(port, names):
+    """Fetch each known deck name from the port. -> {deck name: (hash, title, bytes)}
+
+    `names` is every .html seen in any candidate folder, so the probe covers whatever this
+    machine's decks are called instead of a list written into this file.
+    """
     got = {}
-    for name in PROBE:
+    for name in names:
         try:
             body = urllib.request.urlopen('http://127.0.0.1:%d/%s' % (port, name),
                                           timeout=3).read().decode('utf-8', 'replace')
@@ -201,7 +232,9 @@ def main():
     folders = deck_folders(root, extra=[p['asked'] for p in procs])
     live = listeners()
     ports = sorted({p['port'] for p in procs if p['port']})
-    served = {port: answering(port) for port in ports}
+    names = sorted({n for decks in folders.values() for n in decks})
+    served = {port: answering(port, names) for port in ports}
+    up = {port: alive(port) for port in ports}
 
     print('%-6s %-7s %-38s %-38s %s'
           % ('port', 'pid', 'folder asked for', 'FOLDER ACTUALLY SERVED', 'title on the wire'))
@@ -216,7 +249,12 @@ def main():
         # relative to --root, so two spellings of one folder compare unequal
         want = resolve(p['asked'])
         matched = want is not None and want in hits
-        if not got:
+        if not got and up.get(port):
+            # it answers, and holds no deck this run knows the name of. That is a folder
+            # outside --root, not a dead process: never call it an orphan, because the
+            # next thing a session does with that word is kill it
+            real, note = '(answering - its folder is outside --root)', ''
+        elif not got:
             real, note = '(nothing answering)', ''
             orphans.append(p)
         elif not hits:

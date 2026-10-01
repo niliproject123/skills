@@ -21,6 +21,14 @@ with class="here".
 """
 import io, os, re, sys, math, json, html as htmlmod
 
+# A Windows console is cp1252, and a deck title is not: without this the script dies while
+# printing the title it just read off the wire. Decks are Hebrew, Arabic, Greek more often than not.
+if hasattr(sys.stdout, 'reconfigure'):
+    sys.stdout.reconfigure(encoding='utf-8')
+if hasattr(sys.stderr, 'reconfigure'):
+    sys.stderr.reconfigure(encoding='utf-8')
+
+
 SLIDE_W, SLIDE_H = 1280, 720
 PAD_H = 46 + 40                       # .slide padding top + bottom
 BUDGET = SLIDE_H - PAD_H              # usable height before a slide must .grow
