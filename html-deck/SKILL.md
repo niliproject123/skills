@@ -54,15 +54,22 @@ again and the deck is current — that is the whole reason the folder has a buil
 Propose it, do not interview. Fill every line you can from the repository, show it as one
 table, and get it corrected in one reply. `references/brief.md` says what to fill from where.
 
-**Three things are always asked**, because no file answers them and a wrong guess rewrites
+**Four things are always asked**, because no file answers them and a wrong guess rewrites
 the deck:
 
+- **where the content comes from** — name the file, table or document you intend to read
+  and say how you found it, then get it confirmed **before reading any of it into slides**.
+  Finding one plausible source is not permission to use it
 - **who reads it** — it sets every word on every slide
 - **how it will be read** — on screen, printed to pdf, sent as pptx, projected
 - **right-to-left or left-to-right** — never inferred from the language of the request
 
-And one rule that costs more than the rest put together: **where two sources could have
-produced a number, stop and ask which. Never pick the likelier one.**
+Two rules follow from the first, and cost more than all the rest together:
+
+- **where two sources could have produced a number, stop and ask which.** Never pick the
+  likelier one, and never the one that makes the slide tidier
+- **a source the reader did not confirm never reaches a slide** — not as a placeholder, not
+  as an illustration, not "for now". The deck goes out and nobody remembers which it was
 
 ### 2. The folder
 

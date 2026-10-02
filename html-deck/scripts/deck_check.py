@@ -130,6 +130,23 @@ def brief_rows(folder):
     return rows, path
 
 
+def unanswered(path):
+    """Lines of the brief's own table still holding the template's prompt.
+
+    The deck-level source is the one that matters: a deck whose brief never says what it
+    was read from is a deck nobody can re-derive or correct, however complete its slides
+    look. The prompts are the italic parenthesis the template writes.
+    """
+    out = []
+    for line in path.read_text(encoding='utf-8').splitlines():
+        if not line.strip().startswith('|'):
+            continue
+        cells = [c.strip() for c in line.strip().strip('|').split('|')]
+        if len(cells) == 2 and cells[1].startswith('*(') and cells[1].endswith(')*'):
+            out.append(cells[0])
+    return out
+
+
 def check_brief(folder, slides, rep):
     rows, path = brief_rows(folder)
     if rows is None:
@@ -139,6 +156,8 @@ def check_brief(folder, slides, rep):
         rep.bad('brief', '%s holds no slide-plan table' % path.name)
         return
     trouble = []
+    for line in unanswered(path):
+        trouble.append('%s: still the question the template asked, never answered' % line)
     for s in slides:
         row = rows.get(s['no'])
         if row is None:

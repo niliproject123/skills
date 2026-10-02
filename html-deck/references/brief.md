@@ -20,7 +20,7 @@ correction. `brief.md` in the deck folder is where it lives, and `deck_check.py`
 | who reads it | — | **always ask.** It sets every word on every slide. A customer, a team, a regulator and a new joiner need four different decks from the same data |
 | how it will be read | — | **always ask.** On screen · printed to pdf · sent as pptx · projected. It decides whether a `.grow` slide is allowed at all, and whether charts may stay as svg |
 | language and direction | `<html lang dir>` of an existing deck, the repository's own text | **always confirm rtl or ltr.** Never infer it from the language of the request. It decides the sidebar's side, how every mixed number must be wrapped, and whether the pptx needs `rtl="1"` on each paragraph |
-| where the content comes from | the seed, a migration, a spec document, a live database | **two candidates exist** — see below |
+| where the content comes from | the seed, a migration, a spec document, a live database | **always ask.** Propose the source you found and how you found it; read nothing into slides until it is confirmed. See below |
 | what it does not cover | the reader's request, and what you found and dropped | never |
 | how long it is | your own draft plan | never — propose a number of slides |
 
@@ -34,11 +34,34 @@ Write the plan before the first slide. Then every slide has a job, and a slide t
 no question is visible as a row with an empty middle column rather than as a wall of text
 the reader has to read to discover it says nothing.
 
-## The source rule
+## The source is asked, every time
 
-**Where two sources could have produced a number, stop and ask which. Never pick the
-likelier one.** This is the single rule that costs the most when it is broken: a deck is
-believed, and a number taken from the wrong table is believed too.
+Not "asked if unsure" — **asked**. The session searches first and proposes, so the reader
+confirms rather than researches, but the confirmation itself is never skipped:
+
+> The numbers would come from `spec/mock/mock-data/*.json`, the seed this environment was
+> built from — 18 states, 67 transitions, 5 checks. I found it because `seed:base` reads it
+> and the running database matches it today.
+> The alternative is the live database, which differs as soon as anybody uses the system.
+> **Which should the deck describe?**
+
+Three things make that a proposal and not a question: the source is **named**, how it was
+found is **stated**, and the alternatives are **listed**. A session that cannot write those
+three lines has not looked hard enough to be asking yet.
+
+Record the answer in `brief.md` — the source per slide, and for the deck as a whole the
+file or database it was read from **and when**. A deck is read months later; "the seed" is
+not an answer then, and "the seed as of 2026-10-01, migration 097" is.
+
+**A source the reader did not confirm never reaches a slide.** Not as a placeholder, not as
+an illustration, not "for now" — once it is rendered it looks as finished as everything
+around it.
+
+## When there is more than one candidate
+
+**Stop and ask which. Never pick the likelier one.** This is the rule that costs the most
+when it is broken: a deck is believed, and a number taken from the wrong table is believed
+too.
 
 In practice:
 

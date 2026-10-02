@@ -11,6 +11,8 @@ below: a slide missing from it, or a row with no source, fails the check.
 | how it will be read | __MEDIUM__ |
 | language and direction | __LANG__ / __DIR__ |
 | where the content comes from | __SOURCE__ |
+| confirmed by the reader on | *(date — until this is filled, no slide may show its numbers)* |
+| read from it on | *(date, and the commit or migration if it has one — "the seed" is not an answer six months from now)* |
 | what it does **not** cover | __OUTOFSCOPE__ |
 | approved by | *(name and date — no slide is written before this line is filled)* |
 
