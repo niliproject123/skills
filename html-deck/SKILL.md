@@ -40,6 +40,8 @@ its own conventions, in that project's own skill.
   build_slide_data.py  reads the source the brief names, writes data.json and fragments/
   data.json            what the builder produced
   fragments/           generated blocks the slides include
+  build_screens.py     draws screens/*.svg, the mockups of the app's screens (when it has any)
+  .preview/            what screen_mock.py preview rendered, for the author's eyes only
   changes.json         the reader's remarks, paired with the marks in the deck
   .bak/                what the editor saved over, newest last
 ```
@@ -96,6 +98,11 @@ with `scripts/md_table.py`.
 Pick the layout from the shape of the content, not from habit — `references/layouts.md` has
 the catalogue and the skeleton. A deck where every slide is the same grid of boxes reads as
 a wall.
+
+A slide about an app's screen shows a **drawn mockup** of it: svg drawn by
+`templates/build_screens.py` with `scripts/screen_mock.py`, every label, colour and layout read
+from the app's code, grey bars where the user's data would be, checked with
+`screen_mock.py preview` before the slide is written — `references/layouts.md`.
 
 ### 5. The navigation
 
@@ -159,6 +166,7 @@ into a deck folder.
 | `deck_check.py` | fit · nav · marks · brief, before it is sent |
 | `reorder_slides.py` | put the slides in the order written in `slide-order.txt` |
 | `md_table.py` | a markdown document of tables becomes a deck |
+| `screen_mock.py` | primitives for drawn mockups; `preview` renders them headless to look at |
 | `to_pptx.py` | a picture per slide — identical to the deck, not editable |
 | `to_pptx_native.py` | native shapes and tables — editable in PowerPoint |
 

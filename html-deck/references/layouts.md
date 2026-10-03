@@ -90,6 +90,8 @@ Then one of these, chosen by what the slide actually is:
 | **a screen** — what it holds, and what it looks like | `.screen` > `.facts` + `.mock`. `.wide-spec` flips the ratio, `.even` splits it |
 | a field and its meaning | `.facts` > `.g` (group heading) + `.f` > `.k` + `.v`, or `.b` for a loose sentence |
 | a miniature of the real screen | `.mock` > `.mock-t` (`.mt` + `.cap`) + `.mock-b` |
+| **a drawn mockup** — a chart, a dark theme, a dialog over a graph | `.screen.drawn` (`.phone` for a tall one) > `.facts` + `div` > `img.mock-img` (`.tall`) + `.mock-cap`. See *Drawn mockups* below |
+| numbered callouts on a mockup | `.facts .f .k` > `span.n` — the same number as the mockup's badge |
 | rows of a list inside a mockup | `table.mini` — header row is the **fields**, body rows are the **examples** |
 | filters or states above a list | `.chips` > `.chip.on/.ok/.bad/.warn/.off` |
 | a derived folder tree | `.tree` > `.l1`…`.l4` — indentation carries nesting, never arrows |
@@ -111,3 +113,36 @@ Use the variables, never raw hex, so a deck restyles in one place.
 Anything you add here must also be added to `TARGETS` in `edit.js`, or the reader
 cannot click that line and rewrite it.
 
+
+## Drawn mockups
+
+When markup cannot look like the screen — a chart, the app's own dark theme, a dialog over a
+graph — draw the screen as svg instead. The deck folder gets `build_screens.py` (copy
+`templates/build_screens.py`); it imports the primitives from `scripts/screen_mock.py` and
+writes `screens/*.svg`, one function per screen, named for the screen.
+
+What makes a drawn mockup trustworthy, and what this deck format checks for:
+
+- **read, never recall.** Every label is a string found in the app's code, every colour comes
+  from its theme file, and the layout from its components. Name the files in the builder's
+  docstring and in `brief.md`. A real screenshot, when one exists, is the thing to compare against
+- **no user data.** `bar()` stands where the app shows a name, a date or a number; `wave()`
+  draws the shape of a line, not anybody's prices. Example rows with invented tickers or
+  amounts are invented data, and the brief's source rule applies to them
+- **say it is a drawing.** `.mock-cap` under each picture: *mockup drawn from the app's code ·
+  grey bars stand for your own data*
+- **callouts sit on empty space.** `marked(..., at=)` puts the badge on the side of its ring
+  that has room; a corner badge covers the first word of what it marks
+- **look before the reader does.** `screen_mock.py preview <deck-folder>` renders every svg
+  headless to `.preview/*.png` and refuses one that does not parse — a browser shows a
+  broken svg as an empty frame, and the slide just looks sparse. Then `deck_check.py` for fit
+
+```html
+<div class="screen drawn">
+  <div class="facts">
+    <div class="f"><div class="k"><span class="n">1</span>Show</div><div class="v">...</div></div>
+  </div>
+  <div><img class="mock-img" src="screens/graph.svg" alt="graph screen">
+    <div class="mock-cap">mockup drawn from the app's code · grey bars stand for your own data</div></div>
+</div>
+```

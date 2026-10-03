@@ -34,7 +34,7 @@
     /* the slide-type layouts: every leaf that carries words is editable too */
     '.facts .g', '.facts .f .k', '.facts .f .v', '.facts .b',
     '.flds .fl h4', '.flds .fl li', '.acts .ac h4', '.acts .ac li',
-    '.mock-t .mt', '.mock-t .cap', 'table.mini th', 'table.mini td',
+    '.mock-t .mt', '.mock-t .cap', '.mock-cap', 'table.mini th', 'table.mini td',
     '.chip', '.tree div', '.form .lb', '.form .in',
     '.kpi .n', '.kpi .t', '.kpi .s',
     '.rules .r .h', '.rules .r .d', '.rail .st .h', '.rail .st .d',

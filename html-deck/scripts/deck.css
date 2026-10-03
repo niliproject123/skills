@@ -211,6 +211,19 @@ body.has-deckbar{padding-top:62px}
 .mock-t .cap{margin-right:auto;font-weight:400;color:#9FB6D0;font-size:11px}
 .mock-b{padding:11px 12px;display:flex;flex-direction:column;gap:9px}
 
+/* a drawn mockup: the screen as svg (screens/*.svg, screen_mock.py), for what markup cannot
+   show - a chart, a dark theme, a dialog over a graph. The facts column is narrow because
+   the picture carries the slide; `.phone` puts a tall picture on the narrow side instead. */
+.screen.drawn{grid-template-columns:330px minmax(0,1fr);gap:24px}
+.screen.drawn.phone{grid-template-columns:minmax(0,1fr) 300px}
+img.mock-img{display:block;width:100%;height:auto;border-radius:10px;
+  box-shadow:0 4px 16px rgba(0,0,0,.18)}
+img.mock-img.tall{width:auto;height:455px;margin:0 auto}
+.mock-cap{font-size:11px;color:#7a8794;margin-top:6px;text-align:end}
+/* a numbered callout in the facts column - the same number the mockup's badge carries */
+.facts .f .k .n{display:inline-block;width:20px;height:20px;border-radius:50%;margin-inline-end:6px;
+  background:#ffd700;color:#0d1117;font-weight:800;font-size:12px;text-align:center;line-height:20px}
+
 /* a compact table inside a mockup -- a header row and example rows, never mixed */
 table.mini{width:100%;border-collapse:collapse;font-size:12.5px;background:#fff}
 table.mini th{background:var(--bg-blue);color:var(--navy-deep);font-weight:800;font-size:11.5px;
