@@ -37,10 +37,12 @@
   var here = null;
   function mark() {
     var middle = window.innerHeight / 2, pick = null;
+    /* the last slide whose top is above the middle of the window. Not the first one still
+       visible: after a jump the previous slide's last strip sits on screen behind the deck
+       bar, and taking it marked 04 when the reader had clicked 05 */
     for (var i = 0; i < slides.length; i++) {
       if (!slides[i]) continue;
-      var box = slides[i].getBoundingClientRect();
-      if (box.top <= middle && box.bottom >= 0) { pick = links[i]; break; }
+      if (slides[i].getBoundingClientRect().top <= middle) pick = links[i];
     }
     if (!pick || pick === here) return;
     if (here) here.classList.remove('here');

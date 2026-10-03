@@ -456,7 +456,9 @@ body.has-deckbar #slidebar{top:44px}
 #slidebar .sb-n{color:#7E9AB8;font-weight:700;font-variant-numeric:tabular-nums;
   direction:ltr;min-width:18px}
 #slidebar a.here .sb-n{color:var(--yellow)}
-#slidebar .sb-t{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+/* a title wraps rather than ending in "...": the list is for finding a slide, and a cut
+   title hides the words that tell two slides apart */
+#slidebar .sb-t{min-width:0;overflow-wrap:anywhere}
 body.slidebar-folded #slidebar{display:none}
 /* The slides are centred by margin:0 auto in the width of the page, and the panel is
    fixed, so without this they are centred under it: at 1600px the frame fits the room

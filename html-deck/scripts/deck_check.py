@@ -74,8 +74,8 @@ class Report(object):
 
 def check_nav(deck, html, rep):
     class Args(object):
-        heading = 'שקפים'
-        contents_heading = 'תוכן דברים'
+        heading = None              # the deck's own headings - see deck_nav.headings
+        contents_heading = None
         contents_on = None
         no_sidebar = False
         no_contents = False

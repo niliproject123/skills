@@ -55,6 +55,20 @@ ADOPT_SIDEBAR = r'<nav id="slidebar".*?</nav>\n?'
 NAV_SCRIPT = '<script src="/_deck/nav.js"></script>'
 FIT_SCRIPT = '<script src="/_deck/fit.js"></script>'
 ADOPT_CONTENTS = r'[ \t]*<div class="toc">.*?\n[ \t]*</div>\n?'
+# The headings are the deck's own words. Once written they are read back from the deck, so
+# a rerun - and deck_check, which passes no headings - keeps what is there instead of
+# swapping an English deck's "slides" for the Hebrew default and calling the deck stale.
+# Only a deck that has none yet takes them from its <html lang>.
+HEADINGS = {'he': ('שקפים', 'תוכן דברים'), 'en': ('slides', 'contents')}
+
+
+def headings(html, args):
+    lang = re.search(r'<html[^>]*\blang="([a-z]+)', html)
+    lang = lang.group(1) if lang and lang.group(1) in HEADINGS else 'en'
+    side = re.search(r'<div class="sb-h">(.*?)</div>', html, re.S)
+    toc = re.search(r'<div class="toc-h">(.*?)</div>', html, re.S)
+    return (args.heading or (side.group(1) if side else HEADINGS[lang][0]),
+            args.contents_heading or (toc.group(1) if toc else HEADINGS[lang][1]))
 
 
 def attr(text, name):
@@ -178,9 +192,10 @@ def rebuild(html, args):
     html, ids = with_ids(html, slides)
     slides = slides_of(html)
     said = []
+    side_heading, contents_heading = headings(html, args)
 
     if not args.no_sidebar:
-        block = sidebar_block(slides, ids, args.heading)
+        block = sidebar_block(slides, ids, side_heading)
         html, how = put(html, 'slidebar', block, after=BODY,
                         adopt=ADOPT_SIDEBAR)
         said.append('sidebar %s, %d slides' % (how, len(slides)))
@@ -203,7 +218,7 @@ def rebuild(html, args):
         if host is None:
             said.append('contents: no cover slide and no --contents-on, skipped')
         else:
-            block = contents_block(slides, ids, args.contents_heading)
+            block = contents_block(slides, ids, contents_heading)
             # the host's span is read again from the current text: the sidebar moved it
             now = next(s for s in slides_of(html) if s['no'] == host['no'])
             html, how = put(html, 'contents', block, inside=(now['start'], now['end']),
@@ -215,8 +230,10 @@ def rebuild(html, args):
 def main():
     ap = argparse.ArgumentParser(description='build the slide sidebar and the contents block')
     ap.add_argument('deck', help='a deck .html, or a folder of them')
-    ap.add_argument('--heading', default='שקפים', help='the heading over the sidebar')
-    ap.add_argument('--contents-heading', default='תוכן דברים')
+    ap.add_argument('--heading', default=None,
+                    help="the heading over the sidebar (default: the deck's own, else by <html lang>)")
+    ap.add_argument('--contents-heading', default=None,
+                    help="the contents heading (default: the deck's own, else by <html lang>)")
     ap.add_argument('--contents-on', default=None, help='the slide the contents go on')
     ap.add_argument('--no-sidebar', action='store_true')
     ap.add_argument('--no-contents', action='store_true')
