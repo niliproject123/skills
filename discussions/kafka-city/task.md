@@ -122,3 +122,11 @@ Added one 96-unit straight cell between dock approaches and road corner clearanc
 The seven-service demo now includes four connected topics: orders, payments, inventory and fulfilments. Presets change subscriptions, partition counts and producer/consumer bay counts as well as rates and lag. Added inventory and fulfilment producers and receiving groups.
 
 No tests or build run, following the user's code-only instruction. Branch codex/kafka-city; discussion discussions/kafka-city; task task.md; Windows / Node 20.19.0 / npm 10.8.2 / Vite 6.4.3; port 5173; application credentials none.
+
+## 2026-10-05 startup repair
+
+The requested startup check found two TypeScript errors (road-piece join typing and missing TerminalLayout.name) and real route initialization errors from expanded driveway ports, hard parallel-road reservations, overlapping manual/automatic terminal placement and tightly packed receiving rows. Fixed the types and gauge label; parallel spacing is a routing cost rather than an impossible exclusion; automatic bays reserve existing manual placements and receiving rows allow the complete driveway setback. Non-demo example campuses were repositioned to clear their wider producer bays. Raster cache quality is 1 and the memory estimate includes all retained full-world layers.
+
+Added tools/check-startup.mjs, which transpiles actual application modules and initializes Demo, Normal, Hot partition, Consumer lag, Recovering consumer, High throughput and Many groups. All seven passed, each with seven services and four topics. Mocked data: none. Production build passed and Vite returned HTTP 200 on port 5173. Browser verification could not run because the browser-control tool failed with a missing kernel-assets path.
+
+Branch codex/kafka-city; discussion discussions/kafka-city; task task.md; Windows / Node 20.19.0 / npm 10.8.2 / Vite 6.4.3; port 5173; application credentials none.

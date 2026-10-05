@@ -19,7 +19,7 @@ export function pavedRoutePoints(route:TrafficRoute):GroundPoint[]{
 }
 export const roadSegments=(topic:Topic):RoadSegment[]=>roadNetwork(cityRoutes.filter(route=>route.topic===topic).flatMap(route=>{
  const points=pavedRoutePoints(route);
- return points.slice(1).flatMap((to,index)=>{const from=points[index];let pieces=[{from,to,lanes:route.lanes,join:index<points.length-2}];
+ return points.slice(1).flatMap((to,index)=>{const from=points[index];let pieces:RoadSegment[]=[{from,to,lanes:route.lanes,join:index<points.length-2}];
  for(const bridge of overpasses.filter(bridge=>bridge.topic===topic))pieces=pieces.flatMap(piece=>{
  if(piece.from.u!==bridge.u||piece.to.u!==bridge.u)return [piece];const low=Math.min(piece.from.v,piece.to.v),high=Math.max(piece.from.v,piece.to.v),end=bridge.start+bridge.ramp*2+bridge.deck;
  if(high<=bridge.start||low>=end)return [piece];const remaining:RoadSegment[]=[];

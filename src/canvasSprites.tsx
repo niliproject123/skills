@@ -19,7 +19,7 @@ export type Bounds={x:number;y:number;width:number;height:number};
 export type Sprite=Bounds&{image:HTMLCanvasElement};
 export type Scenery=Sprite&{depth:number;name?:Service;terminal?:string;bridge?:boolean};
 export const mapBounds:Bounds=renderModel.worldBounds;
-const quality=1.5;
+const quality=1;
 export function context(canvas:HTMLCanvasElement){const drawing=canvas.getContext('2d');if(!drawing)throw new Error('Canvas 2D is unavailable');return drawing;}
 async function raster(node:ReactNode,bounds:Bounds):Promise<Sprite>{
  const {renderToStaticMarkup}=await import('react-dom/server');
