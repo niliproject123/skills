@@ -35,7 +35,7 @@ export function routePoints(config:LayoutConfiguration,topic:string,producer:Ter
  return orthogonal(topicTrunkRoute(config,buildLayout(config).terminals,topic,producer,receiver,topicIndex,existingRoutes));
 }
 export function worldGeometry(config:LayoutConfiguration,buildings:DerivedRenderModel['cityBuildings'],terminals:Terminal[],routes:DerivedRenderModel['cityRoutes']){
- const groundPoints=[...Object.values(buildings).flatMap(building=>[{u:building.u-70,v:building.v-70},{u:building.u+building.width+90,v:building.v+building.depth+90}]),...terminals.flatMap(terminal=>[{u:terminal.u-90,v:terminal.v-70},{u:terminal.u+terminal.width+110,v:terminal.v+terminal.depth+110}]),...routes.flatMap(route=>route.points.flatMap(point=>[{u:point.u-route.lanes*11-30,v:point.v-route.lanes*11-30},{u:point.u+route.lanes*11+30,v:point.v+route.lanes*11+30}]))];
+ const groundPoints=[...Object.values(buildings).flatMap(building=>[{u:building.u-70,v:building.v-70},{u:building.u+building.width+90,v:building.v+building.depth+90}]),...terminals.flatMap(terminal=>[{u:terminal.u-90,v:terminal.v-70},{u:terminal.u+terminal.width+180,v:terminal.v+terminal.depth+180}]),...routes.flatMap(route=>route.points.flatMap(point=>[{u:point.u-route.lanes*11-30,v:point.v-route.lanes*11-30},{u:point.u+route.lanes*11+30,v:point.v+route.lanes*11+30}]))];
  if(!groundPoints.length)groundPoints.push({u:0,v:0},{u:320,v:320});
  const left=Math.min(...groundPoints.map(p=>p.u)),right=Math.max(...groundPoints.map(p=>p.u)),back=Math.min(...groundPoints.map(p=>p.v)),front=Math.max(...groundPoints.map(p=>p.v));
  const terrain=terrainOutline(groundPoints.flatMap(point=>[{u:point.u-45,v:point.v-45},{u:point.u+45,v:point.v+45}]));

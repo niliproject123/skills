@@ -130,3 +130,11 @@ The requested startup check found two TypeScript errors (road-piece join typing 
 Added tools/check-startup.mjs, which transpiles actual application modules and initializes Demo, Normal, Hot partition, Consumer lag, Recovering consumer, High throughput and Many groups. All seven passed, each with seven services and four topics. Mocked data: none. Production build passed and Vite returned HTTP 200 on port 5173. Browser verification could not run because the browser-control tool failed with a missing kernel-assets path.
 
 Branch codex/kafka-city; discussion discussions/kafka-city; task task.md; Windows / Node 20.19.0 / npm 10.8.2 / Vite 6.4.3; port 5173; application credentials none.
+
+## 2026-10-06 junctions, multi-pass bridges and vehicle turns
+
+Bridge planning groups all perpendicular road passes along each straight elevated run into one deck, using full lower-road widths and curb clearance. Adjacent bridge spans on the same topic corridor merge. Landing corners move outward where available; deck clearance is preserved when ramps are fitted. Supports and shadows are rasterized beneath ground roads; decks remain in the elevated depth layer. Ground-level elevated-road spans remain removed.
+
+Added reusable junction geometry, neutral junction pavement and marking masks; actual perpendicular intersections become shared graph nodes. Free road ends receive explicit turnaround surfaces instead of square stubs. Receiving yards render turning-loop geometry also used by vehicle paths. Queued delivery heads unload then turn through the yard; moving arrivals continue through the loop. All vehicle classes now use 32 cached orientation variants sampled from their lane tangents, and shared previews use the same sprites.
+
+Verification: npx tsc --noEmit passed. Only TypeScript errors were checked, as requested; no build, runtime, browser or unit tests were run. Branch codex/kafka-city; discussion discussions/kafka-city; task task.md; Windows / Node 20.19.0 / npm 10.8.2 / Vite 6.4.3; port 5173; application credentials none.

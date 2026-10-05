@@ -1,3 +1,4 @@
+import {yardTurn} from './turnGeometry';
 import {pointAtBay} from './terminalConnection';
 import {consumerGroups} from './kafkaTopology';
 import {cityRoutes,pavedRoutePoints,type TrafficRoute} from './cityLayout';
@@ -15,13 +16,15 @@ export const makeTrafficUnits=(routes:TrafficRoute[]):TrafficUnit[]=>routes.flat
 export const trafficUnits=makeTrafficUnits(cityRoutes);
 export class CitySimulation {
  private paths:LanePath[][];
+ private arrivals:number[][];
  constructor(private routes:TrafficRoute[]=cityRoutes){
- this.paths=routes.map(route=>{const origin=terminals.find(terminal=>terminal.producer&&terminal.topics.includes(route.topic)&&pointAtBay(terminal,route.points[0])),receiver=terminalById(route.terminal),center=curvedCenterline(pavedRoutePoints(route),route.lanes*11+18);
+ const planned=routes.map(route=>{const origin=terminals.find(terminal=>terminal.producer&&terminal.topics.includes(route.topic)&&pointAtBay(terminal,route.points[0])),receiver=terminalById(route.terminal),center=curvedCenterline(pavedRoutePoints(route),route.lanes*11+18);
  return Array.from({length:route.lanes},(_,partition)=>{
  const points=offsetCurve(center,(partition-(route.lanes-1)/2)*22);
  const gatePoint=(terminal:TerminalLayout)=>{const gate=Math.round(partition*(terminal.instances-1)/Math.max(1,route.lanes-1));return terminal.wall==='front'?{u:terminal.u+(gate+1)*terminal.width/(terminal.instances+1),v:terminal.v+terminal.depth}:{u:terminal.u+terminal.width,v:terminal.v+(gate+1)*terminal.depth/(terminal.instances+1)};};
- if(origin)points.unshift(gatePoint(origin));if(!receiver.producer)points.push(gatePoint(receiver));return lanePath(points);
+ if(origin)points.unshift(gatePoint(origin));const arrival=lanePath(points);if(!receiver.producer)points.push(...yardTurn(points.at(-1)!,receiver.wall==='side'));else{const end=points.at(-1)!,before=points.at(-2)!,side=Math.abs(end.u-before.u)>Math.abs(end.v-before.v);points.push(...yardTurn(end,side,36,Math.sign(side?end.u-before.u:end.v-before.v)));}return {path:lanePath(points),arrival:arrival.length};
  });});
+ this.paths=planned.map(lanes=>lanes.map(lane=>lane.path));this.arrivals=planned.map(lanes=>lanes.map(lane=>lane.arrival));
  }
  chain(unit:TrafficUnit){
  const path=this.paths[unit.route][unit.partition],chain=[this.pose(unit,this.distance(unit))];let distance=this.distance(unit);
@@ -31,13 +34,13 @@ export class CitySimulation {
  elapsed=0;
  advance(seconds:number){this.elapsed+=seconds;}
  private distance(unit:TrafficUnit){
- const route=this.routes[unit.route],path=this.paths[unit.route][unit.partition],length=path.length;
+ const route=this.routes[unit.route],path=this.paths[unit.route][unit.partition],length=this.arrivals[unit.route][unit.partition];
  const cycle=route.consumeEvery===Infinity?0:this.elapsed/route.consumeEvery-unit.partition/route.lanes,progress=((cycle%1)+1)%1;
  const queueSpacing=Math.max(76,partitionLoads[route.topic].reduce((largest,load)=>Math.max(largest,load.trailers*46+40),58));
  const queueRows=Math.ceil((consumerGroups.find(group=>group.id===route.terminal)?.waiting??0)/route.lanes),queueLength=queueRows*queueSpacing;
  let distance:number;
- if(unit.waiting){const row=((unit.laneIndex-Math.floor(cycle))%queueRows+queueRows)%queueRows;distance=length-(row+1-progress)*queueSpacing;}
- else {const available=Math.max(30,queueLength?length-queueLength-20:length);const load=partitionLoads[route.topic][unit.partition];const spacing=unit.kind==='semi'?unit.trailers*46+48:unit.kind==='truck'?70:unit.kind==='van'?52:36,visibleCount=Math.min(unit.laneCount,Math.max(1,Math.floor(available/spacing)));distance=unit.laneIndex>=visibleCount?-10000:((unit.laneIndex/visibleCount+this.elapsed*24*load.frequency/available)%1)*available;}
+ if(unit.waiting){const row=((unit.laneIndex-Math.floor(cycle))%queueRows+queueRows)%queueRows;distance=row===0?(progress<.35?length-queueSpacing+progress/.35*queueSpacing:progress<.5?length:length+(progress-.5)/.5*(path.length-length)):length-(row+1-progress)*queueSpacing;}
+ else {const available=Math.max(30,queueLength?length-queueLength-20:path.length);const load=partitionLoads[route.topic][unit.partition];const spacing=unit.kind==='semi'?unit.trailers*46+48:unit.kind==='truck'?70:unit.kind==='van'?52:36,visibleCount=Math.min(unit.laneCount,Math.max(1,Math.floor(available/spacing)));distance=unit.laneIndex>=visibleCount?-10000:((unit.laneIndex/visibleCount+this.elapsed*24*load.frequency/available)%1)*available;}
  return distance;
  }
  position(unit:TrafficUnit,behind=0){
