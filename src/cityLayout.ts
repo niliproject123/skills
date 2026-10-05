@@ -1,6 +1,7 @@
 import {renderModel} from './scenarioRuntime';
 import type {Route} from './scenarioTypes';
-import {terminals} from './terminalLayout';
+import {terminals,overpasses} from './terminalLayout';
+import {roadNetwork} from './roadNetwork';
 import {connectionLength,connectionPosition,pointAtBay} from './terminalConnection';
 import type {Service,Topic} from './model';
 import type {BuildingLayout} from './IsoBuilding';
@@ -16,11 +17,17 @@ export function pavedRoutePoints(route:TrafficRoute):GroundPoint[]{
  if(!receiver.producer)points[points.length-1]=connectionPosition(receiver);
  return points.filter((point,index)=>index===0||point.u!==points[index-1].u||point.v!==points[index-1].v);
 }
-export const roadSegments=(topic:Topic):RoadSegment[]=>cityRoutes.filter(route=>route.topic===topic).flatMap(route=>{
- const origin=route.points[0];
- const producer=terminals.find(terminal=>terminal.producer&&terminal.topics.includes(topic)&&pointAtBay(terminal,origin));
- return route.points.slice(1).map((to,index)=>({from:index===0&&producer?connectionPosition(producer):route.points[index],to:index===route.points.length-2&&!terminals.find(terminal=>terminal.id===route.terminal)!.producer?connectionPosition(terminals.find(terminal=>terminal.id===route.terminal)!):to,lanes:route.lanes,join:index<route.points.length-2}));
-});
+export const roadSegments=(topic:Topic):RoadSegment[]=>roadNetwork(cityRoutes.filter(route=>route.topic===topic).flatMap(route=>{
+ const points=pavedRoutePoints(route);
+ return points.slice(1).flatMap((to,index)=>{const from=points[index];let pieces=[{from,to,lanes:route.lanes,join:index<points.length-2}];
+ for(const bridge of overpasses.filter(bridge=>bridge.topic===topic))pieces=pieces.flatMap(piece=>{
+ if(piece.from.u!==bridge.u||piece.to.u!==bridge.u)return [piece];const low=Math.min(piece.from.v,piece.to.v),high=Math.max(piece.from.v,piece.to.v),end=bridge.start+bridge.ramp*2+bridge.deck;
+ if(high<=bridge.start||low>=end)return [piece];const remaining:RoadSegment[]=[];
+ if(low<bridge.start)remaining.push({...piece,from:{u:bridge.u,v:low},to:{u:bridge.u,v:bridge.start}});
+ if(high>end)remaining.push({...piece,from:{u:bridge.u,v:end},to:{u:bridge.u,v:high}});return remaining;
+ });return pieces;});
+}));
+
 export const routeLength=(points:GroundPoint[])=>points.slice(1).reduce((length,point,index)=>length+Math.abs(point.u-points[index].u)+Math.abs(point.v-points[index].v),0);
 export function onRoute(points:GroundPoint[],distance:number):GroundPoint&{direction:Direction} {
  for(let index=1;index<points.length;index++){

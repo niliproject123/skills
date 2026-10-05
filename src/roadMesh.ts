@@ -8,9 +8,16 @@ export function topicRoadGeometry(topic:string){
  const segments=roadSegments(topic),geometry={source,curves:roadCurves(segments),branches:roadBranches(segments)};cached.set(topic,geometry);return geometry;
 }
 export function roadCurves(segments:RoadSegment[]){
- const routes:{points:GroundPoint[];lanes:number}[]=[];
- for(const segment of segments){if(segment.from.u===segment.to.u&&segment.from.v===segment.to.v)continue;const previous=routes.at(-1);if(previous&&previous.points.at(-1)!.u===segment.from.u&&previous.points.at(-1)!.v===segment.from.v&&previous.lanes===segment.lanes)previous.points.push(segment.to);else routes.push({points:[segment.from,segment.to],lanes:segment.lanes});}
+ const routes:{points:GroundPoint[];lanes:number}[]=[],visited=new Set<number>();
+ const key=(point:GroundPoint)=>`${point.u}/${point.v}`,nodes=new Map<string,number[]>();
+ segments.forEach((segment,index)=>{for(const point of [segment.from,segment.to]){const id=key(point);nodes.set(id,[...(nodes.get(id)??[]),index]);}});
+ const trace=(first:number,start:GroundPoint)=>{let index=first,point=start;const points=[point],lanes=segments[first].lanes;
+ while(!visited.has(index)){visited.add(index);const segment=segments[index];point=key(segment.from)===key(point)?segment.to:segment.from;points.push(point);const arms=nodes.get(key(point))!;if(arms.length!==2)break;const next=arms.find(candidate=>!visited.has(candidate));if(next===undefined||segments[next].lanes!==lanes)break;index=next;}
+ routes.push({points,lanes});};
+ segments.forEach((segment,index)=>{if(visited.has(index))return;if(nodes.get(key(segment.from))!.length!==2)trace(index,segment.from);else if(nodes.get(key(segment.to))!.length!==2)trace(index,segment.to);});
+ segments.forEach((segment,index)=>{if(!visited.has(index))trace(index,segment.from);});
  return routes.map(route=>({...route,points:curvedCenterline(route.points,route.lanes*11+18)}));
+
 }
 export function roadRibbon(points:GroundPoint[],halfWidth:number):number[][]{
  return [...offsetCurve(points,halfWidth),...offsetCurve(points,-halfWidth).reverse()].map(point=>[point.u,point.v]);

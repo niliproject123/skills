@@ -114,3 +114,11 @@ User requested code only: no tests, build, browser inspection or runtime executi
 Added Inventory, Shipping and Fraud with physical receiving terminals and lag snapshots. Terrain uses a beveled infrastructure hull, with tree clusters and paths around the expanded campuses. Automatic routing reserves separate corridors for parallel roads of different topics; crossing routes can receive route-specific elevated decks with ramps. Sprite loading is configuration-revision aware and stale builds are cancelled; failed cache loads are discarded for subsequent explicit retries. Moving traffic is limited by physical lane length to avoid compressed overlapping vehicle groups on short routes.
 
 No tests or build run, following the user's code-only instruction. Branch codex/kafka-city; discussion discussions/kafka-city; task task.md; Windows / Node 20.19.0 / npm 10.8.2 / Vite 6.4.3, port 5173; application credentials none.
+
+## 2026-10-05 dock setbacks, bridge ground spans and four-topic presets
+
+Added one 96-unit straight cell between dock approaches and road corner clearance. Shared road stretches now form one deduplicated road graph before corners are rounded. Bridge ground-level spans are removed from the elevated route while the perpendicular lower road remains drawn; vehicles sharing an elevated physical segment receive matching elevation. Crossing landing corners can move outward into available space before bridge creation.
+
+The seven-service demo now includes four connected topics: orders, payments, inventory and fulfilments. Presets change subscriptions, partition counts and producer/consumer bay counts as well as rates and lag. Added inventory and fulfilment producers and receiving groups.
+
+No tests or build run, following the user's code-only instruction. Branch codex/kafka-city; discussion discussions/kafka-city; task task.md; Windows / Node 20.19.0 / npm 10.8.2 / Vite 6.4.3; port 5173; application credentials none.
