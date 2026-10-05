@@ -18,6 +18,11 @@ export function planBridges(config:LayoutConfiguration,routes:Route[]):Omit<Brid
    const point=points[index],other=points[neighbor];if(other.v!==point.v||other.u===point.u)continue;
    const position=point.v<(deckStart+deckEnd)/2?Math.min(point.v,deckStart-ramp-landing-corner):Math.max(point.v,deckEnd+ramp+landing+corner),half=segment.route.lanes*11+12;
    if(buildings.some(building=>position>building.v-half&&position<building.v+(building.depth??110)+half&&Math.max(point.u,other.u)>building.u-half&&Math.min(point.u,other.u)<building.u+(building.width??150)+half))continue;
+   // Extending a landing must not fold an adjoining straight back over itself.
+   const proposed=points.map((entry,entryIndex)=>entryIndex===index||entryIndex===neighbor?{...entry,v:position}:entry);
+   if(proposed.some((entry,entryIndex)=>{if(entryIndex===0||entryIndex===proposed.length-1)return false;const before=proposed[entryIndex-1],after=proposed[entryIndex+1],du=entry.u-before.u,dv=entry.v-before.v,nextU=after.u-entry.u,nextV=after.v-entry.v;return du*nextV-dv*nextU===0&&du*nextU+dv*nextV<0;}))continue;
+   // Shared trunks retain identical geometry rather than gaining a parallel copy.
+   if(routes.some(route=>route!==segment.route&&route.topic===segment.route.topic&&route.points.some(entry=>(entry.u===point.u&&entry.v===point.v)||(entry.u===other.u&&entry.v===other.v))))continue;
    point.v=position;other.v=position;
   }
   const low=Math.min(segment.from.v,segment.to.v),high=Math.max(segment.from.v,segment.to.v),available=Math.min(deckStart-low,high-deckEnd)-12;

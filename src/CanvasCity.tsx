@@ -12,7 +12,7 @@ import {CityLabels,placeLabels} from './CityLabels';
 import {linked,drawHighlights} from './canvasHighlights';
 import {groupById,producerById} from './kafkaTopology';
 
-type DrawItem={depth:number;sprite:HTMLCanvasElement|null;bounds:Bounds;erase:boolean;opacity:number;connector?:{x:number;y:number;toX:number;toY:number}};
+type DrawItem={depth:number;sprite:HTMLCanvasElement|null;bounds:Bounds;erase:boolean;opacity:number;source?:Bounds;connector?:{x:number;y:number;toX:number;toY:number}};
 const overlap=(a:Bounds,b:Bounds)=>a.x<b.x+b.width&&a.x+a.width>b.x&&a.y<b.y+b.height&&a.y+a.height>b.y;
 export function CanvasCity({paused,speed,selected,onSelect,reset,layoutMode=false,onMoveCampus}:{paused:boolean;speed:number;selected:Selection|null;onSelect:(selection:Selection)=>void;reset:number;layoutMode?:boolean;onMoveCampus?:(service:string,u:number,v:number)=>void}){
  const MAX_VEHICLES=renderModel.visualization.maxVehiclesTotal;
@@ -28,7 +28,7 @@ export function CanvasCity({paused,speed,selected,onSelect,reset,layoutMode=fals
  const drawSamples:number[]=[],intervalSamples:number[]=[],panSamples:number[]=[];
  const drawPool:DrawItem[]=Array.from({length:MAX_VEHICLES*(renderModel.visualization.maxTrailers*2+1)+renderModel.terminals.length+renderModel.overpasses.length+Object.keys(services).length+64},()=>({depth:0,sprite:null,bounds:{x:0,y:0,width:0,height:0},erase:false,opacity:1}));
  const ordered:DrawItem[]=[];let used=0;
- function queueDraw(depth:number,sprite:HTMLCanvasElement,x:number,y:number,width:number,height:number,erase:boolean,opacity:number){const item=drawPool[used++];if(!item)throw new Error('Canvas draw capacity exceeded');item.connector=undefined;item.depth=depth;item.sprite=sprite;item.bounds.x=x;item.bounds.y=y;item.bounds.width=width;item.bounds.height=height;item.erase=erase;item.opacity=opacity;ordered.push(item);}
+ function queueDraw(depth:number,sprite:HTMLCanvasElement,x:number,y:number,width:number,height:number,erase:boolean,opacity:number,source?:Bounds){const item=drawPool[used++];if(!item)throw new Error('Canvas draw capacity exceeded');item.connector=undefined;item.source=source;item.depth=depth;item.sprite=sprite;item.bounds.x=x;item.bounds.y=y;item.bounds.width=width;item.bounds.height=height;item.erase=erase;item.opacity=opacity;ordered.push(item);}
  const requested=new URLSearchParams(location.search).get('stress');
  const count=requested===null?cityRoutes.reduce((sum,route)=>sum+route.moving+route.queue,0):Number(requested);
  if(!Number.isInteger(count)||(requested!==null&&count<74)||count>MAX_VEHICLES)throw new Error('Stress traffic must be an integer between 74 and 200');
@@ -72,10 +72,10 @@ export function CanvasCity({paused,speed,selected,onSelect,reset,layoutMode=fals
  for(let carriage=chain.length-1;carriage>=0;carriage--){const point=chain[carriage];if(!point.visible)continue;const kind=carriage>0?'trailer':unit.kind==='semi'?'tractor':unit.kind,orientation=((Math.round(point.heading/(Math.PI*2)*articulatedAngles)%articulatedAngles)+articulatedAngles)%articulatedAngles,sprite=cache.vehicles.get(`${cityRoutes[unit.route].topic}-${kind}-${orientation}-${unit.waiting}`);if(!sprite)throw new Error(`Missing cached vehicle ${kind}`);
  const bounds={x:point.x+sprite.x,y:point.y+sprite.y,width:sprite.width,height:sprite.height};if(!overlap(bounds,visible))continue;
  const relevant=linked(cityRoutes[unit.route].topic,focus)&&!(unit.waiting&&focus?.kind==='terminal'&&!focus.producer&&focus.id!==cityRoutes[unit.route].terminal);
- queueDraw(point.depth,sprite.image,bounds.x,bounds.y,bounds.width,bounds.height,false,relevant?1:.18);if(carriage===0)rendered++;}
+ queueDraw(point.depth,sprite.image,bounds.x,bounds.y,bounds.width,bounds.height,false,relevant?1:.18,sprite.source);if(carriage===0)rendered++;}
  }
  ordered.sort((a,b)=>a.depth-b.depth);
- for(const item of ordered){if(item.connector){const link=item.connector;foreground.globalCompositeOperation='source-over';foreground.globalAlpha=item.opacity;foreground.strokeStyle='#596b62';foreground.lineWidth=3;foreground.lineCap='round';foreground.beginPath();foreground.moveTo(link.x,link.y);foreground.lineTo(link.toX,link.toY);foreground.stroke();continue;}if(!item.sprite)throw new Error('Uninitialized raster draw item');foreground.globalCompositeOperation=item.erase?'destination-out':'source-over';foreground.globalAlpha=item.opacity;foreground.drawImage(item.sprite,item.bounds.x,item.bounds.y,item.bounds.width,item.bounds.height);}
+ for(const item of ordered){if(item.connector){const link=item.connector;foreground.globalCompositeOperation='source-over';foreground.globalAlpha=item.opacity;foreground.strokeStyle='#596b62';foreground.lineWidth=3;foreground.lineCap='round';foreground.beginPath();foreground.moveTo(link.x,link.y);foreground.lineTo(link.toX,link.toY);foreground.stroke();continue;}if(!item.sprite)throw new Error('Uninitialized raster draw item');foreground.globalCompositeOperation=item.erase?'destination-out':'source-over';foreground.globalAlpha=item.opacity;if(item.source){const source=item.source;foreground.drawImage(item.sprite,source.x,source.y,source.width,source.height,item.bounds.x,item.bounds.y,item.bounds.width,item.bounds.height);}else foreground.drawImage(item.sprite,item.bounds.x,item.bounds.y,item.bounds.width,item.bounds.height);}
  foreground.globalCompositeOperation='source-over';
  foreground.globalAlpha=1;
  if(campusDrag){const offset=project(campusDrag.du,campusDrag.dv);foreground.globalAlpha=.65;for(const sprite of cache.scenery)if(sprite.name===campusDrag.service)foreground.drawImage(sprite.image,sprite.x+offset.x,sprite.y+offset.y,sprite.width,sprite.height);foreground.globalAlpha=1;}

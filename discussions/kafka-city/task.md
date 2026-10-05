@@ -138,3 +138,15 @@ Bridge planning groups all perpendicular road passes along each straight elevate
 Added reusable junction geometry, neutral junction pavement and marking masks; actual perpendicular intersections become shared graph nodes. Free road ends receive explicit turnaround surfaces instead of square stubs. Receiving yards render turning-loop geometry also used by vehicle paths. Queued delivery heads unload then turn through the yard; moving arrivals continue through the loop. All vehicle classes now use 32 cached orientation variants sampled from their lane tangents, and shared previews use the same sprites.
 
 Verification: npx tsc --noEmit passed. Only TypeScript errors were checked, as requested; no build, runtime, browser or unit tests were run. Branch codex/kafka-city; discussion discussions/kafka-city; task task.md; Windows / Node 20.19.0 / npm 10.8.2 / Vite 6.4.3; port 5173; application credentials none.
+
+## 2026-10-06 sprite preparation and dock approach corrections
+
+Replaced individual vehicle raster images with cached per-paint/per-kind sprite sheets. Each sheet contains all 32 orientations and both waiting states in one decoded image and one canvas; Canvas draws source rectangles directly. Only configured vehicle types on connected topics are prepared. Paint-keyed sheets and size-keyed trees survive configuration rebuilds, with bounded caches and failed entries discarded while errors continue to reach the rendering alert. Preparation yields between uncached sheets. Road marking masks now use scene geometry bounds instead of a 40,000 by 40,000 area.
+
+Removed circular road caps, receiving-yard circulation loops and circular selection highlights. Vehicles terminate at receiving gates rather than following a return loop. Shortest-path routing rejects first/last edges that reverse the dock direction. Bridge landing extensions cannot introduce a collinear reversal or independently shift shared topic waypoints into duplicate parallel roads.
+
+A separate logical route is currently generated for each producer/consumer-group connection. Multiple routes of the same topic represent fan-out to independent consumer groups, not opposing traffic directions; coincident stretches share their physical pavement.
+
+Verification: only npx tsc --noEmit; no runtime, performance, browser, build or unit tests. CPU improvement is architectural and has not been benchmarked under the user's verification restriction. Mocked data: none.
+
+Branch codex/kafka-city; discussion discussions/kafka-city; task task.md; Windows / Node 20.19.0 / npm 10.8.2 / Vite 6.4.3; port 5173; application credentials none.
