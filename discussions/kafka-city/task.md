@@ -1,0 +1,110 @@
+# Kafka City prototype
+
+## Canvas performance renderer
+
+The default world now uses two Canvas 2D elements and no live SVG/world-object DOM nodes. Existing vector artwork is serialized only during startup, decoded to raster sprites, and cached once. The complete static scene is pre-rendered to an offscreen canvas. Camera changes redraw this image once; traffic and highlights draw on the transparent foreground. Ground-depth sorting and destination-out scenery sprites occlude vehicles without per-vehicle scratch canvases. HTML retains HUD, native hover descriptions, and selection panels.
+
+Camera position lives in a ref, with no React render per drag event. Pan is bounded; zoom is limited to 0.65â€“1.8. Offscreen traffic is culled. Default traffic is capped at 50 orders vehicles and 23 payments vehicles, including queues. Explicit /?stress=200 runs the actual simulation with 200 vehicles for performance checks; the absolute cap is 200.
+
+Chromium in-app preview at 1280Ã—720, 200 visible vehicles: final saved sample averaged 3.24 ms draw time, 6.20 ms p95, 3.95 ms draw time on camera-change frames, and 16.65 ms requestAnimationFrame intervals (~60 fps). These are local preview measurements, not a guarantee for every device. Evidence: canvas-performance.json. The first per-vehicle masking attempt missed the frame budget and was replaced. The sprite generation syntax error and React title serialization errors were fixed; subsequent browser checks captured no warnings/errors.
+
+Browser verified road and gate selection, pause retaining simulation time, pan, zoom to 1.8, culling from 200 to 173 visible vehicles, reset, and playback. Tests execute actual projection, layout, simulation, and canvas hit-testing modules; mocked data: none. The demo data remains intentionally simulated. Screenshot: kafka-city-canvas.jpg. No packages were installed for this change.
+
+Build a React + TypeScript SVG city using deterministic simulated Kafka traffic. Four services, shared four-lane orders infrastructure, two-lane payments infrastructure, physical producer/consumer gates, moving vehicles, and distinct consumer queues. Support selection, pause, speed, pan, and zoom.
+
+No Kafka connection or credentials required. Start: npm run dev -- --port 5173. Validate: npm run build.
+
+Simulation data is intentionally synthetic, as requested. Numeric lag is a fixed illustrative metric; vehicles represent message batches. Queue positions advance on consumption intervals. Logical topology, layout coordinates, simulation, and visual components are separate modules.
+
+Validation: npm install completed with zero vulnerabilities; npm run build passed. Browser verified orders selection, pause/play, animated vehicle transforms, 87 total vehicles, 19 queued vehicles, and no captured console warnings/errors. No test mocks were introduced. Browser viewport inspection used the narrow in-app preview; full desktop performance and pan/zoom have not been measured automatically.
+
+Environment: Windows PowerShell, Node 20.19.0, npm 10.8.2; Vite bound to 127.0.0.1:5173 with strict port selection. Branch: codex/kafka-city. Credentials: none.
+
+## Isometric rework
+
+### Rounded kids-game artwork
+
+Rounded building footprints are created in ground coordinates and then projected, including curved wall shading and roof trims. Loading bays have arched openings. Vehicle bodies and cabins use the same rounded geometry. Trees now have full shaded leaf canopies, rounded trunks, and 2:1 ground shadows; shrubs and building signs are softer. No new packages or changes to the simulated topology. Screenshot: kafka-city-rounded.jpg.
+
+Built and visually inspected the isolated style area before implementing the full scene. Available at /?style-test; screenshot: style-test.jpg.
+
+The active renderer is CityWorld. All geometry uses project(u,v,height) = (u-v, (u+v)/2-height). Ground coordinates are separate from logical service/topic information. IsoBuilding, IsoGate, IsoRoad, IsoCar, IsoVan, IsoTruck, IsoSemi, IsoTree, and IsoRoadSign share this projection. Vehicles use four directional sprite variants without screen-space rotation. Ground-depth sorting includes moving vehicles, buildings, and trees. Roads have physically separate 4/2 lanes. Embedded bays include dark recesses, frames, lintels, aprons, and short drives. Rooftop details distinguish dispatch, payment, analytics, and notification buildings.
+
+Reworked simulation: 74 total vehicles, five Analytics queue vehicles, fourteen Notification queue vehicles, no persistent Payment queue. Queue units advance to gates and recycle to the tail on deterministic consumption intervals. Simulated batches and illustrative metrics remain deliberately simplified; this is not a Kafka execution model.
+
+Validation: npm test executes actual application modules with no mocked data. It checks the exact 2:1 projection, road axis/lane invariants, shared branch, receiving-wall endpoints, 60 simulated seconds with finite positions, and continuous queue advancement across consumption intervals. Browser checks confirm 13 gates, 74 vehicles, 19 waiting vehicles, pause retaining positions, gate and physical-road selection, pan, and zoom. No new packages installed. The TypeScript depth-sort inference error was corrected with an explicit Element|null type. Screenshot: kafka-city-isometric.jpg.
+
+
+## Canvas renderer and physical Kafka terminals — October 5, 2026
+
+Retained rounded 2:1 artwork and implemented two Canvas 2D layers. Static terrain, roads, campuses, buildings, terminals and trees are rasterized and cached once; moving vehicles use cached directional sprites. Camera transforms, viewport culling, requestAnimationFrame and reused draw records replace world DOM updates. Default traffic is capped; ?stress=200 runs an explicit stress scenario.
+
+Kafka producer depots and consumer groups are separate physical terminals. Receiving yards include paved approaches, low curbs, intake markings and receiving booths; depots have loading bays and yellow departure markings. Campus grass, connecting paths and curb corners group each service property. Payment has zero waiting heads, Analytics five, Notification fourteen. Partition-specific vehicle classes include four-trailer semi batches; trailers follow road bends independently. Payments rises across an actual bridge above orders, including supports and shadow, with no intersection connection.
+
+Default world text is limited to four compact service names and two lowercase topic labels. Group names and partitions appear only at close zoom or through hover/selection. Roads have subtle orange orders and lavender payments edge strips. Consumer-yard selection exposes actual simulated topology metrics.
+
+Validation: npm test and npm run build passed. Mocked data: none; tests execute actual application modules using the intentionally simulated demo topology. Browser verified six visible default labels, receiving-yard selection, and no captured console warnings/errors. At 1280x720 with 200 visible vehicle heads, sampled draw mean 4.35ms, p95 6.20ms and frame interval 16.80ms; measured pan draw mean 5.37ms across nine frames. Evidence: receiving-yards-performance.json and kafka-city-physical-yards.jpg. No packages installed.
+
+The demo now demonstrates two separate Analytics consumer-group yards and two distinct Orders depots producing orders and payments. Main buildings remain in place. Additional terminal routes merge into the existing topic trunks. Stress traffic allocation scales across all routes without changing the total head cap.
+
+Branch: codex/kafka-city. Discussion folder: discussions/kafka-city. Task file: discussions/kafka-city/task.md. Environment: Windows PowerShell, Node 20.19.0, npm 10.8.2. Vite: 127.0.0.1:5173. Credentials: none.
+
+Final validation also selected analytics-audit from its physical receiving booth. Default simulation has 72 vehicle heads. Fixed the TypeScript unreachable truck-kind comparison identified during the final build; subsequent build passed. Removed the decorative SERVICE HOUSE text from default building sprites.
+
+
+## Anchored signs and road/dock clearance — October 5, 2026
+
+Kept neutral asphalt, adding subtle orange/lavender topic edge stripes, repeating small road markers, matching terminal trim and sign accents. Compact screen-horizontal sign plates have thin poles ending at projected rooftop or roadside origins. Group signs are hidden by default and revealed for hovered/selected yards or close zoom.
+
+Road rectangles now stop at their endpoints; rounded joins exist only at interior bends. This removes asphalt extending beneath dock walls. Receiving approaches finish against bay faces. Shifted the realtime Analytics yard 35 ground units to clear the neighboring audit approach. Payments turns at v=850, leaving 70 ground units after the bridge ramp ends at v=780. Ramp/deck/ramp geometry and asphalt match the continuous neutral topic road. Extended the terrain and cache bounds to contain the new turn.
+
+Tests execute actual road geometry, layouts and simulation, without mocked data. New checks prove paved footprints and bend bounds do not intersect solid buildings and verify straight bridge landing clearance and the four ramp/deck heights. Browser verified six default anchored signs and a seventh consumer-group sign on selection, with the correct consumer-group metrics. No new packages installed. Screenshot: kafka-city-anchored-signs.jpg.
+
+
+## Terminal apron/driveway sequence and topic vehicle families — October 5, 2026
+
+Every producer/consumer terminal now has a warm concrete loading/receiving apron and a separate gray driveway. Driveways taper into neutral asphalt through flared curb cuts and merge markings. Asphalt starts/ends 60 ground units from bay walls, preserving 28 units of apron plus 32 units of driveway. Shifted the orders trunk from v=365 to v=400 to preserve straight clearance before the Payment approach. Producers depart from individual bay positions; receivers converge across the connection toward their actual bay positions.
+
+Orders vehicles use orange/red cabs and roof bands; payments vehicles use blue/purple equivalents. Body panels stay cream/neutral. Cars, vans, trucks, semis and all articulated trailers retain their distinct silhouettes. Waiting batches retain their topic colors and use a small amber marker. A shared topic theme supplies vehicle, road, bridge and terminal accents. Both topic families are pre-rasterized for each orientation and waiting state; no extra per-frame vector drawing.
+
+Validation: npm test and production build passed. Mocked data: none. Tests execute actual geometry/layout/simulation, prove apron/driveway separation from asphalt, and sample trailer turning over actual simulated movement. Corrected an initially missing sprite-cache parenthesis and replaced the former fixed-initial-position bend assertion after the longer source approach changed the vehicle's initial position. Browser inspected every terminal connection and neutral topic-colored vehicle bodies, with no captured warnings/errors. Files remain under 600 lines. No packages installed. Evidence: kafka-city-topic-traffic.jpg and topic-traffic-performance.json. Pan timing records pointer-driven camera changes separately from initial cache painting.
+
+## Snapshot scenario configuration â€” October 5, 2026
+
+Added ScenarioConfig topology/state/layout/visualization sections, centralized validation and derived render model, configurable partition distribution and absolute vehicle encoding, capped traffic, automatic/manual layout, and a closed-by-default four-tab editor. Apply/Reset preserves Canvas rendering and snapshot values without page reload. Added six scenario presets plus Demo and validated JSON import/export.
+
+Tests pass using actual application configuration, layout, encoding and simulation modules. Mocked data: none. Browser verified 8 partitions, 12 physical producer bays, hot-P6 editing, Apply/Reset and visible invalid-rate rejection preserving the world. Default Demo restored; no captured browser console errors/warnings. No packages installed. Configuration documentation: scenario-configuration.md. Screenshot: kafka-city-configuration.png.
+
+Corrected TypeScript errors, a UTF-8 file-reading error and an oversized bundle warning during implementation. The drawer now loads as a separate chunk. No silent replacement of invalid configurations is used.
+
+Branch: codex/kafka-city. Discussion folder: discussions/kafka-city. Task file: discussions/kafka-city/task.md. Environment: Windows PowerShell, Node 20.19.0, npm 10.8.2. Vite: 127.0.0.1:5173. Credentials: none.
+
+## Continuous roads, linked articulated traffic and campus signs â€” October 5, 2026
+
+Added reusable curved centerlines, offset road ribbons and shared T/cross-branch polygons. Asphalt, accents and partition markings follow continuous curves; picking and highlights use the same curved road geometry. Straight-piece/circular bend assembly is no longer used by the active renderer.
+
+Precomputed partition lane paths include physical bay approaches. Articulated traffic uses a tractor plus linked trailers: each axle is constrained against the previous axle along the same lane. First separation is 29 ground units; subsequent separations are 35. Tractors/trailers use 32 rasterized isometric orientations, and visible couplers join their attachment positions. Chain computation is sequential, avoiding repeated independent trailer positioning.
+
+Service signs use dedicated campus-edge ground anchors, screen-facing plates and one thin neutral pole. Anchors lie outside the campus/building silhouette, and plates are raised above the service roofline without attaching to art or roof props.
+
+Validation: npm test and npm run build pass. Mocked data: none. Actual High throughput preset exercises multi-trailer linkage over 60 simulated seconds; checks cover axle separation, curved road ribbons, shared branches, arbitrary configurations and sign clearance. Fixed duplicate trimmed waypoints and a tight-turn linkage assertion failure. Removed the initial 500KB bundle warning by dynamically importing the sprite rasterizer. Build main chunk: 296.54KB; rasterizer chunk: 204.38KB. No packages installed; files remain under 600 lines.
+
+Browser: inspected default and High throughput traffic with no captured console errors/warnings. High throughput sample draw mean 7.56ms, p95 12.80ms; frame interval 24.77ms on this machine. Evidence: kafka-city-linked-trailers.png and kafka-city-continuous-roads.png. Restored Demo before completion.
+
+Branch: codex/kafka-city. Discussion folder: discussions/kafka-city. Task file: discussions/kafka-city/task.md. Environment: Windows PowerShell, Node 20.19.0, npm 10.8.2. Vite: 127.0.0.1:5173. Credentials: none.
+
+## 2026-10-05 guided editor and visual-system iteration
+
+Implemented the supplied 40-section continuation specification: dedicated campus signs with rooftop clearance, shared playful vehicle previews, path-linked trailers, guided services/topics/groups forms, map selection, whole-campus dragging, automatic connected-district layout and shared-trunk routing, and unified JSON/scenario actions. Existing Canvas rendering and building artwork retained.
+
+Verification uses actual application modules and explicitly simulated product scenarios; mocked data: none. Browser checks created Orders/Payment, a four-partition orders topic, four producer bays and a three-consumer group with configured throughput, consumption and lag without JSON. Browser campus movement updated the service and both owned terminals together and removed affected manual route overrides. Automatic reset and shared Visuals gallery verified. Browser selector mismatch and a focus timeout were reported, inspected and resolved; Browser automatic reset exposed a real sign-placement error: a viewport clamp placed the pole origin inside rooftop geometry. Removed the clamp and expanded the dedicated perimeter-anchor search; automatic reset then rendered successfully. Added automatic-campus pole checks. File lookups for cameraTransform.ts and scenarioFiles.ts used nonexistent names and were reported; no file mutation resulted. Export succeeded to Downloads/kafka-city-demo.json; the automation download-event waiter timed out despite the completed file.
+
+Environment: branch codex/kafka-city; Node 20.19.0; npm 10.8.2; Vite 6.4.3; localhost port 5173; credentials none; no packages installed.
+
+Final verification: npm test and npm run build passed after the viewport-clamp correction. Mocked data: none. JSON export file was parsed successfully (four services, two topics). Live preview changed configured maximum from four to five trailers immediately, then was restored to four. Screenshots: kafka-city-guided-editor.png and kafka-city-campus-signs.png. Preview left on Demo at port 5173.
+
+## 2026-10-05 requested visual changes and publication
+
+Ground now encloses all campuses and road geometry. Default road detours replaced by shortest orthogonal obstacle-avoiding paths between paved driveways. Topic vehicle paint covers body panels with grey streaks; both road edges and dashed partition markings use topic color. Signs use long straight vertical poles anchored at object centers. Partition labels removed. Consumer terminals have roof-mounted lag gauges colored green, amber or red from the configured snapshot.
+
+User requested code only: no tests, build, browser inspection or runtime execution performed for these changes. Remote supplied by the user is the same as C:/dev/skills: https://github.com/niliproject123/skills.git. Publication branch: codex/kafka-city. Environment: Windows; Node 20.19.0; npm 10.8.2; Vite 6.4.3 port 5173; application credentials none.

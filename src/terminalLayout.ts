@@ -1,0 +1,10 @@
+import {renderModel} from './scenarioRuntime';
+import type {Terminal} from './scenarioTypes';
+import type {GroundPoint} from './isometric';
+import {consumerGroups,producers} from './kafkaTopology';
+import type {Service,Topic} from './model';
+export type TerminalLayout=GroundPoint&{id:string;width:number;depth:number;wall:'front'|'side';producer:boolean;service:Service;topics:Topic[];instances:number};
+export const terminals:Terminal[]=renderModel.terminals;
+export function terminalById(id:string){const terminal=terminals.find(terminal=>terminal.id===id);if(!terminal)throw new Error(`Terminal layout missing for ${id}`);return terminal;}
+export const overpasses=renderModel.overpasses;
+export function roadElevation(topic:Topic,u:number,v:number){for(const bridge of overpasses){const end=bridge.start+bridge.ramp*2+bridge.deck;if(topic===bridge.topic&&Math.abs(u-bridge.u)<=bridge.lanes*11+13&&v>=bridge.start&&v<=end)return Math.max(0,Math.min(1,(v-bridge.start)/bridge.ramp,(end-v)/bridge.ramp))*bridge.height;}return 0;}

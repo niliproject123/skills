@@ -1,0 +1,13 @@
+{
+  "viewport": "1280x720 Chromium in-app preview",
+  "vehicles": 200,
+  "timings": {
+    "frames": 120,
+    "drawMeanMs": 3.2383333186308545,
+    "drawP95Ms": 6.199999809265137,
+    "frameMeanMs": 16.653333333333347,
+    "panDrawMeanMs": 3.9473684085042855,
+    "panFrames": 19
+  },
+  "mockedData": "none; actual deterministic simulation"
+}

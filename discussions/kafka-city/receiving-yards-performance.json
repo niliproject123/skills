@@ -1,0 +1,11 @@
+{
+  "timings": {
+    "drawMeanMs": 4.345833321412404,
+    "drawP95Ms": 6.199999809265137,
+    "frameMeanMs": 16.795833333333334,
+    "frames": 120,
+    "panDrawMeanMs": 5.366666661368476,
+    "panFrames": 9
+  },
+  "visible": "200"
+}
