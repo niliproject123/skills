@@ -150,3 +150,13 @@ A separate logical route is currently generated for each producer/consumer-group
 Verification: only npx tsc --noEmit; no runtime, performance, browser, build or unit tests. CPU improvement is architectural and has not been benchmarked under the user's verification restriction. Mocked data: none.
 
 Branch codex/kafka-city; discussion discussions/kafka-city; task task.md; Windows / Node 20.19.0 / npm 10.8.2 / Vite 6.4.3; port 5173; application credentials none.
+
+## 2026-10-06 route search and bridge mutation correction
+
+The spacing preference previously charged five times the distance alongside another topic, causing large detours. Reduced that factor to 1.15. Same-topic centerlines now participate in the visibility grid and receive a modest reuse discount so related connections prefer shared pavement. Added a direction-aware search with separate arrival headings, a meaningful corner cost, prohibited immediate reversals and explicit dock direction constraints. The prior cell-only search could discard paths arriving with a more suitable heading.
+
+Bridge planning no longer changes route waypoints after the routing pass. This removes the post-routing corner movement that produced long extensions and inconsistent shared branches. Same-topic intersections remain ground-level junctions; bridge detection considers different-topic crossings, retaining full lower-road-width spans and fitted ramps on the existing straight geometry.
+
+Verification: npx tsc --noEmit passed; no build, runtime, browser, unit or performance tests were run, following the user's restriction. Mocked data: none. Visual output has not been verified in the browser.
+
+Branch codex/kafka-city; discussion discussions/kafka-city; task task.md; Windows / Node 20.19.0 / npm 10.8.2 / Vite 6.4.3; port 5173; application credentials none.

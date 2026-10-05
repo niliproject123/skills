@@ -1,7 +1,6 @@
-import type {Bridge,LayoutConfiguration,Point,Route} from './scenarioTypes';
-import {computeLayout} from './autoLayout';
+import type {Bridge,LayoutConfiguration,Route} from './scenarioTypes';
 export function planBridges(config:LayoutConfiguration,routes:Route[]):Omit<Bridge,'depth'|'lanes'>[]{
- const bridges=config.layout.overpasses.map(bridge=>({...bridge})),buildings=Object.values(computeLayout(config.topology,config.layout));
+ const bridges=config.layout.overpasses.map(bridge=>({...bridge}));
  const segments=()=>routes.flatMap(route=>route.points.slice(1).map((to,index)=>({route,index,from:route.points[index],to})));
  const handled=new Set<string>();
  for(const segment of segments()){
@@ -9,22 +8,12 @@ export function planBridges(config:LayoutConfiguration,routes:Route[]):Omit<Brid
   const u=segment.from.u,key=`${segment.route.topic}/${u}/${Math.min(segment.from.v,segment.to.v)}/${Math.max(segment.from.v,segment.to.v)}`;
   if(handled.has(key))continue;handled.add(key);
   // Every lower-road pass on this straight run contributes to the one elevated span.
-  const crossings=segments().filter(other=>other.route.id!==segment.route.id&&other.from.v===other.to.v&&u>Math.min(other.from.u,other.to.u)&&u<Math.max(other.from.u,other.to.u)&&other.from.v>Math.min(segment.from.v,segment.to.v)&&other.from.v<Math.max(segment.from.v,segment.to.v));
+  const crossings=segments().filter(other=>other.route.topic!==segment.route.topic&&other.from.v===other.to.v&&u>Math.min(other.from.u,other.to.u)&&u<Math.max(other.from.u,other.to.u)&&other.from.v>Math.min(segment.from.v,segment.to.v)&&other.from.v<Math.max(segment.from.v,segment.to.v));
   if(!crossings.length)continue;
   const deckStart=Math.min(...crossings.map(other=>other.from.v-other.route.lanes*11-22)),deckEnd=Math.max(...crossings.map(other=>other.from.v+other.route.lanes*11+22));
-  const ramp=64,landing=96,corner=segment.route.lanes*11+18;
-  for(const [index,neighbor] of [[segment.index,segment.index-1],[segment.index+1,segment.index+2]]){
-   const points=segment.route.points;if(index<1||index>=points.length-1||neighbor<1||neighbor>=points.length-1)continue;
-   const point=points[index],other=points[neighbor];if(other.v!==point.v||other.u===point.u)continue;
-   const position=point.v<(deckStart+deckEnd)/2?Math.min(point.v,deckStart-ramp-landing-corner):Math.max(point.v,deckEnd+ramp+landing+corner),half=segment.route.lanes*11+12;
-   if(buildings.some(building=>position>building.v-half&&position<building.v+(building.depth??110)+half&&Math.max(point.u,other.u)>building.u-half&&Math.min(point.u,other.u)<building.u+(building.width??150)+half))continue;
-   // Extending a landing must not fold an adjoining straight back over itself.
-   const proposed=points.map((entry,entryIndex)=>entryIndex===index||entryIndex===neighbor?{...entry,v:position}:entry);
-   if(proposed.some((entry,entryIndex)=>{if(entryIndex===0||entryIndex===proposed.length-1)return false;const before=proposed[entryIndex-1],after=proposed[entryIndex+1],du=entry.u-before.u,dv=entry.v-before.v,nextU=after.u-entry.u,nextV=after.v-entry.v;return du*nextV-dv*nextU===0&&du*nextU+dv*nextV<0;}))continue;
-   // Shared trunks retain identical geometry rather than gaining a parallel copy.
-   if(routes.some(route=>route!==segment.route&&route.topic===segment.route.topic&&route.points.some(entry=>(entry.u===point.u&&entry.v===point.v)||(entry.u===other.u&&entry.v===other.v))))continue;
-   point.v=position;other.v=position;
-  }
+  const ramp=64,landing=96;
+  // Bridges consume the completed route. Never move its corners after routing:
+  // those points can be shared by other branches and bound the dock approach.
   const low=Math.min(segment.from.v,segment.to.v),high=Math.max(segment.from.v,segment.to.v),available=Math.min(deckStart-low,high-deckEnd)-12;
   if(available<20)continue;
   const fittedRamp=Math.min(ramp,available),start=deckStart-fittedRamp,deck=deckEnd-deckStart,v=(deckStart+deckEnd)/2;

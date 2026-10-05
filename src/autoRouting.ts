@@ -9,7 +9,7 @@ export function topicTrunkRoute(config:LayoutConfiguration,terminals:Terminal[],
  const exit=driveway(producer,start),entrance=driveway(receiver,end);
  if(receiver.producer)return [start,exit,{u:exit.u+180,v:exit.v}];
  const obstacles=[...Object.values(computeLayout(config.topology,config.layout)).map(building=>({...building,width:building.width??150,depth:building.depth??110})),...terminals];
- try {return [start,...shortestRoad(exit,entrance,obstacles,clearance,existingRoutes.filter(route=>route.topic!==topic).flatMap(route=>route.points.slice(1).map((to,index)=>({from:route.points[index],to,margin:route.lanes*11+lanes*11+35}))),{start:producer?.wall==='front'?{u:0,v:1}:{u:1,v:0},end:receiver.wall==='front'?{u:0,v:-1}:{u:-1,v:0}}),end];}catch(error){throw new Error(`Cannot route ${topic}: ${producer?.id??'external'} to ${receiver.id}, driveway (${exit.u}, ${exit.v}) to (${entrance.u}, ${entrance.v}). ${String(error)}`);}
+ try {return [start,...shortestRoad(exit,entrance,obstacles,clearance,existingRoutes.flatMap(route=>route.points.slice(1).map((to,index)=>({from:route.points[index],to,margin:route.topic===topic?0:route.lanes*11+lanes*11+35,shared:route.topic===topic}))),{start:producer?.wall==='front'?{u:0,v:1}:{u:1,v:0},end:receiver.wall==='front'?{u:0,v:-1}:{u:-1,v:0}}),end];}catch(error){throw new Error(`Cannot route ${topic}: ${producer?.id??'external'} to ${receiver.id}, driveway (${exit.u}, ${exit.v}) to (${entrance.u}, ${entrance.v}). ${String(error)}`);}
 }
 
 export function automaticOverpasses(config:LayoutConfiguration,routes:Route[]):Omit<Bridge,'depth'|'lanes'>[]{
