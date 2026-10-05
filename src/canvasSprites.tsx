@@ -1,5 +1,5 @@
 import {IsoArticulatedSprite,articulatedAngles} from './IsoArticulatedSprite';
-import {renderModel} from './scenarioRuntime';
+import {renderModel,scenarioRevision} from './scenarioRuntime';
 import type {ReactNode} from 'react';
 import {IsoBuilding} from './IsoBuilding';
 import {IsoVehicle,type VehicleKind} from './IsoVehicle';
@@ -29,6 +29,7 @@ async function raster(node:ReactNode,bounds:Bounds):Promise<Sprite>{
 }
 function Drives(){return <>{(Object.keys(cityBuildings) as Service[]).map(name=>{const building=cityBuildings[name];return <g key={name}>{Array.from({length:services[name].consumers},(_,index)=>{const u=building.u+(index+1)*building.width/(services[name].consumers+1),v=building.v+building.depth;return <polygon key={index} points={vertices([[u-15,v],[u+15,v],[u+15,v+35],[u-15,v+35]])} fill="#baa786" stroke="#f3d99f"/>;})}{Array.from({length:services[name].producers},(_,index)=>{const u=building.u+building.width,v=building.v+(index+1)*building.depth/(services[name].producers+1);return <polygon key={index} points={vertices([[u,v-14],[u+35,v-14],[u+35,v+14],[u,v+14]])} fill="#baa786" stroke="#f3d99f"/>;})}</g>;})}</>;}
 export async function createSprites(){
+ const revision=scenarioRevision,mapBounds={...renderModel.worldBounds};
  const terrain=await raster(<><CityTerrain/><ServiceYards/></>,mapBounds);
  const roads=await Promise.all(Object.keys(topics).map(topic=>raster(<><IsoRoad label={topic} topic={topic} segments={roadSegments(topic)}/>{terminals.filter(terminal=>terminal.topics.includes(topic)).map(terminal=><IsoTerminalConnection key={terminal.id} terminal={terminal}/>)}</>,mapBounds)));
  const scenery:Scenery[]=await Promise.all((Object.keys(cityBuildings) as Service[]).map(async name=>{const building=cityBuildings[name],point=project(building.u,building.v);const sprite=await raster(<IsoBuilding mainOnly name={name} layout={{...building,u:0,v:0}} onSelect={()=>{}}/>,{x:-building.depth-45,y:-270,width:building.width+building.depth+100,height:470});return {...sprite,x:sprite.x+point.x,y:sprite.y+point.y,depth:building.u+building.v+building.width/2+building.depth,name};}));
@@ -51,11 +52,12 @@ export async function createSprites(){
  for(const sprite of scenery){drawing.globalAlpha=!sprite.name||focus==='all'||[...services[sprite.name].produces,...services[sprite.name].consumes].includes(focus as 'orders'|'payments')?1:.3;drawing.drawImage(sprite.image,sprite.x,sprite.y,sprite.width,sprite.height);}
  drawing.globalAlpha=1;drawing.drawImage(props.image,mapBounds.x,mapBounds.y,mapBounds.width,mapBounds.height);if(worlds.size>=3){const oldest=[...worlds.keys()].find(key=>key!=='all');if(oldest!==undefined)worlds.delete(oldest);}worlds.set(focus,world);return world;
  }
+ if(revision!==scenarioRevision)throw new Error('Scenario changed while preparing sprites; the previous render was cancelled.');
  worldForFocus('all');
  return {worlds,worldForFocus,scenery,vehicles};
 }
 export type SpriteCache=Awaited<ReturnType<typeof createSprites>>;
-let loadedSprites:Promise<SpriteCache>|undefined;
-export function loadSpriteCache(){if(!loadedSprites)loadedSprites=createSprites();return loadedSprites;}
+let loadedSprites:Promise<SpriteCache>|undefined,loadedRevision=-1;
+export function loadSpriteCache(){if(!loadedSprites||loadedRevision!==scenarioRevision){loadedRevision=scenarioRevision;loadedSprites=createSprites();const pending=loadedSprites;pending.catch(()=>{if(loadedSprites===pending)loadedSprites=undefined;});}return loadedSprites;}
 
 export function invalidateSpriteCache(){loadedSprites=undefined;}

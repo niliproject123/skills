@@ -12,7 +12,7 @@ export const decoration=[
  {u:600,v:760,size:1},{u:640,v:780,size:.8},{u:680,v:785,size:.6}
 ];
 export function visibleDecorations(){
- const candidates=renderModel.terrainOutline.length>4?decoration:Object.values(renderModel.cityBuildings).flatMap(building=>[{u:building.u-50,v:building.v-35,size:.8},{u:building.u-35,v:building.v-55,size:.7},{u:building.u+40,v:building.v-55,size:.9}]);
+ const candidates=[...decoration,...Object.values(renderModel.cityBuildings).flatMap(building=>[{u:building.u-100,v:building.v-65,size:.8},{u:building.u-75,v:building.v-100,size:1},{u:building.u+40,v:building.v-105,size:.7},{u:building.u+building.width+100,v:building.v-80,size:.8}])];
  const outline=renderModel.terrainOutline;
  return candidates.filter(tree=>{let inside=false;for(let index=0,previous=outline.length-1;index<outline.length;previous=index++){const a=outline[index],b=outline[previous];if((a[1]>tree.v)!==(b[1]>tree.v)&&tree.u<(b[0]-a[0])*(tree.v-a[1])/(b[1]-a[1])+a[0])inside=!inside;}if(!inside)return false;
  if([...Object.values(renderModel.cityBuildings),...renderModel.terminals].some(shape=>tree.u>shape.u-40&&tree.u<shape.u+shape.width+40&&tree.v>shape.v-40&&tree.v<shape.v+shape.depth+40))return false;
@@ -22,7 +22,7 @@ export function visibleDecorations(){
 export function CityTerrain(){
  const outline=renderModel.terrainOutline;
  return <g><polygon points={vertices(outline.map(([u,v])=>[u,v,-18]))} fill="#6b964f"/><polygon points={vertices(outline)} fill="#a7c771" stroke="#bfdc87" strokeWidth="5"/>
- {outline.length>4&&<><polygon points={vertices([[240,150],[410,150],[410,190],[240,190]])} fill="#dfc98d"/><polygon points={vertices([[630,90],[666,90],[666,-260],[630,-260]])} fill="#dfc98d"/></>}
+ {Object.values(renderModel.cityBuildings).map((building,index)=><polygon key={`path-${index}`} points={vertices([[building.u-20,building.v+building.depth+10],[building.u+building.width+20,building.v+building.depth+10],[building.u+building.width+20,building.v+building.depth+25],[building.u-20,building.v+building.depth+25]])} fill="#dfc98d"/>)}
  {Array.from({length:28},(_,index)=>{const u=250+(index*53%430),v=450+(index*71%120);return <path key={index} d={`M${u-v} ${(u+v)/2}l4-2m-2 4 4-2`} stroke="#759e53" opacity=".5"/>;})}
  </g>;
 }

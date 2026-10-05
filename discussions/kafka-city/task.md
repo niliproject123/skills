@@ -108,3 +108,9 @@ Final verification: npm test and npm run build passed after the viewport-clamp c
 Ground now encloses all campuses and road geometry. Default road detours replaced by shortest orthogonal obstacle-avoiding paths between paved driveways. Topic vehicle paint covers body panels with grey streaks; both road edges and dashed partition markings use topic color. Signs use long straight vertical poles anchored at object centers. Partition labels removed. Consumer terminals have roof-mounted lag gauges colored green, amber or red from the configured snapshot.
 
 User requested code only: no tests, build, browser inspection or runtime execution performed for these changes. Remote supplied by the user is the same as C:/dev/skills: https://github.com/niliproject123/skills.git. Publication branch: codex/kafka-city. Environment: Windows; Node 20.19.0; npm 10.8.2; Vite 6.4.3 port 5173; application credentials none.
+
+## 2026-10-05 seven-service terrain, crossings and cache corrections
+
+Added Inventory, Shipping and Fraud with physical receiving terminals and lag snapshots. Terrain uses a beveled infrastructure hull, with tree clusters and paths around the expanded campuses. Automatic routing reserves separate corridors for parallel roads of different topics; crossing routes can receive route-specific elevated decks with ramps. Sprite loading is configuration-revision aware and stale builds are cancelled; failed cache loads are discarded for subsequent explicit retries. Moving traffic is limited by physical lane length to avoid compressed overlapping vehicle groups on short routes.
+
+No tests or build run, following the user's code-only instruction. Branch codex/kafka-city; discussion discussions/kafka-city; task task.md; Windows / Node 20.19.0 / npm 10.8.2 / Vite 6.4.3, port 5173; application credentials none.

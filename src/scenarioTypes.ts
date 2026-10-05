@@ -11,7 +11,7 @@ export type RuntimeSnapshot={
  topics:Record<string,{messagesPerSecond:number;partitionOverrides?:Record<string,number>}>;
  consumerGroups:Record<string,{consumptionRate:number;lag:number}>;
 };
-export type Bridge=Point&{id:string;topic:string;height:number;start:number;ramp:number;deck:number;depth:number;lanes:number};
+export type Bridge=Point&{routeId?:string;id:string;topic:string;height:number;start:number;ramp:number;deck:number;depth:number;lanes:number};
 export type LayoutModel={
  labels?:Record<string,{labelAnchor:{x:number;y:number};labelOffset:{x:number;y:number}}>;
  services:Record<string,Placement>;

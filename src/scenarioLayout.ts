@@ -1,3 +1,4 @@
+import {terrainOutline} from './terrainOutline';
 import {topicTrunkRoute} from './autoRouting';
 import {computeLayout} from './autoLayout';
 import {bayPosition} from './terminalConnection';
@@ -20,7 +21,7 @@ export function buildLayout(config:LayoutConfiguration){
  return {buildings,terminals};
 }
 function orthogonal(points:Point[]):Point[]{const result:Point[]=[];for(const point of points){const previous=result.at(-1);if(previous&&previous.u===point.u&&previous.v===point.v)continue;if(previous&&previous.u!==point.u&&previous.v!==point.v)result.push({u:point.u,v:previous.v});result.push({...point});}return result;}
-export function routePoints(config:LayoutConfiguration,topic:string,producer:Terminal|undefined,receiver:Terminal,key:string,topicIndex:number):Point[]{
+export function routePoints(config:LayoutConfiguration,topic:string,producer:Terminal|undefined,receiver:Terminal,key:string,topicIndex:number,existingRoutes:DerivedRenderModel['cityRoutes']=[]):Point[]{
  const start=producer?bayPosition(producer):{u:receiver.u-240,v:receiver.v+receiver.depth+160};
  const end=receiver.producer?{u:start.u+250,v:start.v+170}:bayPosition(receiver);
  const override=config.layout.routes[key];
@@ -31,13 +32,13 @@ export function routePoints(config:LayoutConfiguration,topic:string,producer:Ter
  const shared=producer?Object.entries(config.layout.routes).find(([id,route])=>id.startsWith(producer.id+'/')&&route.branch):undefined;
  if(shared&&!trunk){const points=shared[1].waypoints;return orthogonal([...points.slice(0,-2),{u:end.u,v:points[points.length-2].v},end]);}
  if(trunk)return orthogonal([start,...trunk,end]);
- return orthogonal(topicTrunkRoute(config,buildLayout(config).terminals,topic,producer,receiver,topicIndex));
+ return orthogonal(topicTrunkRoute(config,buildLayout(config).terminals,topic,producer,receiver,topicIndex,existingRoutes));
 }
 export function worldGeometry(config:LayoutConfiguration,buildings:DerivedRenderModel['cityBuildings'],terminals:Terminal[],routes:DerivedRenderModel['cityRoutes']){
  const groundPoints=[...Object.values(buildings).flatMap(building=>[{u:building.u-70,v:building.v-70},{u:building.u+building.width+90,v:building.v+building.depth+90}]),...terminals.flatMap(terminal=>[{u:terminal.u-90,v:terminal.v-70},{u:terminal.u+terminal.width+110,v:terminal.v+terminal.depth+110}]),...routes.flatMap(route=>route.points.flatMap(point=>[{u:point.u-route.lanes*11-30,v:point.v-route.lanes*11-30},{u:point.u+route.lanes*11+30,v:point.v+route.lanes*11+30}]))];
  if(!groundPoints.length)groundPoints.push({u:0,v:0},{u:320,v:320});
  const left=Math.min(...groundPoints.map(p=>p.u)),right=Math.max(...groundPoints.map(p=>p.u)),back=Math.min(...groundPoints.map(p=>p.v)),front=Math.max(...groundPoints.map(p=>p.v));
- const terrain:[[number,number],[number,number],[number,number],[number,number]]=[[left-45,back-45],[right+45,back-45],[right+45,front+45],[left-45,front+45]];
+ const terrain=terrainOutline(groundPoints.flatMap(point=>[{u:point.u-45,v:point.v-45},{u:point.u+45,v:point.v+45}]));
  const projected=[...groundPoints,...terrain.map(([u,v])=>({u,v}))].map(p=>({x:p.u-p.v,y:(p.u+p.v)/2}));
  let x=Math.min(...projected.map(p=>p.x))-80,y=Math.min(...projected.map(p=>p.y))-260,maxX=Math.max(...projected.map(p=>p.x))+80,maxY=Math.max(...projected.map(p=>p.y))+60;
  if(config.layout.worldBounds){const bounds=config.layout.worldBounds;x=Math.min(x,bounds.x);y=Math.min(y,bounds.y);maxX=Math.max(maxX,bounds.x+bounds.width);maxY=Math.max(maxY,bounds.y+bounds.height);}

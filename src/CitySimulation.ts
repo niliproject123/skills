@@ -37,7 +37,7 @@ export class CitySimulation {
  const queueRows=Math.ceil((consumerGroups.find(group=>group.id===route.terminal)?.waiting??0)/route.lanes),queueLength=queueRows*queueSpacing;
  let distance:number;
  if(unit.waiting){const row=((unit.laneIndex-Math.floor(cycle))%queueRows+queueRows)%queueRows;distance=length-(row+1-progress)*queueSpacing;}
- else {const available=Math.max(30,queueLength?length-queueLength-20:length);const load=partitionLoads[route.topic][unit.partition];distance=((unit.laneIndex/unit.laneCount+this.elapsed*24*load.frequency/available)%1)*available;}
+ else {const available=Math.max(30,queueLength?length-queueLength-20:length);const load=partitionLoads[route.topic][unit.partition];const spacing=unit.kind==='semi'?unit.trailers*46+48:unit.kind==='truck'?70:unit.kind==='van'?52:36,visibleCount=Math.min(unit.laneCount,Math.max(1,Math.floor(available/spacing)));distance=unit.laneIndex>=visibleCount?-10000:((unit.laneIndex/visibleCount+this.elapsed*24*load.frequency/available)%1)*available;}
  return distance;
  }
  position(unit:TrafficUnit,behind=0){
@@ -45,9 +45,9 @@ export class CitySimulation {
  }
  private pose(unit:TrafficUnit,distance:number){
  const route=this.routes[unit.route],path=this.paths[unit.route][unit.partition],point=sampleLane(path,distance);
- const height=roadElevation(route.topic,point.u,point.v),screen=project(point.u,point.v,height);
+ const height=roadElevation(route.topic,point.u,point.v,route.id),screen=project(point.u,point.v,height);
  let depth=point.u+point.v;
- for(const bridge of overpasses){if(height>0&&bridge.topic===route.topic&&Math.abs(point.u-bridge.u)<bridge.lanes*11+13)depth=bridge.depth+1;else if(route.topic!==bridge.topic&&Math.abs(point.u-bridge.u)<bridge.lanes*11+40&&Math.abs(point.v-bridge.v)<route.lanes*11+30)depth=bridge.depth-1;}
+ for(const bridge of overpasses){if(height>0&&bridge.topic===route.topic&&Math.abs(point.u-bridge.u)<bridge.lanes*11+13)depth=bridge.depth+1;else if((route.topic!==bridge.topic||bridge.routeId!==route.id)&&Math.abs(point.u-bridge.u)<bridge.lanes*11+40&&Math.abs(point.v-bridge.v)<route.lanes*11+30)depth=bridge.depth-1;}
  const tangentAhead=sampleLane(path,Math.min(path.length,distance+2)),tangentBehind=sampleLane(path,Math.max(0,distance-2));
  return {...screen,u:point.u,v:point.v,pathDistance:distance,heading:Math.atan2(tangentAhead.v-tangentBehind.v,tangentAhead.u-tangentBehind.u),depth,direction:point.direction,visible:distance>=0};
  }
