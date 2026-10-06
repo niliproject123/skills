@@ -8,4 +8,5 @@ export type TerminalLayout=GroundPoint&{id:string;width:number;depth:number;wall
 export const terminals:Terminal[]=renderModel.terminals;
 export function terminalById(id:string){const terminal=terminals.find(terminal=>terminal.id===id);if(!terminal)throw new Error(`Terminal layout missing for ${id}`);return terminal;}
 export const overpasses=renderModel.overpasses;
-export function roadElevation(topic:Topic,u:number,v:number,_routeId?:string){for(const bridge of overpasses){const point={u,v},along=bridgePosition(bridge,point);if(topic===bridge.topic&&Math.abs(bridgeAcross(bridge,point))<=bridge.lanes*11+13&&along>=bridge.start&&along<=bridgeEnd(bridge))return bridgeHeight(bridge,along);}return 0;}
+// Display-only road highlights; vehicle heights use lane-distance bridge spans.
+export function roadElevation(topic:Topic,u:number,v:number){for(const bridge of overpasses){const point={u,v},along=bridgePosition(bridge,point);if(topic===bridge.topic&&Math.abs(bridgeAcross(bridge,point))<=bridge.lanes*11+13&&along>=bridge.start&&along<=bridgeEnd(bridge))return bridgeHeight(bridge,along);}return 0;}

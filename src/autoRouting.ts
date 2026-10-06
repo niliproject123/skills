@@ -13,6 +13,6 @@ export function topicTrunkRoute(config:LayoutConfiguration,terminals:Terminal[],
  try {return [start,...shortestRoad(exit,entrance,obstacles,clearance,roadReservations(existingRoutes,terminals,topic,lanes,config.topology.topics),{start:producer?.wall==='front'?{u:0,v:1}:{u:1,v:0},end:receiver.wall==='front'?{u:0,v:-1}:{u:-1,v:0}}),end];}catch(error){throw new Error(`Cannot route ${topic}: ${producer?.id??'external'} to ${receiver.id}, driveway (${exit.u}, ${exit.v}) to (${entrance.u}, ${entrance.v}). ${String(error)}`);}
 }
 
-export function automaticOverpasses(config:LayoutConfiguration,routes:Route[]):Omit<Bridge,'depth'|'lanes'>[]{
- return planBridges(config,routes);
+export function automaticOverpasses(config:LayoutConfiguration,routes:Route[],terminals:Terminal[]):Omit<Bridge,'depth'|'lanes'>[]{
+ return planBridges(config,routes,terminals);
 }

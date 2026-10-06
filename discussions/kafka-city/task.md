@@ -182,3 +182,15 @@ Road reservations trim terminal approaches to their actual paved connection and 
 Verification: npx tsc --noEmit passed before the final explicit branch guard; the final TypeScript check is recorded by the completion response. No build, browser, runtime, unit or performance tests were run, following the user's restriction. Mocked data: none.
 
 Branch codex/kafka-city; discussion discussions/kafka-city; task task.md; Windows / Node 20.19.0 / npm 10.8.2 / Vite 6.4.3; port 5173; application credentials none.
+
+## 2026-10-06 physical junction classification and bridge lane membership
+
+Root causes: bridge planning used individual logical producer/group route segments, hiding intermediate shared-topic junctions; vehicle height depended only on topic and proximity to a bridge rectangle. A turning route could therefore leave the deck sideways and abruptly lose elevation.
+
+Added physicalRoadRuns: paved terminal approaches are normalized, coincident topic edges are deduplicated and split at shared nodes, and straight runs stop at all physical corners and junctions. Bridges are planned against those runs, so no deck or ramp can cover a same-topic branch. Automatic bridge spans preserve corner and landing clearance; merging cannot join separate physical runs through a junction. Invalid manual bridges and diagonal dock connections produce explicit geometry errors.
+
+Vehicle bridge travel is now precomputed per route and partition from the actual sampled lane path. A carriage is elevated only while traversing the full straight span from one ramp to the other, using lane-distance entry/exit intervals. Each trailer receives its own continuous ramp elevation. Road highlights retain a separate display-only elevation lookup.
+
+Verification: final npx tsc --noEmit only, following the user's restriction. No build, browser, runtime, unit or performance tests were run. Mocked data: none. Visual behavior has not been verified in the browser.
+
+Branch codex/kafka-city; discussion discussions/kafka-city; task task.md; Windows / Node 20.19.0 / npm 10.8.2 / Vite 6.4.3; port 5173; application credentials none.

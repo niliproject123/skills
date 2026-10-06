@@ -1,3 +1,4 @@
+import {laneBridgeTravel,bridgeTravelHeight,type BridgeTravel} from './bridgeTravel';
 import {bridgeAcross,bridgePosition} from './bridgeGeometry';
 import {pointAtBay} from './terminalConnection';
 import {consumerGroups} from './kafkaTopology';
@@ -6,7 +7,7 @@ import {curvedCenterline,offsetCurve,lanePath,sampleLane,type LanePath} from './
 import {project,type Direction} from './isometric';
 import type {VehicleKind} from './IsoVehicle';
 import {partitionLoads} from './kafkaTopology';
-import {terminalById,roadElevation,overpasses,terminals,type TerminalLayout} from './terminalLayout';
+import {terminalById,overpasses,terminals,type TerminalLayout} from './terminalLayout';
 export type TrafficUnit={id:string;route:number;index:number;waiting:boolean;kind:VehicleKind;partition:number;trailers:number;laneIndex:number;laneCount:number};
 export const makeTrafficUnits=(routes:TrafficRoute[]):TrafficUnit[]=>routes.flatMap((route,routeIndex)=>[false,true].flatMap(waiting=>{
  const expected=waiting?route.queue:route.moving,configured=waiting?route.queueLanes:route.laneTraffic;
@@ -16,6 +17,7 @@ export const makeTrafficUnits=(routes:TrafficRoute[]):TrafficUnit[]=>routes.flat
 export const trafficUnits=makeTrafficUnits(cityRoutes);
 export class CitySimulation {
  private paths:LanePath[][];
+ private bridgePaths:BridgeTravel[][][];
  constructor(private routes:TrafficRoute[]=cityRoutes){
  this.paths=routes.map(route=>{const origin=terminals.find(terminal=>terminal.producer&&terminal.topics.includes(route.topic)&&pointAtBay(terminal,route.points[0])),receiver=terminalById(route.terminal),center=curvedCenterline(pavedRoutePoints(route),route.lanes*11+18);
  return Array.from({length:route.lanes},(_,partition)=>{
@@ -23,6 +25,7 @@ export class CitySimulation {
  const gatePoint=(terminal:TerminalLayout)=>{const gate=Math.round(partition*(terminal.instances-1)/Math.max(1,route.lanes-1));return terminal.wall==='front'?{u:terminal.u+(gate+1)*terminal.width/(terminal.instances+1),v:terminal.v+terminal.depth}:{u:terminal.u+terminal.width,v:terminal.v+(gate+1)*terminal.depth/(terminal.instances+1)};};
  if(origin)points.unshift(gatePoint(origin));if(!receiver.producer)points.push(gatePoint(receiver));return lanePath(points);
  });});
+ this.bridgePaths=this.paths.map((lanes,index)=>lanes.map(path=>laneBridgeTravel(path,overpasses.filter(bridge=>bridge.topic===routes[index].topic))));
  }
  chain(unit:TrafficUnit){
  const path=this.paths[unit.route][unit.partition],chain=[this.pose(unit,this.distance(unit))];let distance=this.distance(unit);
@@ -46,9 +49,10 @@ export class CitySimulation {
  }
  private pose(unit:TrafficUnit,distance:number){
  const route=this.routes[unit.route],path=this.paths[unit.route][unit.partition],point=sampleLane(path,distance);
- const height=roadElevation(route.topic,point.u,point.v,route.id),screen=project(point.u,point.v,height);
+ const bridgeTravel=this.bridgePaths[unit.route][unit.partition].find(span=>distance>=span.entry&&distance<=span.exit);
+ const height=bridgeTravel?bridgeTravelHeight(bridgeTravel,point):0,screen=project(point.u,point.v,height);
  let depth=point.u+point.v;
- for(const bridge of overpasses){if(height>0&&bridge.topic===route.topic&&Math.abs(bridgeAcross(bridge,point))<bridge.lanes*11+13)depth=bridge.depth+1;else if(route.topic!==bridge.topic&&Math.abs(bridgeAcross(bridge,point))<bridge.lanes*11+40&&Math.abs(bridgePosition(bridge,point)-(bridge.start+bridge.ramp+bridge.deck/2))<bridge.deck/2+route.lanes*11+30)depth=bridge.depth-1;}
+ for(const bridge of overpasses){if(height>0&&bridgeTravel?.bridge.id===bridge.id)depth=bridge.depth+1;else if(route.topic!==bridge.topic&&Math.abs(bridgeAcross(bridge,point))<bridge.lanes*11+40&&Math.abs(bridgePosition(bridge,point)-(bridge.start+bridge.ramp+bridge.deck/2))<bridge.deck/2+route.lanes*11+30)depth=bridge.depth-1;}
  const tangentAhead=sampleLane(path,Math.min(path.length,distance+2)),tangentBehind=sampleLane(path,Math.max(0,distance-2));
  return {...screen,u:point.u,v:point.v,pathDistance:distance,heading:Math.atan2(tangentAhead.v-tangentBehind.v,tangentAhead.u-tangentBehind.u),depth,direction:point.direction,visible:distance>=0};
  }

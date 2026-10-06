@@ -9,5 +9,5 @@ export function computeLayout(topology:TopologyModel,overrides:LayoutModel){
  const add=(sourceId:string|undefined,receiverId:string,outgoing=false)=>{const receiver=terminals.find(terminal=>terminal.id===receiverId)!;const producer=sourceId?terminals.find(terminal=>terminal.id===sourceId):undefined,id=`${sourceId??'external'}/${outgoing?'outgoing':receiverId}`;routes.push({id,topic:topic.id,destination:receiver.service,terminal:receiverId,lanes:topic.partitionCount,points:routePoints(config,topic.id,producer,receiver,id,topicIndex,routes,sharedPaths),moving:0,queue:0,consumeEvery:1,laneTraffic:Array(topic.partitionCount).fill(0),queueLanes:Array(topic.partitionCount).fill(0)});};
  for(const group of groups)for(const source of sources.length?sources:[undefined])add(source?.id,group.id);if(!groups.length)for(const source of sources)add(source.id,source.id,true);
  });
- return {buildings,terminals,routes,overpasses:automaticOverpasses(config,routes)};
+ return {buildings,terminals,routes,overpasses:automaticOverpasses(config,routes,terminals)};
 }
