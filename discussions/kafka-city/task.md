@@ -208,3 +208,17 @@ Verification: npx tsc --noEmit passed. The user explicitly requested starting Vi
 Browser inspection failed because the browser tool could not write its kernel assets (missing path, error 3), so rendered output is unverified. One source read used the incorrect CityCanvas.tsx filename; the correct CanvasCity.tsx was subsequently read. No packages were installed and no build, unit or performance tests were run.
 
 Branch codex/kafka-city; discussion discussions/kafka-city; task task.md; Windows / Node 20.19.0 / npm 10.8.2 / Vite 6.4.3; port 5173; application credentials none.
+
+## 2026-10-07 toy vehicles, lag sign colors and dock approaches
+
+Previous work was already committed as 7b30ad4; the working tree was clean when this request began.
+
+Vehicle bodies now use larger rounded corners. Cached moving sprites share the ground-coordinate rounded-box geometry, including all orientation frames and articulated tractor/trailer units. Moving sprites use four arc subdivisions per corner to limit sprite-generation geometry. Neutral roof streaks and topic colors remain visible.
+
+Consumer lag changes the gauge housing color (green/amber/red). The inner gauge fill is the same cream color everywhere, with a fixed dark label color; its length still represents lag.
+
+Added one shared dock approach length calculation: apron/driveway plus two 48-unit straight sections and the road corner radius. Topic routing, future driveway reservations and automatic campus footprints use this same calculation. Dock ports are exempt from the additional trunk/bridge turn setback that forced tight entrance detours; physical road-width and building collisions remain enforced. Ordinary trunk branch spacing stays enforced.
+
+Verification: npx tsc --noEmit passed. No runtime, browser, build, unit or performance tests were run, following the user's TypeScript-only instruction. Mocked data: none. Visual removal of every dock loop is unverified. The previously reported Hot partition routing failure and unverified later presets have not been runtime-checked in this iteration. Git reported an LF-to-CRLF warning for IsoRoundedBox.tsx.
+
+Branch codex/kafka-city; discussion discussions/kafka-city; task task.md; Windows / Node 20.19.0 / npm 10.8.2 / Vite 6.4.3; configured Vite port 5173; application credentials none.

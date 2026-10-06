@@ -17,5 +17,12 @@ export function shortestRoad(start:Point,end:Point,obstacles:Obstacle[],clearanc
   if(parallel.some(road=>road.shared&&(vertical?from.u===road.from.u:from.v===road.from.v)))return length*.85;
   return length;
  };
- return searchRoadGrid({columns,rows,start,ends,blocked,turnBlocked:point=>roadTurnBlocked(point,reserved,cornerRadius),travelCost,directions});
+ const turnBlocked=(point:Point)=>{
+  // The straight driveway already reserves the dock's physical footprint.
+  // Do not impose the extra trunk/bridge turn setback at its outer end.
+  if(point.u===start.u&&point.v===start.v&&directions.start)return false;
+  if(ends.some(end=>end.u===point.u&&end.v===point.v)&&(directions.endAt?.(point)||directions.end))return false;
+  return roadTurnBlocked(point,reserved,cornerRadius);
+ };
+ return searchRoadGrid({columns,rows,start,ends,blocked,turnBlocked,travelCost,directions});
 }

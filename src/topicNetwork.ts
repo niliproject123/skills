@@ -1,7 +1,7 @@
 import {roadReservations,roadTurnBlocked} from './roadClearance';
 import type {LayoutConfiguration,Point,Route,Terminal} from './scenarioTypes';
 import {computeLayout} from './autoLayout';
-import {bayPosition,connectionLength} from './terminalConnection';
+import {bayPosition,dockApproachLength} from './terminalConnection';
 import {shortestRoad} from './shortestRoad';
 
 type Edge={from:Point;to:Point};
@@ -25,7 +25,8 @@ export function planTopicNetwork(config:LayoutConfiguration,terminals:Terminal[]
  const result=new Map<string,Point[]>();if(!sources.length||!receivers.length)return result;
  const lanes=config.topology.topics.find(item=>item.id===topic)!.partitionCount,clearance=lanes*11+22;
  const participants=[...sources,...receivers],ports=new Map<string,Point>();
- for(const terminal of participants){const bay=bayPosition(terminal,topic),direction=outward(terminal),setback=connectionLength+clearance+116;ports.set(terminal.id,{u:bay.u+direction.u*setback,v:bay.v+direction.v*setback});}
+ for(const terminal of participants){const bay=bayPosition(terminal,topic),direction=outward(terminal),setback=dockApproachLength(lanes);ports.set(terminal.id,{u:bay.u+direction.u*setback,v:bay.v+direction.v*setback});}
+ const isDockPort=(point:Point)=>participants.some(terminal=>key(ports.get(terminal.id)!)===key(point));
  const obstacles=[...Object.values(computeLayout(config.topology,config.layout)).map(building=>({...building,width:building.width??150,depth:building.depth??110})),...terminals];
  const reserved=roadReservations(previousRoutes,terminals,topic,lanes,config.topology.topics);
  const edges:Edge[]=[],root=participants[0],rootPoint=ports.get(root.id)!;
@@ -33,13 +34,13 @@ export function planTopicNetwork(config:LayoutConfiguration,terminals:Terminal[]
  for(const terminal of participants.slice(1).sort((a,b)=>distance(ports.get(a.id)!,rootPoint)-distance(ports.get(b.id)!,rootPoint))){
   const port=ports.get(terminal.id)!;
   const nearest=edges.length?edges.map(edge=>edge.from.u===edge.to.u?{u:edge.from.u,v:Math.max(Math.min(edge.from.v,edge.to.v),Math.min(Math.max(edge.from.v,edge.to.v),port.v))}:{u:Math.max(Math.min(edge.from.u,edge.to.u),Math.min(Math.max(edge.from.u,edge.to.u),port.u)),v:edge.from.v}):[rootPoint];
-  const candidates=edges.length?[...nearest,...edges.flatMap(edge=>[edge.from,edge.to,{u:(edge.from.u+edge.to.u)/2,v:(edge.from.v+edge.to.v)/2}])].filter(point=>!roadTurnBlocked(point,reserved,lanes*11+18)):nearest;
+  const candidates=edges.length?[...nearest,...edges.flatMap(edge=>[edge.from,edge.to,{u:(edge.from.u+edge.to.u)/2,v:(edge.from.v+edge.to.v)/2}])].filter(point=>isDockPort(point)||!roadTurnBlocked(point,reserved,lanes*11+18)):nearest;
   const target=candidates.sort((a,b)=>distance(port,a)-distance(port,b))[0];
   if(!target)throw new Error(`Cannot attach ${terminal.id} to topic ${topic}: no branch position has enough clearance from neighboring roads. Move the campuses farther apart.`);
   if(key(port)===key(target))continue;
   const arrivalDirection=(point:Point)=>{const terminal=participants.find(item=>key(ports.get(item.id)!)===key(point));if(!terminal)return undefined;const direction=outward(terminal);return {u:-direction.u,v:-direction.v};};
   const sharedEdges=edges.map(edge=>({...edge,margin:0,shared:true}));
-  const unsafeAttachment=(from:Point,to:Point)=>intersections(from,to,edges).some(contact=>!contact.parallel&&roadTurnBlocked(contact.point,reserved,lanes*11+18));
+  const unsafeAttachment=(from:Point,to:Point)=>intersections(from,to,edges).some(contact=>!contact.parallel&&!isDockPort(contact.point)&&roadTurnBlocked(contact.point,reserved,lanes*11+18));
   let path:Point[];
   try{path=shortestRoad(port,target,obstacles,clearance,[...reserved,...sharedEdges],{start:outward(terminal),endAt:arrivalDirection},unsafeAttachment,[...new Map(candidates.map(point=>[key(point),point])).values()]);}catch(reason){throw new Error(`Cannot attach ${terminal.id} to topic ${topic}: ${String(reason)}`);}
   // Attach at the first contact with the tree, never leave it and reconnect.
@@ -47,7 +48,7 @@ export function planTopicNetwork(config:LayoutConfiguration,terminals:Terminal[]
   for(let index=1;index<path.length&&!joined;index++){
    const from=path[index-1],to=path[index],contacts=intersections(from,to,existingEdges).sort((a,b)=>distance(from,a.point)-distance(from,b.point));
    const contact=contacts[0],end=contact?.point??to;
-   if(contact&&!contact.parallel&&roadTurnBlocked(contact.point,reserved,lanes*11+18))throw new Error(`Cannot join ${terminal.id} to topic ${topic}: the selected branch violates road clearance.`);
+   if(contact&&!contact.parallel&&!isDockPort(contact.point)&&roadTurnBlocked(contact.point,reserved,lanes*11+18))throw new Error(`Cannot join ${terminal.id} to topic ${topic}: the selected branch violates road clearance.`);
    if(distance(from,end)>0)edges.push({from,to:end});
    if(contact)joined=true;
   }

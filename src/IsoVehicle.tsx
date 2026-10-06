@@ -7,7 +7,7 @@ export type VehicleKind = 'car'|'van'|'truck'|'semi';
 export const vehicleLengths:Record<VehicleKind,number>={car:16,van:28,truck:40,semi:56};
 function Body({start,length,width,height,base=3,direction,roof,front,side}:{start:number;length:number;width:number;height:number;base?:number;direction:Direction;roof:string;front:string;side:string}) {
  const corners=[orient(start,-width/2,direction),orient(start+length,width/2,direction)];
- return <IsoRoundedBox u={Math.min(corners[0][0],corners[1][0])} v={Math.min(corners[0][1],corners[1][1])} width={Math.abs(corners[1][0]-corners[0][0])} depth={Math.abs(corners[1][1]-corners[0][1])} height={height} base={base} radius={3} roof={roof} front={front} side={side}/>;
+ return <IsoRoundedBox u={Math.min(corners[0][0],corners[1][0])} v={Math.min(corners[0][1],corners[1][1])} width={Math.abs(corners[1][0]-corners[0][0])} depth={Math.abs(corners[1][1]-corners[0][1])} height={height} base={base} radius={Math.min(7,width*.42,length*.3)} roof={roof} front={front} side={side}/>;
 }
 function Sprite({kind,direction='east',waiting=false,topic='orders',accent}:{kind:VehicleKind;direction?:Direction;waiting?:boolean;topic?:Topic;accent?:string}) {
  const length=vehicleLengths[kind],width=kind==='car'?8:15;

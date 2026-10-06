@@ -1,5 +1,5 @@
 import type {Point,Route,Terminal} from './scenarioTypes';
-import {bayPosition,connectionPosition,pointAtBay,connectionLength} from './terminalConnection';
+import {bayPosition,connectionPosition,pointAtBay,dockApproachLength} from './terminalConnection';
 
 export type ReservedRoad={from:Point;to:Point;margin:number;shared?:boolean;driveway?:boolean;bendFrom?:number;bendTo?:number};
 export const roadGap=28;
@@ -22,7 +22,7 @@ export function roadReservations(routes:Route[],terminals:Terminal[],topic:strin
  for(const terminal of terminals)for(const otherTopic of terminal.topics){
   if(otherTopic===topic)continue;
   const definition=topics.find(item=>item.id===otherTopic);if(!definition)throw new Error(`Missing topic ${otherTopic} while reserving driveway ${terminal.id}.`);
-  const width=definition.partitionCount,from=connectionPosition(terminal,otherTopic),bay=bayPosition(terminal,otherTopic),length=connectionLength+width*11+22+116;
+  const width=definition.partitionCount,from=connectionPosition(terminal,otherTopic),bay=bayPosition(terminal,otherTopic),length=dockApproachLength(width);
   const to=terminal.wall==='front'?{u:bay.u,v:bay.v+length}:{u:bay.u+length,v:bay.v};
   result.push({from,to,margin:width*11+lanes*11+roadGap,driveway:true});
  }
