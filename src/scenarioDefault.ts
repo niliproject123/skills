@@ -9,8 +9,8 @@ export const defaultScenario:ScenarioConfig={
  },
  state:{topics:{orders:{messagesPerSecond:10000},payments:{messagesPerSecond:3000},inventory:{messagesPerSecond:2000},fulfilments:{messagesPerSecond:1500}},consumerGroups:{'orders-inventory':{consumptionRate:2000,lag:0},'shipping-inventory':{consumptionRate:1800,lag:2000},'notification-fulfilments':{consumptionRate:1200,lag:3000},'analytics-fulfilments':{consumptionRate:1500,lag:0},'inventory-orders':{consumptionRate:10000,lag:0},'shipping-orders':{consumptionRate:8000,lag:4000},'fraud-payments':{consumptionRate:2800,lag:6000},'payment-orders':{consumptionRate:10000,lag:20},'analytics-realtime':{consumptionRate:4500,lag:10000},'analytics-audit':{consumptionRate:10000,lag:0},'notification-delivery':{consumptionRate:1500,lag:28000}}},
  layout:{
- services:{Inventory:{u:-380,v:-100,width:145,depth:110},Shipping:{u:500,v:690,width:155,depth:115},Fraud:{u:1050,v:-290,width:145,depth:110},Orders:{u:-90,v:240,width:130,depth:110},Payment:{u:440,v:100,width:150,depth:110},Analytics:{u:865,v:290,width:150,depth:110},Notification:{u:785,v:-410,width:160,depth:120}},
- terminals:{'orders-dispatch':{u:75,v:200,width:45,depth:170,wall:'side'},'payment-shipping':{u:640,v:105,width:45,depth:90,wall:'side'},'orders-receipts':{u:75,v:110,width:45,depth:70,wall:'side'},'payment-orders':{u:470,v:245,width:150,depth:35,wall:'front'},'analytics-realtime':{u:885,v:495,width:150,depth:35,wall:'front'},'analytics-audit':{u:790,v:420,width:65,depth:30,wall:'front'},'notification-delivery':{u:720,v:-255,width:160,depth:35,wall:'front'}},
+ services:{Inventory:{u:-620,v:-450,width:145,depth:110},Shipping:{u:300,v:850,width:155,depth:115},Fraud:{u:1550,v:-200,width:145,depth:110},Orders:{u:-200,v:180,width:130,depth:110},Payment:{u:450,v:-80,width:150,depth:110},Analytics:{u:1000,v:450,width:150,depth:110},Notification:{u:1100,v:-650,width:160,depth:120}},
+ terminals:{},
  topics:{},routes:{},overpasses:[],
 
  },

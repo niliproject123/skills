@@ -1,3 +1,4 @@
+import {bridgeAcross,bridgePosition,bridgePoint,bridgeEnd} from './bridgeGeometry';
 import {renderModel} from './scenarioRuntime';
 import type {Route} from './scenarioTypes';
 import {terminals,overpasses} from './terminalLayout';
@@ -21,10 +22,10 @@ export const roadSegments=(topic:Topic):RoadSegment[]=>roadNetwork(cityRoutes.fi
  const points=pavedRoutePoints(route);
  return points.slice(1).flatMap((to,index)=>{const from=points[index];let pieces:RoadSegment[]=[{from,to,lanes:route.lanes,join:index<points.length-2}];
  for(const bridge of overpasses.filter(bridge=>bridge.topic===topic))pieces=pieces.flatMap(piece=>{
- if(piece.from.u!==bridge.u||piece.to.u!==bridge.u)return [piece];const low=Math.min(piece.from.v,piece.to.v),high=Math.max(piece.from.v,piece.to.v),end=bridge.start+bridge.ramp*2+bridge.deck;
+ if(bridgeAcross(bridge,piece.from)!==0||bridgeAcross(bridge,piece.to)!==0)return [piece];const low=Math.min(bridgePosition(bridge,piece.from),bridgePosition(bridge,piece.to)),high=Math.max(bridgePosition(bridge,piece.from),bridgePosition(bridge,piece.to)),end=bridgeEnd(bridge);
  if(high<=bridge.start||low>=end)return [piece];const remaining:RoadSegment[]=[];
- if(low<bridge.start)remaining.push({...piece,from:{u:bridge.u,v:low},to:{u:bridge.u,v:bridge.start}});
- if(high>end)remaining.push({...piece,from:{u:bridge.u,v:end},to:{u:bridge.u,v:high}});return remaining;
+ if(low<bridge.start)remaining.push({...piece,from:bridgePoint(bridge,low),to:bridgePoint(bridge,bridge.start)});
+ if(high>end)remaining.push({...piece,from:bridgePoint(bridge,end),to:bridgePoint(bridge,high)});return remaining;
  });return pieces;});
 }));
 

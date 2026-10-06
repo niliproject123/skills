@@ -160,3 +160,15 @@ Bridge planning no longer changes route waypoints after the routing pass. This r
 Verification: npx tsc --noEmit passed; no build, runtime, browser, unit or performance tests were run, following the user's restriction. Mocked data: none. Visual output has not been verified in the browser.
 
 Branch codex/kafka-city; discussion discussions/kafka-city; task task.md; Windows / Node 20.19.0 / npm 10.8.2 / Vite 6.4.3; port 5173; application credentials none.
+
+## 2026-10-06 shared topic trees, campus spacing and both bridge axes
+
+Automatic topic routing now creates one connected physical tree per topic. Producer and receiving driveway ports attach once to the nearest existing network; attachments stop at first contact to avoid redundant reconnections and cycles. Logical producer/group vehicle paths are recovered from that shared tree, so fan-out uses a common trunk and actual branches instead of separately routed parallel roads. Explicit route/trunk overrides remain authoritative.
+
+Spread the seven default service coordinates and removed old absolute dock coordinates so docks follow their campuses. Presets inherit the same spacing. Automatic districts calculate campus envelopes from building sizes, producer/group counts, receiving rows, topic partition widths and driveway setbacks, with collision errors surfaced when placement cannot be resolved. Producer bays accumulate the depths of preceding bays rather than multiplying their own size by their index, fixing unequal-bay overlap.
+
+Added an optional bridge axis (u or v, preserving existing v-axis configurations). Both orientations share point, height and span geometry across deck rendering, supports, ground-road removal, vehicle elevation/depth, picking, sprite bounds, validation and the layout editor. Crossing detection can select either orientation when there is room for a deck and ramps; same-topic junctions stay at ground level. Bridge planning preserves completed route coordinates.
+
+Verification: only npx tsc --noEmit. An invalid comparison in the bridge-direction editor was reported and corrected; the final TypeScript check passed. No build, runtime, browser, performance or unit tests were run. Mocked data: none. A source read for src/App.tsx failed; the actual entry src/main.tsx was then read. Visual output is unverified under the requested check restriction.
+
+Branch codex/kafka-city; discussion discussions/kafka-city; task task.md; Windows / Node 20.19.0 / npm 10.8.2 / Vite 6.4.3; port 5173; application credentials none.
