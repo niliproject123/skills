@@ -172,3 +172,13 @@ Added an optional bridge axis (u or v, preserving existing v-axis configurations
 Verification: only npx tsc --noEmit. An invalid comparison in the bridge-direction editor was reported and corrected; the final TypeScript check passed. No build, runtime, browser, performance or unit tests were run. Mocked data: none. A source read for src/App.tsx failed; the actual entry src/main.tsx was then read. Visual output is unverified under the requested check restriction.
 
 Branch codex/kafka-city; discussion discussions/kafka-city; task task.md; Windows / Node 20.19.0 / npm 10.8.2 / Vite 6.4.3; port 5173; application credentials none.
+
+## 2026-10-06 hard road-width and corner clearance
+
+Different-topic parallel road segments are now hard routing exclusions rather than a spacing penalty. Minimum centerline separation includes both road half-widths plus a 28-world-unit gap, with extended endpoint bounds and rounded-corner envelopes. Turns and branch attachment points reserve the turning ribbon and bridge-ramp space; perpendicular straight passes remain available for bridge planning. Same-topic road sharing remains allowed.
+
+Road reservations trim terminal approaches to their actual paved connection and reserve every other topic's fixed driveway before the first network is planned. Reservations use configured partition counts and deduplicate repeated physical edges. The visibility grid includes clearance-boundary coordinates so blocked corridors can be bypassed. Direction-aware search now uses an admissible distance priority to reduce grid exploration. Unrouteable terminals and unsafe first-contact branch joins produce explicit placement errors; constraints are never silently relaxed.
+
+Verification: npx tsc --noEmit passed before the final explicit branch guard; the final TypeScript check is recorded by the completion response. No build, browser, runtime, unit or performance tests were run, following the user's restriction. Mocked data: none.
+
+Branch codex/kafka-city; discussion discussions/kafka-city; task task.md; Windows / Node 20.19.0 / npm 10.8.2 / Vite 6.4.3; port 5173; application credentials none.

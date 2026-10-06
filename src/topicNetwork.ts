@@ -1,3 +1,4 @@
+import {roadReservations,roadTurnBlocked} from './roadClearance';
 import type {LayoutConfiguration,Point,Route,Terminal} from './scenarioTypes';
 import {computeLayout} from './autoLayout';
 import {bayPosition,connectionLength} from './terminalConnection';
@@ -17,15 +18,18 @@ export function planTopicNetwork(config:LayoutConfiguration,terminals:Terminal[]
  const participants=[...sources,...receivers],ports=new Map<string,Point>();
  for(const terminal of participants){const bay=bayPosition(terminal),direction=outward(terminal),setback=connectionLength+clearance+116;ports.set(terminal.id,{u:bay.u+direction.u*setback,v:bay.v+direction.v*setback});}
  const obstacles=[...Object.values(computeLayout(config.topology,config.layout)).map(building=>({...building,width:building.width??150,depth:building.depth??110})),...terminals];
- const reserved=previousRoutes.flatMap(route=>route.points.slice(1).map((to,index)=>({from:route.points[index],to,margin:route.lanes*11+lanes*11+35})));
+ const reserved=roadReservations(previousRoutes,terminals,topic,lanes,config.topology.topics);
  const edges:Edge[]=[],root=participants[0],rootPoint=ports.get(root.id)!;
  for(const terminal of participants.slice(1)){
   const port=ports.get(terminal.id)!;
-  const candidates=edges.length?edges.map(edge=>edge.from.u===edge.to.u?{u:edge.from.u,v:Math.max(Math.min(edge.from.v,edge.to.v),Math.min(Math.max(edge.from.v,edge.to.v),port.v))}:{u:Math.max(Math.min(edge.from.u,edge.to.u),Math.min(Math.max(edge.from.u,edge.to.u),port.u)),v:edge.from.v}):[rootPoint];
+  const nearest=edges.length?edges.map(edge=>edge.from.u===edge.to.u?{u:edge.from.u,v:Math.max(Math.min(edge.from.v,edge.to.v),Math.min(Math.max(edge.from.v,edge.to.v),port.v))}:{u:Math.max(Math.min(edge.from.u,edge.to.u),Math.min(Math.max(edge.from.u,edge.to.u),port.u)),v:edge.from.v}):[rootPoint];
+  const candidates=edges.length?[...nearest,...edges.flatMap(edge=>[edge.from,edge.to,{u:(edge.from.u+edge.to.u)/2,v:(edge.from.v+edge.to.v)/2}])].filter(point=>!roadTurnBlocked(point,reserved,lanes*11+18)):nearest;
   const target=candidates.sort((a,b)=>distance(port,a)-distance(port,b))[0];
+  if(!target)throw new Error(`Cannot attach ${terminal.id} to topic ${topic}: no branch position has enough clearance from neighboring roads. Move the campuses farther apart.`);
   if(key(port)===key(target))continue;
   const targetTerminal=participants.find(item=>key(ports.get(item.id)!)===key(target)),direction=targetTerminal?outward(targetTerminal):undefined;
-  const path=shortestRoad(port,target,obstacles,clearance,reserved,{start:outward(terminal),end:direction?{u:-direction.u,v:-direction.v}:undefined});
+  let path:Point[];
+  try{path=shortestRoad(port,target,obstacles,clearance,reserved,{start:outward(terminal),end:direction?{u:-direction.u,v:-direction.v}:undefined});}catch(reason){throw new Error(`Cannot attach ${terminal.id} to topic ${topic}: ${String(reason)}`);}
   // Attach at the first contact with the tree, never leave it and reconnect.
   const existingEdges=edges.slice();let joined=false;
   for(let index=1;index<path.length&&!joined;index++){
@@ -36,6 +40,7 @@ export function planTopicNetwork(config:LayoutConfiguration,terminals:Terminal[]
     else for(const point of [edge.from,edge.to,from,to])if(onEdge(point,edge)&&onEdge(point,segment))contacts.push(point);
    }
    const contact=contacts.sort((a,b)=>distance(from,a)-distance(from,b))[0],end=contact??to;
+   if(contact&&roadTurnBlocked(contact,reserved,lanes*11+18))throw new Error(`Cannot join ${terminal.id} to topic ${topic} at (${contact.u}, ${contact.v}): the branch is too close to another topic road. Move the campus or terminal.`);
    if(distance(from,end)>0)edges.push({from,to:end});
    if(contact)joined=true;
   }
