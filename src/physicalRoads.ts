@@ -14,8 +14,8 @@ export function physicalRoadRuns(routes:Route[],terminals:Terminal[]):PhysicalRo
    const points=route.points.map(point=>({...point}));
    const producer=terminals.find(terminal=>terminal.producer&&terminal.topics.includes(topic)&&pointAtBay(terminal,points[0]));
    const receiver=terminals.find(terminal=>terminal.id===route.terminal);
-   if(producer)points[0]=connectionPosition(producer);
-   if(receiver&&!receiver.producer)points[points.length-1]=connectionPosition(receiver);
+   if(producer)points[0]=connectionPosition(producer,route.topic);
+   if(receiver&&!receiver.producer)points[points.length-1]=connectionPosition(receiver,route.topic);
    return points.slice(1).flatMap((to,index)=>{const from=points[index];if(from.u!==to.u&&from.v!==to.v)throw new Error(`Road ${route.id} has a diagonal dock connection. Correct its driveway waypoints before planning bridges.`);return key(to)===key(from)?[]:[{from,to,lanes:route.lanes}];});
   });
   const edges=roadNetwork(pieces),nodes=new Map<string,number[]>(),visited=new Set<number>();

@@ -194,3 +194,17 @@ Vehicle bridge travel is now precomputed per route and partition from the actual
 Verification: final npx tsc --noEmit only, following the user's restriction. No build, browser, runtime, unit or performance tests were run. Mocked data: none. Visual behavior has not been verified in the browser.
 
 Branch codex/kafka-city; discussion discussions/kafka-city; task task.md; Windows / Node 20.19.0 / npm 10.8.2 / Vite 6.4.3; port 5173; application credentials none.
+
+## 2026-10-06 startup recovery
+
+Started one Vite server on port 5173 after stopping the two verified duplicate project Vite processes. The default scene previously failed during module initialization because road-width restrictions trapped dock approaches and the branch search could choose an unreachable nearest attachment.
+
+Reserved full future driveways, widened automatic dock spacing, gave multi-topic receiving yards separate topic approach positions, and made the road search consider all safe attachment candidates. Nearby terminal ports attach before distant branches. Added a bootstrap that displays the actual startup exception and a Reload button instead of leaving a blank page.
+
+Reduced Canvas memory use: bridge structures and decorative props use bounded sprites, and only two composed focus worlds remain cached. Normal now stays within the existing memory budget.
+
+Verification: npx tsc --noEmit passed. The user explicitly requested starting Vite and checking startup; the actual default and Normal models initialize successfully, and localhost page/bootstrap/main requests return HTTP 200. Mocked data: none. The startup diagnostic still fails for Hot partition at analytics-fulfilments; later presets remain unverified. Routing spacing/order experiments also produced payment-orders and notification-delivery errors and were reverted. These errors are unresolved for larger preset layouts; no constraints are silently relaxed.
+
+Browser inspection failed because the browser tool could not write its kernel assets (missing path, error 3), so rendered output is unverified. One source read used the incorrect CityCanvas.tsx filename; the correct CanvasCity.tsx was subsequently read. No packages were installed and no build, unit or performance tests were run.
+
+Branch codex/kafka-city; discussion discussions/kafka-city; task task.md; Windows / Node 20.19.0 / npm 10.8.2 / Vite 6.4.3; port 5173; application credentials none.

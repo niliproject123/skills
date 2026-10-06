@@ -26,6 +26,6 @@ export function deriveScenario(input:ScenarioConfig):DerivedRenderModel {
  }
  for(const group of consumerGroups)group.waiting=routes.filter(route=>route.terminal===group.id).reduce((sum,route)=>sum+route.queue,0);
  const geometry=worldGeometry(config,buildings,terminals,routes);
- if(geometry.bounds.width*geometry.bounds.height*(config.topology.topics.length+6)>100000000)throw new Error('Scene exceeds the Canvas cache memory budget. Use a more compact layout or fewer topics.');
+ if(geometry.bounds.width*geometry.bounds.height*(config.topology.topics.length+3)+8000000>100000000)throw new Error('Scene exceeds the Canvas cache memory budget. Use a more compact layout or fewer topics.');
  return {labelAnchors:labelAnchors(config,buildings,terminals,routes),services,topics,producers,consumerGroups,partitionLoads,cityBuildings:buildings,terminals,cityRoutes:routes,themes,terrainOutline:geometry.terrain,worldBounds:geometry.bounds,visualization:structuredClone(visual),overpasses:layout.overpasses.map(bridge=>({...bridge,lanes:topics[bridge.topic].partitions,depth:bridge.u+bridge.v+45}))};
 }

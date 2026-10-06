@@ -5,7 +5,7 @@ import type {LayoutConfiguration,Terminal,Point,Route,Bridge} from './scenarioTy
 import {bayPosition,connectionLength} from './terminalConnection';
 import {computeLayout} from './autoLayout';
 export function topicTrunkRoute(config:LayoutConfiguration,terminals:Terminal[],topic:string,producer:Terminal|undefined,receiver:Terminal,_topicIndex:number,existingRoutes:Route[]=[]):Point[]{
- const start=producer?bayPosition(producer):{u:receiver.u-260,v:receiver.v+receiver.depth+260},end=bayPosition(receiver),lanes=config.topology.topics.find(item=>item.id===topic)!.partitionCount,clearance=lanes*11+22;
+ const start=producer?bayPosition(producer,topic):{u:receiver.u-260,v:receiver.v+receiver.depth+260},end=bayPosition(receiver,topic),lanes=config.topology.topics.find(item=>item.id===topic)!.partitionCount,clearance=lanes*11+22;
  const driveway=(terminal:Terminal|undefined,point:Point)=>terminal?.wall==='front'?{u:point.u,v:point.v+connectionLength+clearance+116}:{u:point.u+connectionLength+clearance+116,v:point.v};
  const exit=driveway(producer,start),entrance=driveway(receiver,end);
  if(receiver.producer)return [start,exit,{u:exit.u+180,v:exit.v}];

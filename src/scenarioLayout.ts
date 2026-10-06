@@ -10,20 +10,24 @@ export function buildLayout(config:LayoutConfiguration){
  const entries=[...config.topology.producers.map(producer=>({id:producer.id,name:producer.id,service:producer.serviceId,topics:[producer.topicId],instances:producer.producerCount,producer:true})),...config.topology.consumerGroups.map(group=>({id:group.id,name:group.name,service:group.serviceId,topics:group.topicIds,instances:group.consumerCount,producer:false}))];
  for(const entry of entries){
  const building=buildings[entry.service],placement=config.layout.terminals[entry.id]??{},wall=placement.wall??(entry.producer?'side':'front');
- const minimum=(entry.instances+1)*34;
+ const bands=entry.topics.map(id=>{const topic=config.topology.topics.find(item=>item.id===id)!;return {id,width:topic.partitionCount*22};});
+ const bandGap=Math.max(96,28+(Math.max(...bands.map(band=>band.width/2))+18)/2);
+ const bandWidth=bands.reduce((sum,band)=>sum+band.width,0)+Math.max(0,bands.length-1)*bandGap;
+ let across=-bandWidth/2;const topicOffsets=Object.fromEntries(bands.map(band=>{const center=across+band.width/2;across+=band.width+bandGap;return [band.id,center];}));
+ const minimum=Math.max((entry.instances+1)*34,entry.topics.length>1?bandWidth+24:0);
  const width=Math.max(placement.width??(entry.producer?45:150),wall==='front'?minimum:45),depth=Math.max(placement.depth??(entry.producer?90:35),wall==='side'?minimum:35);
  const siblings=entries.filter(item=>item.service===entry.service&&item.producer===entry.producer),index=siblings.findIndex(item=>item.id===entry.id);
- let u=building.u+(entry.producer?building.width+45:index%2*(width+65)),v=building.v+(entry.producer?terminals.filter(terminal=>terminal.service===entry.service&&terminal.producer).reduce((total,terminal)=>total+terminal.depth+40,0):building.depth+100+Math.floor(index/2)*(depth+135));
- if(!entry.producer){const reserved=entries.filter(item=>item.service===entry.service&&!item.producer&&item.id!==entry.id&&config.layout.terminals[item.id]?.u!==undefined&&config.layout.terminals[item.id]?.v!==undefined).map(item=>{const placed=config.layout.terminals[item.id];return {u:placed.u!,v:placed.v!,width:Math.max(placed.width??150,(placed.wall??'front')==='front'?(item.instances+1)*34:45)};});const previous=[...terminals.filter(terminal=>terminal.service===entry.service&&!terminal.producer),...reserved];if(previous.length){let slot=0;do{u=building.u+(slot%2)*(width+65);v=building.v+building.depth+100+Math.floor(slot/2)*(depth+440);slot++;}while(previous.some(terminal=>u<terminal.u+terminal.width+30&&u+width+30>terminal.u&&Math.abs(v-terminal.v)<depth+90));}}
+ let u=building.u+(entry.producer?building.width+45:index%2*(width+180)),v=building.v+(entry.producer?terminals.filter(terminal=>terminal.service===entry.service&&terminal.producer).reduce((total,terminal)=>total+terminal.depth+160,0):building.depth+100+Math.floor(index/2)*(depth+135));
+ if(!entry.producer){const reserved=entries.filter(item=>item.service===entry.service&&!item.producer&&item.id!==entry.id&&config.layout.terminals[item.id]?.u!==undefined&&config.layout.terminals[item.id]?.v!==undefined).map(item=>{const placed=config.layout.terminals[item.id];return {u:placed.u!,v:placed.v!,width:Math.max(placed.width??150,(placed.wall??'front')==='front'?(item.instances+1)*34:45)};});const previous=[...terminals.filter(terminal=>terminal.service===entry.service&&!terminal.producer),...reserved];if(previous.length){let slot=0;do{u=building.u+(slot%2)*(width+180);v=building.v+building.depth+100+Math.floor(slot/2)*(depth+440);slot++;}while(previous.some(terminal=>u<terminal.u+terminal.width+30&&u+width+30>terminal.u&&Math.abs(v-terminal.v)<depth+90));}}
  if(placement.side){const offset=placement.offset??.5;if(placement.side==='east'){u=building.u+building.width+45;v=building.v+building.depth*offset-depth/2;}if(placement.side==='west'){u=building.u-width-45;v=building.v+building.depth*offset-depth/2;}if(placement.side==='south'){u=building.u+building.width*offset-width/2;v=building.v+building.depth+100;}if(placement.side==='north'){u=building.u+building.width*offset-width/2;v=building.v-depth-100;}}
- terminals.push({...entry,u:placement.u??u,v:placement.v??v,width,depth,wall});
+ terminals.push({...entry,topicOffsets,u:placement.u??u,v:placement.v??v,width,depth,wall});
  }
  return {buildings,terminals};
 }
 function orthogonal(points:Point[]):Point[]{const result:Point[]=[];for(const point of points){const previous=result.at(-1);if(previous&&previous.u===point.u&&previous.v===point.v)continue;if(previous&&previous.u!==point.u&&previous.v!==point.v)result.push({u:point.u,v:previous.v});result.push({...point});}return result;}
 export function routePoints(config:LayoutConfiguration,topic:string,producer:Terminal|undefined,receiver:Terminal,key:string,topicIndex:number,existingRoutes:DerivedRenderModel['cityRoutes']=[],sharedPaths?:Map<string,Point[]>):Point[]{
- const start=producer?bayPosition(producer):{u:receiver.u-240,v:receiver.v+receiver.depth+160};
- const end=receiver.producer?{u:start.u+250,v:start.v+170}:bayPosition(receiver);
+ const start=producer?bayPosition(producer,topic):{u:receiver.u-240,v:receiver.v+receiver.depth+160};
+ const end=receiver.producer?{u:start.u+250,v:start.v+170}:bayPosition(receiver,topic);
  const override=config.layout.routes[key];
  const branch=config.layout.topics[topic]?.branches?.[receiver.id];
  const trunk=config.layout.topics[topic]?.waypoints;

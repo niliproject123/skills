@@ -14,8 +14,8 @@ export const cityRoutes=renderModel.cityRoutes;
 export function pavedRoutePoints(route:TrafficRoute):GroundPoint[]{
  const points=route.points.map(point=>({...point})),producer=terminals.find(terminal=>terminal.producer&&terminal.topics.includes(route.topic)&&pointAtBay(terminal,points[0])),receiver=terminals.find(terminal=>terminal.id===route.terminal);
  if(!receiver)throw new Error(`Missing terminal ${route.terminal}`);
- if(producer)points[0]=connectionPosition(producer);
- if(!receiver.producer)points[points.length-1]=connectionPosition(receiver);
+ if(producer)points[0]=connectionPosition(producer,route.topic);
+ if(!receiver.producer)points[points.length-1]=connectionPosition(receiver,route.topic);
  return points.filter((point,index)=>index===0||point.u!==points[index-1].u||point.v!==points[index-1].v);
 }
 export const roadSegments=(topic:Topic):RoadSegment[]=>roadNetwork(cityRoutes.filter(route=>route.topic===topic).flatMap(route=>{

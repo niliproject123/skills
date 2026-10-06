@@ -33,7 +33,7 @@ export type VisualEncodingConfig={
 };
 export type ScenarioConfig={version:1;metadata:{id:string;name:string};topology:TopologyModel;state:RuntimeSnapshot;layout:LayoutModel;visualization:VisualEncodingConfig};
 export type LayoutConfiguration=Pick<ScenarioConfig,'topology'|'layout'>;
-export type Terminal=Point&{id:string;name:string;width:number;depth:number;wall:'front'|'side';producer:boolean;service:string;topics:string[];instances:number};
+export type Terminal=Point&{topicOffsets?:Record<string,number>;id:string;name:string;width:number;depth:number;wall:'front'|'side';producer:boolean;service:string;topics:string[];instances:number};
 export type Route={id:string;topic:string;destination:string;terminal:string;points:Point[];lanes:number;moving:number;queue:number;consumeEvery:number;laneTraffic:number[];queueLanes:number[]};
 export type PartitionVisual={id:number;rate:number;kind:VehicleClass;trailers:number;frequency:number;messagesPerVehicle:number};
 export type ServiceVisual={name:string;color:string;palette:[string,string,string];art:string;produces:string[];consumes:string[];producers:number;consumers:number;lag:number};

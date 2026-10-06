@@ -33,8 +33,9 @@ async function raster(node:ReactNode,bounds:Bounds):Promise<Sprite>{
 export async function createSprites(){
  const revision=scenarioRevision,mapBounds={...renderModel.worldBounds};
  const terrain=await raster(<><CityTerrain/><ServiceYards/></>,mapBounds);
- const bridgeStructures=await raster(<>{overpasses.map(bridge=><IsoOverpass key={bridge.id} bridge={bridge} part="structure"/>)}</>,mapBounds);
- const roads=await Promise.all(Object.keys(topics).map(topic=>raster(<><IsoRoad label={topic} topic={topic} segments={roadSegments(topic)}/>{terminals.filter(terminal=>terminal.topics.includes(topic)).map(terminal=><IsoTerminalConnection key={terminal.id} terminal={terminal}/>)}</>,mapBounds)));
+ const bridgeStructures:Sprite[]=[];
+ for(const bridge of overpasses){const half=bridge.lanes*11+40,end=bridge.start+bridge.ramp*2+bridge.deck,corners=[bridge.start,end].flatMap(along=>[-half,half].flatMap(across=>[0,bridge.height].map(height=>{const point=bridgePoint(bridge,along,across);return project(point.u,point.v,height);}))),x=Math.min(...corners.map(point=>point.x))-20,y=Math.min(...corners.map(point=>point.y))-20;bridgeStructures.push(await raster(<IsoOverpass bridge={bridge} part="structure"/>,{x,y,width:Math.max(...corners.map(point=>point.x))-x+40,height:Math.max(...corners.map(point=>point.y))-y+40}));}
+ const roads=await Promise.all(Object.keys(topics).map(topic=>raster(<><IsoRoad label={topic} topic={topic} segments={roadSegments(topic)}/>{terminals.filter(terminal=>terminal.topics.includes(topic)).map(terminal=><IsoTerminalConnection key={terminal.id} terminal={terminal} topic={topic}/>)}</>,mapBounds)));
  const scenery:Scenery[]=await Promise.all((Object.keys(cityBuildings) as Service[]).map(async name=>{const building=cityBuildings[name],point=project(building.u,building.v);const sprite=await raster(<IsoBuilding mainOnly name={name} layout={{...building,u:0,v:0}} onSelect={()=>{}}/>,{x:-building.depth-45,y:-270,width:building.width+building.depth+100,height:470});return {...sprite,x:sprite.x+point.x,y:sprite.y+point.y,depth:building.u+building.v+building.width/2+building.depth,name};}));
  const terminalSprites=await Promise.all(terminals.map(async terminal=>{const point=project(terminal.u,terminal.v);const sprite=await raster(<IsoTerminal terminal={{...terminal,u:0,v:0}}/>,{x:-terminal.depth-105,y:-135,width:terminal.width+terminal.depth+160,height:(terminal.width+terminal.depth)/2+230});return {...sprite,x:sprite.x+point.x,y:sprite.y+point.y,depth:terminal.u+terminal.v+terminal.width/2+terminal.depth,name:terminal.service,terminal:terminal.id};}));
  scenery.push(...terminalSprites);
@@ -49,17 +50,17 @@ export async function createSprites(){
   }
   for(const kind of kinds){const frames=await vehicleAtlas(topic,kind,raster);for(const waiting of [false,true])for(let angle=0;angle<articulatedAngles;angle++)vehicles.set(`${topic}-${kind}-${angle}-${waiting}`,frames[Number(waiting)*articulatedAngles+angle]);}
  }
- const props=await raster(<><IsoLamp u={430} v={435}/><IsoLamp u={670} v={625}/><IsoShrub u={390} v={210}/></>,mapBounds);
+ const props=await raster(<><IsoLamp u={430} v={435}/><IsoLamp u={670} v={625}/><IsoShrub u={390} v={210}/></>,{x:-90,y:170,width:330,height:550});
  const worlds=new Map<string,HTMLCanvasElement>();
  function worldForFocus(focus:string){
  const existing=worlds.get(focus);if(existing)return existing;
  const world=document.createElement('canvas');world.width=terrain.image.width;world.height=terrain.image.height;
  const drawing=context(world);drawing.setTransform(quality,0,0,quality,-mapBounds.x*quality,-mapBounds.y*quality);
  drawing.drawImage(terrain.image,mapBounds.x,mapBounds.y,mapBounds.width,mapBounds.height);
- drawing.drawImage(bridgeStructures.image,mapBounds.x,mapBounds.y,mapBounds.width,mapBounds.height);
+ for(const structure of bridgeStructures)drawing.drawImage(structure.image,structure.x,structure.y,structure.width,structure.height);
  roads.forEach((road,index)=>{drawing.globalAlpha=focus==='all'||focus===Object.keys(topics)[index]?1:.23;drawing.drawImage(road.image,mapBounds.x,mapBounds.y,mapBounds.width,mapBounds.height);});
  for(const sprite of scenery){drawing.globalAlpha=!sprite.name||focus==='all'||[...services[sprite.name].produces,...services[sprite.name].consumes].includes(focus as 'orders'|'payments')?1:.3;drawing.drawImage(sprite.image,sprite.x,sprite.y,sprite.width,sprite.height);}
- drawing.globalAlpha=1;drawing.drawImage(props.image,mapBounds.x,mapBounds.y,mapBounds.width,mapBounds.height);if(worlds.size>=3){const oldest=[...worlds.keys()].find(key=>key!=='all');if(oldest!==undefined)worlds.delete(oldest);}worlds.set(focus,world);return world;
+ drawing.globalAlpha=1;drawing.drawImage(props.image,props.x,props.y,props.width,props.height);if(worlds.size>=2){const oldest=[...worlds.keys()].find(key=>key!=='all');if(oldest!==undefined)worlds.delete(oldest);}worlds.set(focus,world);return world;
  }
  if(revision!==scenarioRevision)throw new Error('Scenario changed while preparing sprites; the previous render was cancelled.');
  worldForFocus('all');

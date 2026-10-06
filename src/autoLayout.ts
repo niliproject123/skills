@@ -11,8 +11,8 @@ export function computeLayout(topology:TopologyModel,overrides:LayoutModel):Reco
   const producers=topology.producers.filter(item=>item.serviceId===id),groups=topology.consumerGroups.filter(item=>item.serviceId===id);
   const laneCount=Math.max(1,...topology.topics.filter(topic=>producers.some(item=>item.topicId===topic.id)||groups.some(group=>group.topicIds.includes(topic.id))).map(topic=>topic.partitionCount));
   const driveway=60+laneCount*11+22+116;
-  const bayWidth=Math.max(150,...groups.map(group=>(group.consumerCount+1)*34));
-  const area={width:Math.max(width+90+driveway,groups.length>1?bayWidth*2+65:bayWidth)+110,depth:Math.max(depth+100+35+Math.max(0,Math.ceil(groups.length/2)-1)*475+driveway,producers.reduce((total,item)=>total+(item.producerCount+1)*34+40,depth))+110};campusFootprints.set(id,area);return area;
+  const bayWidth=Math.max(150,...groups.map(group=>Math.max((group.consumerCount+1)*34,group.topicIds.length>1?group.topicIds.reduce((sum,id)=>sum+topology.topics.find(topic=>topic.id===id)!.partitionCount*22,0)+(group.topicIds.length-1)*Math.max(96,28+(laneCount*11+18)/2)+24:0)));
+  const area={width:Math.max(width+90+driveway,groups.length>1?bayWidth*2+180:bayWidth)+110,depth:Math.max(depth+100+35+Math.max(0,Math.ceil(groups.length/2)-1)*475+driveway,producers.reduce((total,item)=>total+(item.producerCount+1)*34+160,depth))+110};campusFootprints.set(id,area);return area;
  };
  const campusWidth=Math.max(...cluster.map(id=>footprint(id).width)),campusDepth=Math.max(...cluster.map(id=>footprint(id).depth));
  const columnsFor=(role:string)=>cluster.filter(id=>serviceRole(topology,id)===role).length>3?2:1;
