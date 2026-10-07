@@ -1,5 +1,5 @@
 import {bridgePoint} from './bridgeGeometry';
-import {roadCacheBounds} from './roadCacheBounds';
+import {roadCacheBounds,worldCacheScale} from './roadCacheBounds';
 import {articulatedAngles} from './IsoArticulatedSprite';
 import {vehicleAtlas,type VehicleSpriteKind} from './vehicleAtlas';
 import {renderModel,scenarioRevision} from './scenarioRuntime';
@@ -25,19 +25,21 @@ const quality=1;
 const treeSprites=new Map<number,Promise<Sprite>>();
 const markupRenderer=import('react-dom/server');
 export function context(canvas:HTMLCanvasElement){const drawing=canvas.getContext('2d');if(!drawing)throw new Error('Canvas 2D is unavailable');return drawing;}
-async function raster(node:ReactNode,bounds:Bounds):Promise<Sprite>{
+async function raster(node:ReactNode,bounds:Bounds,resolution=quality):Promise<Sprite>{
  const {renderToStaticMarkup}=await markupRenderer;
- const markup=renderToStaticMarkup(<svg xmlns="http://www.w3.org/2000/svg" width={bounds.width*quality} height={bounds.height*quality} viewBox={`${bounds.x} ${bounds.y} ${bounds.width} ${bounds.height}`} style={{fontFamily:'system-ui,sans-serif'}}>{node}</svg>);
+ const markup=renderToStaticMarkup(<svg xmlns="http://www.w3.org/2000/svg" width={bounds.width*resolution} height={bounds.height*resolution} viewBox={`${bounds.x} ${bounds.y} ${bounds.width} ${bounds.height}`} style={{fontFamily:'system-ui,sans-serif'}}>{node}</svg>);
  const url=URL.createObjectURL(new Blob([markup],{type:'image/svg+xml'}));
- try{const image=new Image();image.src=url;await image.decode();const canvas=document.createElement('canvas');canvas.width=Math.ceil(bounds.width*quality);canvas.height=Math.ceil(bounds.height*quality);context(canvas).drawImage(image,0,0);return {...bounds,image:canvas};}finally{URL.revokeObjectURL(url);}
+ try{const image=new Image();image.src=url;await image.decode();const canvas=document.createElement('canvas');canvas.width=Math.ceil(bounds.width*resolution);canvas.height=Math.ceil(bounds.height*resolution);context(canvas).drawImage(image,0,0);return {...bounds,image:canvas};}finally{URL.revokeObjectURL(url);}
 }
 export async function createSprites(){
  const revision=scenarioRevision,mapBounds={...renderModel.worldBounds};
- const terrain=await raster(<><CityTerrain/><ServiceYards/></>,mapBounds);
+ const roadBounds=Object.fromEntries(Object.keys(topics).map(topic=>[topic,roadCacheBounds(topic,renderModel.cityRoutes,terminals)]));
+ const staticScale=worldCacheScale(mapBounds,Object.values(roadBounds).reduce((sum,bounds)=>sum+bounds.width*bounds.height,0));
+ const terrain=await raster(<><CityTerrain/><ServiceYards/></>,mapBounds,staticScale);
  const bridgeStructures:Sprite[]=[];
  for(const bridge of overpasses){const half=bridge.lanes*11+40,end=bridge.start+bridge.ramp*2+bridge.deck,corners=[bridge.start,end].flatMap(along=>[-half,half].flatMap(across=>[0,bridge.height].map(height=>{const point=bridgePoint(bridge,along,across);return project(point.u,point.v,height);}))),x=Math.min(...corners.map(point=>point.x))-20,y=Math.min(...corners.map(point=>point.y))-20;bridgeStructures.push(await raster(<IsoOverpass bridge={bridge} part="structure"/>,{x,y,width:Math.max(...corners.map(point=>point.x))-x+40,height:Math.max(...corners.map(point=>point.y))-y+40}));}
  const roads:Sprite[]=[];
- for(const topic of Object.keys(topics))roads.push(await raster(<><IsoRoad label={topic} topic={topic} segments={roadSegments(topic)}/>{terminals.filter(terminal=>terminal.topics.includes(topic)).map(terminal=><IsoTerminalConnection key={terminal.id} terminal={terminal} topic={topic}/>)}</>,roadCacheBounds(topic,renderModel.cityRoutes,terminals)));
+ for(const topic of Object.keys(topics))roads.push(await raster(<><IsoRoad label={topic} topic={topic} segments={roadSegments(topic)}/>{terminals.filter(terminal=>terminal.topics.includes(topic)).map(terminal=><IsoTerminalConnection key={terminal.id} terminal={terminal} topic={topic}/>)}</>,roadBounds[topic],staticScale));
  const scenery:Scenery[]=await Promise.all((Object.keys(cityBuildings) as Service[]).map(async name=>{const building=cityBuildings[name],point=project(building.u,building.v);const sprite=await raster(<IsoBuilding mainOnly name={name} layout={{...building,u:0,v:0}} onSelect={()=>{}}/>,{x:-building.depth-45,y:-270,width:building.width+building.depth+100,height:470});return {...sprite,x:sprite.x+point.x,y:sprite.y+point.y,depth:building.u+building.v+building.width/2+building.depth,name};}));
  const terminalSprites=await Promise.all(terminals.map(async terminal=>{const point=project(terminal.u,terminal.v);const sprite=await raster(<IsoTerminal terminal={{...terminal,u:0,v:0}}/>,{x:-terminal.depth-105,y:-135,width:terminal.width+terminal.depth+160,height:(terminal.width+terminal.depth)/2+230});return {...sprite,x:sprite.x+point.x,y:sprite.y+point.y,depth:terminal.u+terminal.v+terminal.width/2+terminal.depth,name:terminal.service,terminal:terminal.id};}));
  scenery.push(...terminalSprites);
@@ -57,7 +59,7 @@ export async function createSprites(){
  function worldForFocus(focus:string){
  const existing=worlds.get(focus);if(existing)return existing;
  const world=document.createElement('canvas');world.width=terrain.image.width;world.height=terrain.image.height;
- const drawing=context(world);drawing.setTransform(quality,0,0,quality,-mapBounds.x*quality,-mapBounds.y*quality);
+ const drawing=context(world);drawing.setTransform(staticScale,0,0,staticScale,-mapBounds.x*staticScale,-mapBounds.y*staticScale);
  drawing.drawImage(terrain.image,mapBounds.x,mapBounds.y,mapBounds.width,mapBounds.height);
  for(const structure of bridgeStructures)drawing.drawImage(structure.image,structure.x,structure.y,structure.width,structure.height);
  roads.forEach((road,index)=>{drawing.globalAlpha=focus==='all'||focus===Object.keys(topics)[index]?1:.23;drawing.drawImage(road.image,road.x,road.y,road.width,road.height);});

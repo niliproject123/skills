@@ -48,6 +48,6 @@ export function worldGeometry(config:LayoutConfiguration,buildings:DerivedRender
  let x=Math.min(...projected.map(p=>p.x))-80,y=Math.min(...projected.map(p=>p.y))-260,maxX=Math.max(...projected.map(p=>p.x))+80,maxY=Math.max(...projected.map(p=>p.y))+60;
  if(config.layout.worldBounds){const bounds=config.layout.worldBounds;x=Math.min(x,bounds.x);y=Math.min(y,bounds.y);maxX=Math.max(maxX,bounds.x+bounds.width);maxY=Math.max(maxY,bounds.y+bounds.height);}
  const bounds={x,y,width:maxX-x,height:maxY-y};
- if(bounds.width>8000||bounds.height>8000||bounds.width*bounds.height>20000000)throw new Error('Layout exceeds the supported Canvas cache size. Move services/waypoints closer together.');
+ if(bounds.width>12000||bounds.height>12000||bounds.width*bounds.height>80000000)throw new Error('Layout exceeds the supported world size. Move services/waypoints closer together.');
  return {terrain,bounds};
 }

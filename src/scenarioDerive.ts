@@ -1,5 +1,5 @@
 import {labelAnchors} from './labelGeometry';
-import {roadCacheBounds} from './roadCacheBounds';
+import {roadCacheBounds,worldCacheScale} from './roadCacheBounds';
 import {computeLayout} from './mapLayout';
 import type {ScenarioConfig,DerivedRenderModel,Route} from './scenarioTypes';
 import {automaticColor,snapshotPartitions,tint,groupSnapshot} from './scenarioEncoding';
@@ -28,6 +28,8 @@ export function deriveScenario(input:ScenarioConfig):DerivedRenderModel {
  for(const group of consumerGroups)group.waiting=routes.filter(route=>route.terminal===group.id).reduce((sum,route)=>sum+route.queue,0);
  const geometry=worldGeometry(config,buildings,terminals,routes);
  const roadPixels=config.topology.topics.reduce((sum,topic)=>{const bounds=roadCacheBounds(topic.id,routes,terminals);return sum+bounds.width*bounds.height;},0);
- if(geometry.bounds.width*geometry.bounds.height*3+roadPixels+12000000>100000000)throw new Error('Scene exceeds the Canvas cache memory budget. Use a more compact layout or fewer topics.');
+ const cacheScale=worldCacheScale(geometry.bounds,roadPixels);
+ if(cacheScale<.5)throw new Error('Scene exceeds the Canvas cache memory budget at 50% static map resolution. Reduce the layout size or number of topics.');
+ if((geometry.bounds.width*geometry.bounds.height*3+roadPixels)*cacheScale*cacheScale+12000000>100000000)throw new Error('Scene exceeds the Canvas cache memory budget. Reduce the layout size or number of topics.');
  return {labelAnchors:labelAnchors(config,buildings,terminals,routes),services,topics,producers,consumerGroups,partitionLoads,cityBuildings:buildings,terminals,cityRoutes:routes,themes,terrainOutline:geometry.terrain,worldBounds:geometry.bounds,visualization:structuredClone(visual),overpasses:layout.overpasses.map(bridge=>({...bridge,lanes:topics[bridge.topic].partitions,depth:bridge.u+bridge.v+45}))};
 }

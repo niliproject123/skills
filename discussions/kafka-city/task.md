@@ -278,3 +278,13 @@ Turn rejection now uses the same rounded-road envelope as roadEdgeBlocked. Physi
 Verification: npx tsc --noEmit passed. No runtime, browser, build, unit or performance tests were run under the user's TypeScript-only instruction. Mocked data: none. Successful application of the large preset remains unverified. No packages were installed.
 
 Branch codex/kafka-city; discussion discussions/kafka-city; task task.md; Windows / Node 20.19.0 / npm 10.8.2 / Vite 6.4.3; configured Vite port 5173; application credentials none.
+
+## 2026-10-07 restore routing rules and expand large-city layout
+
+User correction: the routing constraints should remain intact; the services needed more space. Restored the original turn-clearance and future-driveway reservation rules, reversing the previous clearance change. Expanded the 15-service / 35-topic preset campus grid from 560 by 780 to 1000 by 1750, producer dock spacing from 128 to 320, and receiving-yard setback from 500 to 1200.
+
+The larger logical world uses reduced-resolution terrain and road caches within the existing Canvas memory budget, with a minimum supported static resolution of 50%. Building and vehicle sprites retain full resolution. Logical world limits now accommodate the expanded map, while oversized cache allocations still produce explicit errors.
+
+Verification: npx tsc --noEmit passed after the final source change. Only TypeScript was checked; no runtime, browser, build, unit or performance tests were run. Mocked data: none. Successful routing of the large preset remains runtime-unverified. No packages were installed. Git reported LF-to-CRLF warnings for largeCityPreset.ts and roadCacheBounds.ts.
+
+Branch codex/kafka-city; discussion discussions/kafka-city; task task.md; Windows / Node 20.19.0 / npm 10.8.2 / Vite 6.4.3; configured Vite port 5173; application credentials none.

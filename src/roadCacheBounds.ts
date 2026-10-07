@@ -1,6 +1,12 @@
 import type {Route,Terminal} from './scenarioTypes';
 import {project} from './isometric';
 
+// Large world coordinates do not require equally large backing images.
+// Keep static terrain/road caches within the same allocation budget.
+export function worldCacheScale(bounds:{width:number;height:number},roadPixels:number){
+ return Math.min(1,Math.sqrt(76000000/(Math.ceil(bounds.width)*Math.ceil(bounds.height)*3+roadPixels)));
+}
+
 export function roadCacheBounds(topic:string,routes:Route[],terminals:Terminal[]){
  const roads=routes.filter(route=>route.topic===topic),yards=terminals.filter(terminal=>terminal.topics.includes(topic));
  const points=[...roads.flatMap(route=>route.points),...yards.flatMap(terminal=>[
