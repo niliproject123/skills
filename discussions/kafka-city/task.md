@@ -260,3 +260,11 @@ Verification: final npx tsc --noEmit passed. No runtime, browser, build, unit or
 Source lookup errors: rg rejected wildcard paths supplied as literal Windows paths; the search was corrected to use glob flags. vehicleAtlas.ts did not exist; discovery located vehicleAtlas.tsx, which was then read. No packages were installed. Git reported LF-to-CRLF warnings for edited/new text files.
 
 Branch codex/kafka-city; discussion discussions/kafka-city; task task.md; Windows / Node 20.19.0 / npm 10.8.2 / Vite 6.4.3; configured Vite port 5173; application credentials none.
+
+## 2026-10-07 preset load applies the city
+
+Root cause: Load preset only replaced the editor draft and required a separate Apply action, so the city remained on Demo. Load preset now validates and applies the selected configuration immediately. Its reset baseline updates only after successful application. The scenario section displays the active city's name and service/topic counts; success reports the applied counts. Routing/validation exceptions are displayed and logged, with an explicit message that the existing city remains active.
+
+Verification: npx tsc --noEmit passed. No runtime, browser, build, unit or performance tests were run, following the TypeScript-only instruction. Mocked data: none. Large-city route derivation remains unverified.
+
+Branch codex/kafka-city; discussion discussions/kafka-city; task task.md; Windows / Node 20.19.0 / npm 10.8.2 / Vite 6.4.3; configured Vite port 5173; application credentials none.
