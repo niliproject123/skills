@@ -19,7 +19,7 @@ try{
  assert.equal(Object.keys(renderModel.topics).length,4);
  const {createPreset,presetNames}=await source('scenarioPresets');
  const {deriveScenario}=await source('scenarioDerive');
- for(const name of presetNames){const model=deriveScenario(createPreset(name));assert.equal(Object.keys(model.services).length,7);assert.equal(Object.keys(model.topics).length,4);console.log(`PASS startup: ${name}, ${model.cityRoutes.length} routes, ${model.overpasses.length} bridges`);}
+ for(const name of presetNames){const model=deriveScenario(createPreset(name)),large=name==='Large city (15 services, 35 topics)';assert.equal(Object.keys(model.services).length,large?15:7);assert.equal(Object.keys(model.topics).length,large?35:4);console.log(`PASS startup: ${name}, ${model.cityRoutes.length} routes, ${model.overpasses.length} bridges`);}
  console.log('Mocked data: none. Uses actual default topology, presets, validation and route derivation.');
 }finally{
  if(dirname(resolve(directory))!==resolve(tmpdir()))throw new Error('Unexpected temporary directory; cleanup cancelled.');

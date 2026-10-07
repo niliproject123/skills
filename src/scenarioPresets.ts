@@ -1,10 +1,13 @@
 import {presetTopology} from './presetTopology';
+import {largeCityPreset} from './largeCityPreset';
 import {defaultScenario} from './scenarioDefault';
 import type {ScenarioConfig} from './scenarioTypes';
-export const presetNames=['Demo','Normal','Hot partition','Consumer lag','Recovering consumer','High throughput','Many groups'] as const;
+export const presetNames=['Demo','Normal','Hot partition','Consumer lag','Recovering consumer','High throughput','Many groups','Large city (15 services, 35 topics)'] as const;
 export type PresetName=typeof presetNames[number];
 export function createPreset(name:PresetName):ScenarioConfig {
- const config=structuredClone(defaultScenario);config.metadata.name=name;config.metadata.id=name.toLowerCase().replaceAll(' ','-');presetTopology(config,name);
+ const config=structuredClone(defaultScenario);config.metadata.name=name;config.metadata.id=name.toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/-$/,'');
+ if(name==='Large city (15 services, 35 topics)'){largeCityPreset(config);return config;}
+ presetTopology(config,name);
  if(name==='Normal')for(const group of config.topology.consumerGroups){config.state.consumerGroups[group.id]={lag:0,consumptionRate:group.topicIds.reduce((sum,id)=>sum+config.state.topics[id].messagesPerSecond,0)};}
  if(name==='Hot partition')config.state.topics.orders.partitionOverrides={'3':8500};
  if(name==='Consumer lag')config.state.consumerGroups['notification-delivery']={lag:100000,consumptionRate:900};

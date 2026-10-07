@@ -244,3 +244,19 @@ Output docks use thicker orange frames, a hexagonal header and a large filled ou
 Verification: npx tsc --noEmit passed. No runtime, browser, build, unit or performance tests were run. Mocked data: none. Visual results and previously reported larger preset routing errors remain unverified. A read of IsoGate.tsx failed because IsoGate is defined in IsoBuilding.tsx; that implementation was read and edited. No packages were installed.
 
 Branch codex/kafka-city; discussion discussions/kafka-city; task task.md; Windows / Node 20.19.0 / npm 10.8.2 / Vite 6.4.3; configured Vite port 5173; application credentials none.
+
+## 2026-10-07 vehicle legend, item tabs, large preset and outgoing dock joins
+
+The bottom legend uses VehiclePreview drawings for car, van, truck, semi and multi-trailer. Ranges update from configured thresholds and are labeled messages/s per partition because that is the actual vehicle-class selection input. The waiting marker is explained separately. Single-trailer-only configurations omit the multi-trailer entry.
+
+Clicking a service, topic, output dock or receiving yard opens a focused item configuration tab. Multiple clicked items remain available as closable tabs. Existing service/topic/group forms support focused mode, and output docks have their own producer settings. The Configure button retains the general editor in the right sidebar and does not change sections when map items are clicked. Draft errors appear inside the item panel.
+
+Added Large city (15 services, 35 topics): a connected 5-by-3 grid of services, 22 neighbor links plus 13 additional event streams, 35 producer docks, receiving groups with multiple topic approaches, sample Kafka rates and lag, and a 200-vehicle cap. The topic validation limit is now 64; the service limit remains 16. Topic road sprites are cropped to their route/yard bounds, generated sequentially and composited at their own coordinates. The existing total memory budget is retained and estimates cropped road areas instead of 35 full-map layers.
+
+Direct approach selection is shared by incoming and outgoing docks. It also applies to the first producer/root before the shared network is constructed, which was excluded from the earlier consumer-only fix. Collision checks remain enforced.
+
+Verification: final npx tsc --noEmit passed. No runtime, browser, build, unit or performance tests were run under the user's TypeScript-only restriction. Mocked data: none. Updated the existing startup diagnostic's expected service/topic counts for the new preset but did not run it. The preset contains intentionally simulated example state. Large-preset routing/rendering, outgoing loop removal and UI layout remain unverified; previously reported preset routing failures were not rechecked.
+
+Source lookup errors: rg rejected wildcard paths supplied as literal Windows paths; the search was corrected to use glob flags. vehicleAtlas.ts did not exist; discovery located vehicleAtlas.tsx, which was then read. No packages were installed. Git reported LF-to-CRLF warnings for edited/new text files.
+
+Branch codex/kafka-city; discussion discussions/kafka-city; task task.md; Windows / Node 20.19.0 / npm 10.8.2 / Vite 6.4.3; configured Vite port 5173; application credentials none.

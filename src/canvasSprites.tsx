@@ -1,4 +1,5 @@
 import {bridgePoint} from './bridgeGeometry';
+import {roadCacheBounds} from './roadCacheBounds';
 import {articulatedAngles} from './IsoArticulatedSprite';
 import {vehicleAtlas,type VehicleSpriteKind} from './vehicleAtlas';
 import {renderModel,scenarioRevision} from './scenarioRuntime';
@@ -35,7 +36,8 @@ export async function createSprites(){
  const terrain=await raster(<><CityTerrain/><ServiceYards/></>,mapBounds);
  const bridgeStructures:Sprite[]=[];
  for(const bridge of overpasses){const half=bridge.lanes*11+40,end=bridge.start+bridge.ramp*2+bridge.deck,corners=[bridge.start,end].flatMap(along=>[-half,half].flatMap(across=>[0,bridge.height].map(height=>{const point=bridgePoint(bridge,along,across);return project(point.u,point.v,height);}))),x=Math.min(...corners.map(point=>point.x))-20,y=Math.min(...corners.map(point=>point.y))-20;bridgeStructures.push(await raster(<IsoOverpass bridge={bridge} part="structure"/>,{x,y,width:Math.max(...corners.map(point=>point.x))-x+40,height:Math.max(...corners.map(point=>point.y))-y+40}));}
- const roads=await Promise.all(Object.keys(topics).map(topic=>raster(<><IsoRoad label={topic} topic={topic} segments={roadSegments(topic)}/>{terminals.filter(terminal=>terminal.topics.includes(topic)).map(terminal=><IsoTerminalConnection key={terminal.id} terminal={terminal} topic={topic}/>)}</>,mapBounds)));
+ const roads:Sprite[]=[];
+ for(const topic of Object.keys(topics))roads.push(await raster(<><IsoRoad label={topic} topic={topic} segments={roadSegments(topic)}/>{terminals.filter(terminal=>terminal.topics.includes(topic)).map(terminal=><IsoTerminalConnection key={terminal.id} terminal={terminal} topic={topic}/>)}</>,roadCacheBounds(topic,renderModel.cityRoutes,terminals)));
  const scenery:Scenery[]=await Promise.all((Object.keys(cityBuildings) as Service[]).map(async name=>{const building=cityBuildings[name],point=project(building.u,building.v);const sprite=await raster(<IsoBuilding mainOnly name={name} layout={{...building,u:0,v:0}} onSelect={()=>{}}/>,{x:-building.depth-45,y:-270,width:building.width+building.depth+100,height:470});return {...sprite,x:sprite.x+point.x,y:sprite.y+point.y,depth:building.u+building.v+building.width/2+building.depth,name};}));
  const terminalSprites=await Promise.all(terminals.map(async terminal=>{const point=project(terminal.u,terminal.v);const sprite=await raster(<IsoTerminal terminal={{...terminal,u:0,v:0}}/>,{x:-terminal.depth-105,y:-135,width:terminal.width+terminal.depth+160,height:(terminal.width+terminal.depth)/2+230});return {...sprite,x:sprite.x+point.x,y:sprite.y+point.y,depth:terminal.u+terminal.v+terminal.width/2+terminal.depth,name:terminal.service,terminal:terminal.id};}));
  scenery.push(...terminalSprites);
@@ -58,7 +60,7 @@ export async function createSprites(){
  const drawing=context(world);drawing.setTransform(quality,0,0,quality,-mapBounds.x*quality,-mapBounds.y*quality);
  drawing.drawImage(terrain.image,mapBounds.x,mapBounds.y,mapBounds.width,mapBounds.height);
  for(const structure of bridgeStructures)drawing.drawImage(structure.image,structure.x,structure.y,structure.width,structure.height);
- roads.forEach((road,index)=>{drawing.globalAlpha=focus==='all'||focus===Object.keys(topics)[index]?1:.23;drawing.drawImage(road.image,mapBounds.x,mapBounds.y,mapBounds.width,mapBounds.height);});
+ roads.forEach((road,index)=>{drawing.globalAlpha=focus==='all'||focus===Object.keys(topics)[index]?1:.23;drawing.drawImage(road.image,road.x,road.y,road.width,road.height);});
  for(const sprite of scenery){drawing.globalAlpha=!sprite.name||focus==='all'||[...services[sprite.name].produces,...services[sprite.name].consumes].includes(focus as 'orders'|'payments')?1:.3;drawing.drawImage(sprite.image,sprite.x,sprite.y,sprite.width,sprite.height);}
  drawing.globalAlpha=1;drawing.drawImage(props.image,props.x,props.y,props.width,props.height);if(worlds.size>=2){const oldest=[...worlds.keys()].find(key=>key!=='all');if(oldest!==undefined)worlds.delete(oldest);}worlds.set(focus,world);return world;
  }

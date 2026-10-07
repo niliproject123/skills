@@ -12,7 +12,7 @@ export function validateScenario(value:unknown):ScenarioConfig {
  const config=object(value,'configuration');if(config.version!==1)fail('version','only schema version 1 is supported');
  const metadata=object(config.metadata,'metadata');text(metadata.id,'metadata.id',true);text(metadata.name,'metadata.name');
  const topology=object(config.topology,'topology');
- const services=list(topology.services,'topology.services',0,16),topics=list(topology.topics,'topology.topics',0,16),producers=list(topology.producers,'topology.producers',0,64),groups=list(topology.consumerGroups,'topology.consumerGroups',0,64);
+ const services=list(topology.services,'topology.services',0,16),topics=list(topology.topics,'topology.topics',0,64),producers=list(topology.producers,'topology.producers',0,64),groups=list(topology.consumerGroups,'topology.consumerGroups',0,64);
  const serviceIds=unique(services,'services'),topicIds=unique(topics,'topics'),producerIds=unique(producers,'producers'),groupIds=unique(groups,'consumerGroups');
  for(const groupId of groupIds)if(producerIds.has(groupId))fail('terminals',`producer/group IDs must be distinct: ${groupId}`);
  services.forEach(service=>text(service.name,`service ${service.id}.name`));
