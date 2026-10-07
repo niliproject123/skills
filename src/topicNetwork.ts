@@ -1,7 +1,7 @@
-import {roadReservations,roadTurnBlocked} from './roadClearance';
+import {roadReservations,roadTurnBlocked,roadEdgeBlocked} from './roadClearance';
 import type {LayoutConfiguration,Point,Route,Terminal} from './scenarioTypes';
 import {computeLayout} from './autoLayout';
-import {bayPosition,dockApproachLength} from './terminalConnection';
+import {bayPosition,connectionPosition,connectionLength,dockApproachLength} from './terminalConnection';
 import {shortestRoad} from './shortestRoad';
 
 type Edge={from:Point;to:Point};
@@ -32,7 +32,26 @@ export function planTopicNetwork(config:LayoutConfiguration,terminals:Terminal[]
  const edges:Edge[]=[],root=participants[0],rootPoint=ports.get(root.id)!;
  // Connect nearby ports before distant branches can enclose their approaches.
  for(const terminal of participants.slice(1).sort((a,b)=>distance(ports.get(a.id)!,rootPoint)-distance(ports.get(b.id)!,rootPoint))){
-  const port=ports.get(terminal.id)!;
+  let port=ports.get(terminal.id)!;
+  if(!terminal.producer){
+   const bay=bayPosition(terminal,topic),paved=connectionPosition(terminal,topic),direction=outward(terminal),minimum=connectionLength+8;
+   const usable=(point:Point)=>{
+    if(distance(bay,point)<minimum||distance(bay,point)>distance(bay,port)||roadEdgeBlocked(paved,point,reserved,lanes*11+18))return false;
+    return !obstacles.some(area=>area!==terminal&&(direction.u
+     ? point.v>area.v-clearance&&point.v<area.v+area.depth+clearance&&Math.max(paved.u,point.u)>area.u-clearance&&Math.min(paved.u,point.u)<area.u+area.width+clearance
+     : point.u>area.u-clearance&&point.u<area.u+area.width+clearance&&Math.max(paved.v,point.v)>area.v-clearance&&Math.min(paved.v,point.v)<area.v+area.depth+clearance));
+   };
+   // Join an existing trunk before an artificial setback pushes the branch
+   // beyond it. A direct T-junction does not need a remote turning point.
+   const contacts=intersections(paved,port,edges).map(contact=>contact.point).filter(usable).sort((a,b)=>distance(bay,a)-distance(bay,b));
+   if(contacts.length)port=contacts[0];
+   else{
+    const neighbors=edges.length?edges.flatMap(edge=>[edge.from,edge.to]):[rootPoint];
+    const aligned=neighbors.map(point=>direction.u?{u:point.u,v:bay.v}:{u:bay.u,v:point.v}).filter(point=>(point.u-bay.u)*direction.u+(point.v-bay.v)*direction.v>0&&usable(point)).sort((a,b)=>distance(bay,a)-distance(bay,b));
+    if(aligned.length)port=aligned[0];
+   }
+   ports.set(terminal.id,port);
+  }
   const nearest=edges.length?edges.map(edge=>edge.from.u===edge.to.u?{u:edge.from.u,v:Math.max(Math.min(edge.from.v,edge.to.v),Math.min(Math.max(edge.from.v,edge.to.v),port.v))}:{u:Math.max(Math.min(edge.from.u,edge.to.u),Math.min(Math.max(edge.from.u,edge.to.u),port.u)),v:edge.from.v}):[rootPoint];
   const candidates=edges.length?[...nearest,...edges.flatMap(edge=>[edge.from,edge.to,{u:(edge.from.u+edge.to.u)/2,v:(edge.from.v+edge.to.v)/2}])].filter(point=>isDockPort(point)||!roadTurnBlocked(point,reserved,lanes*11+18)):nearest;
   const target=candidates.sort((a,b)=>distance(port,a)-distance(port,b))[0];

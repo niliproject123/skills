@@ -35,7 +35,7 @@ Reworked simulation: 74 total vehicles, five Analytics queue vehicles, fourteen 
 Validation: npm test executes actual application modules with no mocked data. It checks the exact 2:1 projection, road axis/lane invariants, shared branch, receiving-wall endpoints, 60 simulated seconds with finite positions, and continuous queue advancement across consumption intervals. Browser checks confirm 13 gates, 74 vehicles, 19 waiting vehicles, pause retaining positions, gate and physical-road selection, pan, and zoom. No new packages installed. The TypeScript depth-sort inference error was corrected with an explicit Element|null type. Screenshot: kafka-city-isometric.jpg.
 
 
-## Canvas renderer and physical Kafka terminals — October 5, 2026
+## Canvas renderer and physical Kafka terminals ï¿½ October 5, 2026
 
 Retained rounded 2:1 artwork and implemented two Canvas 2D layers. Static terrain, roads, campuses, buildings, terminals and trees are rasterized and cached once; moving vehicles use cached directional sprites. Camera transforms, viewport culling, requestAnimationFrame and reused draw records replace world DOM updates. Default traffic is capped; ?stress=200 runs an explicit stress scenario.
 
@@ -52,7 +52,7 @@ Branch: codex/kafka-city. Discussion folder: discussions/kafka-city. Task file: 
 Final validation also selected analytics-audit from its physical receiving booth. Default simulation has 72 vehicle heads. Fixed the TypeScript unreachable truck-kind comparison identified during the final build; subsequent build passed. Removed the decorative SERVICE HOUSE text from default building sprites.
 
 
-## Anchored signs and road/dock clearance — October 5, 2026
+## Anchored signs and road/dock clearance ï¿½ October 5, 2026
 
 Kept neutral asphalt, adding subtle orange/lavender topic edge stripes, repeating small road markers, matching terminal trim and sign accents. Compact screen-horizontal sign plates have thin poles ending at projected rooftop or roadside origins. Group signs are hidden by default and revealed for hovered/selected yards or close zoom.
 
@@ -61,7 +61,7 @@ Road rectangles now stop at their endpoints; rounded joins exist only at interio
 Tests execute actual road geometry, layouts and simulation, without mocked data. New checks prove paved footprints and bend bounds do not intersect solid buildings and verify straight bridge landing clearance and the four ramp/deck heights. Browser verified six default anchored signs and a seventh consumer-group sign on selection, with the correct consumer-group metrics. No new packages installed. Screenshot: kafka-city-anchored-signs.jpg.
 
 
-## Terminal apron/driveway sequence and topic vehicle families — October 5, 2026
+## Terminal apron/driveway sequence and topic vehicle families ï¿½ October 5, 2026
 
 Every producer/consumer terminal now has a warm concrete loading/receiving apron and a separate gray driveway. Driveways taper into neutral asphalt through flared curb cuts and merge markings. Asphalt starts/ends 60 ground units from bay walls, preserving 28 units of apron plus 32 units of driveway. Shifted the orders trunk from v=365 to v=400 to preserve straight clearance before the Payment approach. Producers depart from individual bay positions; receivers converge across the connection toward their actual bay positions.
 
@@ -220,5 +220,15 @@ Consumer lag changes the gauge housing color (green/amber/red). The inner gauge 
 Added one shared dock approach length calculation: apron/driveway plus two 48-unit straight sections and the road corner radius. Topic routing, future driveway reservations and automatic campus footprints use this same calculation. Dock ports are exempt from the additional trunk/bridge turn setback that forced tight entrance detours; physical road-width and building collisions remain enforced. Ordinary trunk branch spacing stays enforced.
 
 Verification: npx tsc --noEmit passed. No runtime, browser, build, unit or performance tests were run, following the user's TypeScript-only instruction. Mocked data: none. Visual removal of every dock loop is unverified. The previously reported Hot partition routing failure and unverified later presets have not been runtime-checked in this iteration. Git reported an LF-to-CRLF warning for IsoRoundedBox.tsx.
+
+Branch codex/kafka-city; discussion discussions/kafka-city; task task.md; Windows / Node 20.19.0 / npm 10.8.2 / Vite 6.4.3; configured Vite port 5173; application credentials none.
+
+## 2026-10-07 direct dock joins and bridge hover highlights
+
+The prior change relaxed turn clearance but retained a fixed remote dock port. A nearby trunk could cross the driveway before that point, forcing the resulting branch to run outward and return to the receiving bay. Receiving ports now attach at the first clear existing-network contact along the driveway. When connecting to a network at a nearer approach coordinate, the port can align to that coordinate instead of overshooting it. Direct joins retain the apron/driveway plus an 8-unit transition; they do not require the long straight setback intended for remote bends. Collision checks still reject blocked approaches.
+
+Hover highlights previously used topicRoadGeometry, whose ground mesh intentionally removes bridge spans. Added explicit bridge centerlines through ramp foot, ramp crest, deck end and landing using the shared bridge position and height functions. Both bridge axes are supported. Ground highlights now stay at ground level.
+
+Verification: final npx tsc --noEmit passed; no runtime, browser, build, unit or performance tests. Mocked data: none. Visual behavior and previously reported larger preset routing errors remain unverified. A source read of roadRibbon.ts failed; the implementation was found in roadMesh.ts.
 
 Branch codex/kafka-city; discussion discussions/kafka-city; task task.md; Windows / Node 20.19.0 / npm 10.8.2 / Vite 6.4.3; configured Vite port 5173; application credentials none.
