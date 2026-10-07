@@ -5,10 +5,13 @@ import {services,type Service,type Selection,type Topic} from './model';
 export type BuildingLayout = GroundPoint & {width:number;depth:number};
 export function IsoGate({position,wall,producer,topic,name,onSelect}:{position:number;wall:'front'|'side';producer:boolean;topic:Topic;name:Service;onSelect:(value:Selection)=>void}) {
  const transform=wall==='front'?`matrix(1 .5 0 1 ${position} ${position/2})`:`matrix(-1 .5 0 1 ${-position} ${position/2})`;
+ const dockColor=producer?'#ffab46':'#63dcd2';
  return <g transform={transform} className="gate" role="button" tabIndex={0} aria-label={`${name} ${producer?'producer':'consumer'} gate ${position}`} onClick={event=>{event.stopPropagation();onSelect({kind:'gate',name,topic,producer});}} onKeyDown={event=>{if(event.key==='Enter'){event.stopPropagation();onSelect({kind:'gate',name,topic,producer});}}}>
  <title>{`${name} · ${producer?'Shipping':'Receiving'} · ${topic}`}</title>
- <path d="M-14 0V-27Q-14-38-3-38H3Q14-38 14-27V0" fill="#825f48" stroke="#ffe6ae" strokeWidth="5" strokeLinejoin="round"/><path d="M-10 0V-26Q-10-32-3-32H3Q10-32 10-26V0" fill="#263b3e"/><path d="M-10-26-5-24V0H-10Z" fill="#101f27"/><path d="M-9-29Q0-36 9-29L5-26H-5Z" fill="#5c7473"/><rect x="-17" y="-43" width="34" height="9" rx="4.5" fill={producer?'#ffc961':'#b9ead4'}/><path d="M-11-39h5m6 0h5" stroke="#647b62" strokeWidth="3" strokeLinecap="round"/>
- <path d={producer?'M0-24v14m-5-5 5 5 5-5':'M0-10v-14m-5 5 5-5 5 5'} fill="none" stroke={producer?'#ffcb6c':'#b9ecdf'} strokeWidth="2"/><rect x="-17" y="-4" width="4" height="7" fill="#e7bb59"/><rect x="13" y="-4" width="4" height="7" fill="#e7bb59"/>
+ <path d="M-14 0V-27Q-14-38-3-38H3Q14-38 14-27V0" fill="#825f48" stroke={dockColor} strokeWidth="6" strokeLinejoin="round"/><path d="M-10 0V-26Q-10-32-3-32H3Q10-32 10-26V0" fill="#20343a"/><path d="M-10-26-5-24V0H-10Z" fill="#101f27"/><path d="M-9-29Q0-36 9-29L5-26H-5Z" fill="#5c7473"/>
+ {producer?<path d="M-18-43-13-48H13L18-43 13-38H-13Z" fill={dockColor} stroke="#fff1c7" strokeWidth="1.5"/>:<rect x="-18" y="-48" width="36" height="10" rx="5" fill={dockColor} stroke="#e9ffed" strokeWidth="1.5"/>}
+ <path d="M-8-43H8" stroke="#344f4c" strokeWidth="3" strokeLinecap="round"/>
+ <path d={producer?'M-4-27H4V-17H9L0-6-9-17H-4Z':'M-4-6H4V-16H9L0-27-9-16H-4Z'} fill={dockColor} stroke="#fff5d8" strokeWidth="1.5" strokeLinejoin="round"/><rect x="-18" y="-4" width="5" height="7" rx="1" fill={dockColor}/><rect x="13" y="-4" width="5" height="7" rx="1" fill={dockColor}/>
  </g>;
 }
 export function IsoBuilding({name,layout,onSelect,selected=null,gateCount,mainOnly=false}:{name:Service;layout:BuildingLayout;onSelect:(value:Selection)=>void;selected?:Selection|null;gateCount?:number;mainOnly?:boolean}) {

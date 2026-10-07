@@ -3,6 +3,7 @@ import {overpasses} from './terminalLayout';
 import {bridgePoint,bridgeHeight,bridgeEnd} from './bridgeGeometry';
 import {services,topics,type Topic,type Selection} from './model';
 import {project} from './isometric';
+import {highlightDirections} from './highlightDirections';
 export function linked(topic:Topic,selected:Selection|null){return !selected||selected.kind==='topic'&&selected.name===topic||(selected.kind==='gate'||selected.kind==='terminal')&&selected.topic===topic||selected.kind==='service'&&[...services[selected.name].produces,...services[selected.name].consumes].includes(topic);}
 export function drawHighlights(drawing:CanvasRenderingContext2D,selection:Selection,scale:number){
  drawing.strokeStyle='#fff0a3';drawing.lineWidth=3/scale;drawing.globalAlpha=.8;
@@ -18,4 +19,13 @@ export function drawHighlights(drawing:CanvasRenderingContext2D,selection:Select
  }
 
  drawing.globalAlpha=1;
+ drawing.lineWidth=2/scale;drawing.lineCap='round';drawing.lineJoin='round';
+ for(const arrow of highlightDirections())if(linked(arrow.topic,selection)){
+  const forwardX=Math.cos(arrow.angle),forwardY=Math.sin(arrow.angle),length=7/scale,width=4/scale;
+  drawing.beginPath();
+  drawing.moveTo(arrow.x-forwardX*length-forwardY*width,arrow.y-forwardY*length+forwardX*width);
+  drawing.lineTo(arrow.x+forwardX*length,arrow.y+forwardY*length);
+  drawing.lineTo(arrow.x-forwardX*length+forwardY*width,arrow.y-forwardY*length-forwardX*width);
+  drawing.stroke();
+ }
 }

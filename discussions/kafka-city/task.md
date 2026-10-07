@@ -232,3 +232,15 @@ Hover highlights previously used topicRoadGeometry, whose ground mesh intentiona
 Verification: final npx tsc --noEmit passed; no runtime, browser, build, unit or performance tests. Mocked data: none. Visual behavior and previously reported larger preset routing errors remain unverified. A source read of roadRibbon.ts failed; the implementation was found in roadMesh.ts.
 
 Branch codex/kafka-city; discussion discussions/kafka-city; task task.md; Windows / Node 20.19.0 / npm 10.8.2 / Vite 6.4.3; configured Vite port 5173; application credentials none.
+
+## 2026-10-07 campus borders, flow arrows and dock roles
+
+Added a rectangular isometric outline around each microservice campus footprint, including its building and terminal yards. A cream edge and service-colored inner stroke keep boundaries readable against the terrain.
+
+Hover highlights now include screen-sized direction chevrons derived from actual producer-to-consumer route order. Arrow geometry is cached per scenario revision, deduplicated on shared paths and elevated using route-specific bridge travel spans. Opposite message directions can be indicated on shared roads.
+
+Output docks use thicker orange frames, a hexagonal header and a large filled outward arrow. Input docks use thicker turquoise frames, a rounded header and a large filled inward arrow. Bollards match the role color. Dock interiors retain their dark recessed appearance.
+
+Verification: npx tsc --noEmit passed. No runtime, browser, build, unit or performance tests were run. Mocked data: none. Visual results and previously reported larger preset routing errors remain unverified. A read of IsoGate.tsx failed because IsoGate is defined in IsoBuilding.tsx; that implementation was read and edited. No packages were installed.
+
+Branch codex/kafka-city; discussion discussions/kafka-city; task task.md; Windows / Node 20.19.0 / npm 10.8.2 / Vite 6.4.3; configured Vite port 5173; application credentials none.
