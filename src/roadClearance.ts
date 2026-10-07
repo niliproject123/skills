@@ -24,7 +24,7 @@ export function roadReservations(routes:Route[],terminals:Terminal[],topic:strin
   const definition=topics.find(item=>item.id===otherTopic);if(!definition)throw new Error(`Missing topic ${otherTopic} while reserving driveway ${terminal.id}.`);
   const width=definition.partitionCount,from=connectionPosition(terminal,otherTopic),bay=bayPosition(terminal,otherTopic),length=dockApproachLength(width);
   const to=terminal.wall==='front'?{u:bay.u,v:bay.v+length}:{u:bay.u+length,v:bay.v};
-  result.push({from,to,margin:width*11+lanes*11+roadGap,driveway:true});
+  result.push({from,to,margin:width*11+lanes*11+roadGap,driveway:true,bendTo:width*11+18});
  }
  const unique=new Map<string,ReservedRoad>();
  for(const road of result){const a=`${road.from.u}/${road.from.v}`,b=`${road.to.u}/${road.to.v}`,key=a<b?`${a}/${b}/${road.margin}/${road.shared}/${road.driveway}`:`${b}/${a}/${road.margin}/${road.shared}/${road.driveway}`;const existing=unique.get(key);if(!existing)unique.set(key,road);else{const forward=existing.from.u===road.from.u&&existing.from.v===road.from.v;existing.bendFrom=Math.max(existing.bendFrom??0,(forward?road.bendFrom:road.bendTo)??0);existing.bendTo=Math.max(existing.bendTo??0,(forward?road.bendTo:road.bendFrom)??0);}}
@@ -50,8 +50,10 @@ export function roadEdgeBlocked(from:Point,to:Point,roads:ReservedRoad[],cornerR
 export function roadTurnBlocked(point:Point,roads:ReservedRoad[],cornerRadius:number){
  return roads.some(road=>{
   if(road.shared)return false;
-  // Leave room for the turning ribbon and a bridge ramp at perpendicular passes.
-  const radius=road.margin+cornerRadius+64;
+  // Match the occupied rounded-road envelope used by roadEdgeBlocked.
+  // Ramp clearance belongs to bridge planning on complete straight runs;
+  // reserving it around every driveway can seal all of a dock's exits.
+  const radius=cornerBuffer(road,cornerRadius);
   const left=Math.min(road.from.u,road.to.u)-radius,right=Math.max(road.from.u,road.to.u)+radius;
   const back=Math.min(road.from.v,road.to.v)-radius,front=Math.max(road.from.v,road.to.v)+radius;
   return point.u>left&&point.u<right&&point.v>back&&point.v<front;

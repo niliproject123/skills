@@ -268,3 +268,13 @@ Root cause: Load preset only replaced the editor draft and required a separate A
 Verification: npx tsc --noEmit passed. No runtime, browser, build, unit or performance tests were run, following the TypeScript-only instruction. Mocked data: none. Large-city route derivation remains unverified.
 
 Branch codex/kafka-city; discussion discussions/kafka-city; task task.md; Windows / Node 20.19.0 / npm 10.8.2 / Vite 6.4.3; configured Vite port 5173; application credentials none.
+
+## 2026-10-07 large-city driveway turn clearance
+
+The user reported that orders-customers-events could not connect customers-receiving. Source inspection found that roadTurnBlocked expanded every reserved segment by road width, the full corner radius and an additional 64-unit bridge ramp allowance. Closely spaced independent topic driveways therefore blocked turns beyond their actual paved footprint.
+
+Turn rejection now uses the same rounded-road envelope as roadEdgeBlocked. Physical road-width separation, the 28-unit inter-topic gap, driveway crossing exclusions, building obstacles and bridge ramp-fit validation remain in place. Future driveway reservations include their outer corner radius, so earlier routes leave room for later dock turns instead of only reserving straight driveway asphalt.
+
+Verification: npx tsc --noEmit passed. No runtime, browser, build, unit or performance tests were run under the user's TypeScript-only instruction. Mocked data: none. Successful application of the large preset remains unverified. No packages were installed.
+
+Branch codex/kafka-city; discussion discussions/kafka-city; task task.md; Windows / Node 20.19.0 / npm 10.8.2 / Vite 6.4.3; configured Vite port 5173; application credentials none.
