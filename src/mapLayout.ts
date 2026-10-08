@@ -2,7 +2,23 @@ import {planTopicNetwork} from './topicNetwork';
 import type {TopologyModel,LayoutModel,Route} from './scenarioTypes';
 import {buildLayout,routePoints} from './scenarioLayout';
 import {automaticOverpasses} from './autoRouting';
+import {automaticSpatialLayout,spatialLayout,rememberSpatialLayout} from './spatialLayout';
+import {RoadLayoutConflict} from './roadLayoutConflict';
 export function computeLayout(topology:TopologyModel,overrides:LayoutModel){
+ if(!automaticSpatialLayout(overrides))return routeLayout(topology,overrides);
+ let conflict:RoadLayoutConflict|undefined;
+ // Constraint search: each candidate retains all routing rules. Never render
+ // a partial layout or relax clearance to accept an unsuccessful candidate.
+ for(const expansion of [1,1.15,1.35,1.6]){
+  const candidate=spatialLayout(topology,overrides,expansion);
+  try{const layout=routeLayout(topology,candidate);rememberSpatialLayout(topology,overrides,candidate);return layout;}catch(error){
+   if(!(error instanceof RoadLayoutConflict))throw error;
+   conflict=error;
+  }
+ }
+ throw new Error(`Automatic layout could not fit all roads after four corridor allocations. ${conflict?.message} Reduce topic fan-out or provide a manual layout.`);
+}
+function routeLayout(topology:TopologyModel,overrides:LayoutModel){
  const config={topology,layout:overrides},{buildings,terminals}=buildLayout(config),routes:Route[]=[];
  topology.topics.forEach((topic,topicIndex)=>{const sources=topology.producers.filter(producer=>producer.topicId===topic.id),groups=topology.consumerGroups.filter(group=>group.topicIds.includes(topic.id));
  const sharedPaths=planTopicNetwork(config,terminals,topic.id,routes);

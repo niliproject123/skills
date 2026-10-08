@@ -1,9 +1,12 @@
 import {terrainOutline} from './terrainOutline';
+import {automaticSpatialLayout,displayedSpatialLayout} from './spatialLayout';
+import {roadGap} from './roadClearance';
 import {topicTrunkRoute} from './autoRouting';
 import {computeLayout} from './autoLayout';
 import {bayPosition} from './terminalConnection';
 import type {LayoutConfiguration,Terminal,Point,DerivedRenderModel} from './scenarioTypes';
 export function buildLayout(config:LayoutConfiguration){
+ if(automaticSpatialLayout(config.layout)&&config.topology.services.length)return buildLayout({topology:config.topology,layout:displayedSpatialLayout(config.topology,config.layout)});
  const buildings:DerivedRenderModel['cityBuildings']={};
  for(const [id,placement] of Object.entries(computeLayout(config.topology,config.layout)))buildings[id]={...placement,width:placement.width??150,depth:placement.depth??110};
  const terminals:Terminal[]=[];
@@ -11,7 +14,9 @@ export function buildLayout(config:LayoutConfiguration){
  for(const entry of entries){
  const building=buildings[entry.service],placement=config.layout.terminals[entry.id]??{},wall=placement.wall??(entry.producer?'side':'front');
  const bands=entry.topics.map(id=>{const topic=config.topology.topics.find(item=>item.id===id)!;return {id,width:topic.partitionCount*22};});
- const bandGap=Math.max(96,28+(Math.max(...bands.map(band=>band.width/2))+18)/2);
+ // Adjacent topic driveways must leave room for a complete legal turn,
+ // including the existing ramp clearance, not just their asphalt widths.
+ const bandGap=Math.max(96,roadGap+Math.max(...bands.map(band=>band.width/2))+18+64+8);
  const bandWidth=bands.reduce((sum,band)=>sum+band.width,0)+Math.max(0,bands.length-1)*bandGap;
  let across=-bandWidth/2;const topicOffsets=Object.fromEntries(bands.map(band=>{const center=across+band.width/2;across+=band.width+bandGap;return [band.id,center];}));
  const minimum=Math.max((entry.instances+1)*34,entry.topics.length>1?bandWidth+24:0);

@@ -288,3 +288,13 @@ The larger logical world uses reduced-resolution terrain and road caches within 
 Verification: npx tsc --noEmit passed after the final source change. Only TypeScript was checked; no runtime, browser, build, unit or performance tests were run. Mocked data: none. Successful routing of the large preset remains runtime-unverified. No packages were installed. Git reported LF-to-CRLF warnings for largeCityPreset.ts and roadCacheBounds.ts.
 
 Branch codex/kafka-city; discussion discussions/kafka-city; task task.md; Windows / Node 20.19.0 / npm 10.8.2 / Vite 6.4.3; configured Vite port 5173; application credentials none.
+
+## 2026-10-08 calculate spatial layout from road requirements
+
+Replaced the large preset's manual service/dock coordinates with automatic spatial allocation. The new planner measures actual terminal dimensions, reserves complete dock approaches and the existing turn/ramp clearance, places receiving yards beyond producer approaches, and packs measured campuses into a proportion-aware grid. Inter-campus corridor widths sum the widths and gaps of topics crossing each grid boundary. A bounded placement search expands campus/corridor reservations when the actual road search reports a geometry conflict; no road clearance rule is weakened and no incomplete candidate is rendered. Exhausted search produces a visible configuration error. Unexpected exceptions propagate immediately.
+
+Adjacent topic bands at shared receiving terminals now reserve full turn clearance rather than only asphalt separation. The accepted automatic placement is retained for layout-editor coordinates; manually moving a campus first materializes its accepted layout so other campuses and docks stay in place. Existing explicit layouts retain their manual positions. The preset still contains 15 services and 35 topics.
+
+Verification: npx tsc --noEmit passed after all source edits. No runtime, browser, build, unit or performance tests were run, following the TypeScript-only instruction. Mocked data: none. Successful large-city loading, routing speed and visual layout remain runtime-unverified. No packages installed. Git reported LF-to-CRLF warnings for largeCityPreset.ts and scenarioActions.ts.
+
+Branch codex/kafka-city; discussion discussions/kafka-city; task task.md; Windows / Node 20.19.0 / npm 10.8.2 / Vite 6.4.3; configured Vite port 5173; application credentials none.

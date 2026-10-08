@@ -1,6 +1,7 @@
 import {roadReservations} from './roadClearance';
 import {planBridges} from './bridgePlanning';
 import {shortestRoad} from './shortestRoad';
+import {RoadLayoutConflict} from './roadLayoutConflict';
 import type {LayoutConfiguration,Terminal,Point,Route,Bridge} from './scenarioTypes';
 import {bayPosition,dockApproachLength} from './terminalConnection';
 import {computeLayout} from './autoLayout';
@@ -10,7 +11,7 @@ export function topicTrunkRoute(config:LayoutConfiguration,terminals:Terminal[],
  const exit=driveway(producer,start),entrance=driveway(receiver,end);
  if(receiver.producer)return [start,exit,{u:exit.u+180,v:exit.v}];
  const obstacles=[...Object.values(computeLayout(config.topology,config.layout)).map(building=>({...building,width:building.width??150,depth:building.depth??110})),...terminals];
- try {return [start,...shortestRoad(exit,entrance,obstacles,clearance,roadReservations(existingRoutes,terminals,topic,lanes,config.topology.topics),{start:producer?.wall==='front'?{u:0,v:1}:{u:1,v:0},end:receiver.wall==='front'?{u:0,v:-1}:{u:-1,v:0}}),end];}catch(error){throw new Error(`Cannot route ${topic}: ${producer?.id??'external'} to ${receiver.id}, driveway (${exit.u}, ${exit.v}) to (${entrance.u}, ${entrance.v}). ${String(error)}`);}
+ try {return [start,...shortestRoad(exit,entrance,obstacles,clearance,roadReservations(existingRoutes,terminals,topic,lanes,config.topology.topics),{start:producer?.wall==='front'?{u:0,v:1}:{u:1,v:0},end:receiver.wall==='front'?{u:0,v:-1}:{u:-1,v:0}}),end];}catch(error){if(!(error instanceof RoadLayoutConflict))throw error;throw new RoadLayoutConflict(`Cannot route ${topic}: ${producer?.id??'external'} to ${receiver.id}, driveway (${exit.u}, ${exit.v}) to (${entrance.u}, ${entrance.v}). ${error.message}`);}
 }
 
 export function automaticOverpasses(config:LayoutConfiguration,routes:Route[],terminals:Terminal[]):Omit<Bridge,'depth'|'lanes'>[]{

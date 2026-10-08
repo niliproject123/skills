@@ -1,4 +1,5 @@
 import type {Point} from './scenarioTypes';
+import {RoadLayoutConflict} from './roadLayoutConflict';
 
 type Entry={state:number;cost:number;priority:number};
 type RoadGrid={
@@ -50,7 +51,7 @@ export function searchRoadGrid({columns,rows,start,ends,blocked,turnBlocked,trav
    costs[state]=cost;previous[state]=current.state;push({state,cost,priority:cost+remaining(to)});
   }
  }
- if(arrival<0)throw new Error('Cannot connect terminal driveways while maintaining road-width and bend clearance. Move the campus or terminal farther from neighboring topic roads.');
+ if(arrival<0)throw new RoadLayoutConflict('Cannot connect terminal driveways while maintaining road-width and bend clearance. Move the campus or terminal farther from neighboring topic roads.');
  const path:Point[]=[];
  for(let state=arrival;state!==-1;state=previous[state])path.push(point(Math.floor(state/headings)));
  path.reverse();

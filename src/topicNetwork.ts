@@ -4,6 +4,7 @@ import type {LayoutConfiguration,Point,Route,Terminal} from './scenarioTypes';
 import {computeLayout} from './autoLayout';
 import {bayPosition,dockApproachLength} from './terminalConnection';
 import {shortestRoad} from './shortestRoad';
+import {RoadLayoutConflict} from './roadLayoutConflict';
 
 type Edge={from:Point;to:Point};
 const key=(point:Point)=>`${point.u}/${point.v}`;
@@ -40,13 +41,13 @@ export function planTopicNetwork(config:LayoutConfiguration,terminals:Terminal[]
   const nearest=edges.length?edges.map(edge=>edge.from.u===edge.to.u?{u:edge.from.u,v:Math.max(Math.min(edge.from.v,edge.to.v),Math.min(Math.max(edge.from.v,edge.to.v),port.v))}:{u:Math.max(Math.min(edge.from.u,edge.to.u),Math.min(Math.max(edge.from.u,edge.to.u),port.u)),v:edge.from.v}):[rootPoint];
   const candidates=edges.length?[...nearest,...edges.flatMap(edge=>[edge.from,edge.to,{u:(edge.from.u+edge.to.u)/2,v:(edge.from.v+edge.to.v)/2}])].filter(point=>isDockPort(point)||!roadTurnBlocked(point,reserved,lanes*11+18)):nearest;
   const target=candidates.sort((a,b)=>distance(port,a)-distance(port,b))[0];
-  if(!target)throw new Error(`Cannot attach ${terminal.id} to topic ${topic}: no branch position has enough clearance from neighboring roads. Move the campuses farther apart.`);
+  if(!target)throw new RoadLayoutConflict(`Cannot attach ${terminal.id} to topic ${topic}: no branch position has enough clearance from neighboring roads. Move the campuses farther apart.`);
   if(key(port)===key(target))continue;
   const arrivalDirection=(point:Point)=>{const terminal=participants.find(item=>key(ports.get(item.id)!)===key(point));if(!terminal)return undefined;const direction=outward(terminal);return {u:-direction.u,v:-direction.v};};
   const sharedEdges=edges.map(edge=>({...edge,margin:0,shared:true}));
   const unsafeAttachment=(from:Point,to:Point)=>intersections(from,to,edges).some(contact=>!contact.parallel&&!isDockPort(contact.point)&&roadTurnBlocked(contact.point,reserved,lanes*11+18));
   let path:Point[];
-  try{path=shortestRoad(port,target,obstacles,clearance,[...reserved,...sharedEdges],{start:outward(terminal),endAt:arrivalDirection},unsafeAttachment,[...new Map(candidates.map(point=>[key(point),point])).values()]);}catch(reason){throw new Error(`Cannot attach ${terminal.id} to topic ${topic}: ${String(reason)}`);}
+  try{path=shortestRoad(port,target,obstacles,clearance,[...reserved,...sharedEdges],{start:outward(terminal),endAt:arrivalDirection},unsafeAttachment,[...new Map(candidates.map(point=>[key(point),point])).values()]);}catch(reason){if(!(reason instanceof RoadLayoutConflict))throw reason;throw new RoadLayoutConflict(`Cannot attach ${terminal.id} to topic ${topic}: ${reason.message}`);}
   // Attach at the first contact with the tree, never leave it and reconnect.
   const existingEdges=edges.slice();let joined=false;
   for(let index=1;index<path.length&&!joined;index++){
