@@ -1,12 +1,11 @@
 import {labelAnchors} from './labelGeometry';
-import {roadCacheBounds,worldCacheScale} from './roadCacheBounds';
 import {computeLayout} from './mapLayout';
 import type {ScenarioConfig,DerivedRenderModel,Route} from './scenarioTypes';
 import {automaticColor,snapshotPartitions,tint,groupSnapshot} from './scenarioEncoding';
 import {worldGeometry} from './scenarioLayout';
 import {validateScenario} from './scenarioValidation';
-export function deriveScenario(input:ScenarioConfig):DerivedRenderModel {
- const config=validateScenario(input),visual=config.visualization,partitionLoads=snapshotPartitions(config),layout=computeLayout(config.topology,config.layout),{buildings,terminals}=layout;
+export function deriveScenario(input:ScenarioConfig,savedLayout?:ReturnType<typeof computeLayout>):DerivedRenderModel {
+ const config=validateScenario(input),visual=config.visualization,partitionLoads=snapshotPartitions(config),layout=savedLayout??computeLayout(config.topology,config.layout),{buildings,terminals}=layout;
  const services:DerivedRenderModel['services']={},topics:DerivedRenderModel['topics']={},themes:DerivedRenderModel['themes']={};
  const producers=config.topology.producers.map(producer=>({id:producer.id,service:producer.serviceId,topic:producer.topicId,instances:producer.producerCount}));
  const consumerGroups=config.topology.consumerGroups.map(group=>{const snapshot=config.state.consumerGroups[group.id],facts=groupSnapshot(config,group.topicIds,snapshot.consumptionRate);const capacity=config.visualization.vehicles.truck.messagesPerVehicle;return {id:group.id,name:group.name,service:group.serviceId,topics:group.topicIds,instances:group.consumerCount,lag:snapshot.lag,consumptionRate:snapshot.consumptionRate,incomingRate:facts.incomingRate,status:facts.status,waiting:Math.min(visual.maxQueueVehicles,Math.round(snapshot.lag/visual.messagesPerQueueVehicle)),consumeEvery:snapshot.consumptionRate===0?Infinity:Math.max(.35,Math.min(10,capacity/snapshot.consumptionRate))};});
@@ -27,9 +26,6 @@ export function deriveScenario(input:ScenarioConfig):DerivedRenderModel {
  }
  for(const group of consumerGroups)group.waiting=routes.filter(route=>route.terminal===group.id).reduce((sum,route)=>sum+route.queue,0);
  const geometry=worldGeometry(config,buildings,terminals,routes);
- const roadPixels=config.topology.topics.reduce((sum,topic)=>{const bounds=roadCacheBounds(topic.id,routes,terminals);return sum+bounds.width*bounds.height;},0);
- const cacheScale=worldCacheScale(geometry.bounds,roadPixels);
- if(cacheScale<.5)throw new Error('Scene exceeds the Canvas cache memory budget at 50% static map resolution. Reduce the layout size or number of topics.');
- if((geometry.bounds.width*geometry.bounds.height*3+roadPixels)*cacheScale*cacheScale+12000000>100000000)throw new Error('Scene exceeds the Canvas cache memory budget. Reduce the layout size or number of topics.');
+ // Raster allocation is bounded by the viewport tile cache, not logical map area.
  return {labelAnchors:labelAnchors(config,buildings,terminals,routes),services,topics,producers,consumerGroups,partitionLoads,cityBuildings:buildings,terminals,cityRoutes:routes,themes,terrainOutline:geometry.terrain,worldBounds:geometry.bounds,visualization:structuredClone(visual),overpasses:layout.overpasses.map(bridge=>({...bridge,lanes:topics[bridge.topic].partitions,depth:bridge.u+bridge.v+45}))};
 }

@@ -1,9 +1,11 @@
-import {bridgePoint} from './bridgeGeometry';
-import {roadCacheBounds,worldCacheScale} from './roadCacheBounds';
+import {bridgeSpriteTiles,bridgeTilePixels,bridgeTilePadding} from './bridgeSpriteTiles';
+import {createWorldTiles,tilePadding,tilePixels,overlaps} from './worldTiles';
+import {createTileDrawing} from './tileDrawing';
+import {estimateSceneAssetBytes,sceneAssetBudgetBytes} from './sceneAssetBudget';
 import {articulatedAngles} from './IsoArticulatedSprite';
 import {vehicleAtlas,type VehicleSpriteKind} from './vehicleAtlas';
-import {renderModel,scenarioRevision} from './scenarioRuntime';
-import type {ReactNode} from 'react';
+import {renderModel,scenarioRevision,currentScenario} from './scenarioRuntime';
+import {Children,Fragment,isValidElement,type ReactNode} from 'react';
 import {IsoBuilding} from './IsoBuilding';
 import {IsoTree} from './IsoPrimitives';
 import {CityTerrain,visibleDecorations} from './CityTerrain';
@@ -27,23 +29,43 @@ const markupRenderer=import('react-dom/server');
 export function context(canvas:HTMLCanvasElement){const drawing=canvas.getContext('2d');if(!drawing)throw new Error('Canvas 2D is unavailable');return drawing;}
 async function raster(node:ReactNode,bounds:Bounds,resolution=quality):Promise<Sprite>{
  const {renderToStaticMarkup}=await markupRenderer;
- const markup=renderToStaticMarkup(<svg xmlns="http://www.w3.org/2000/svg" width={bounds.width*resolution} height={bounds.height*resolution} viewBox={`${bounds.x} ${bounds.y} ${bounds.width} ${bounds.height}`} style={{fontFamily:'system-ui,sans-serif'}}>{node}</svg>);
+ const parts=isValidElement<{children?:ReactNode}>(node)&&node.type===Fragment?Children.toArray(node.props.children):Children.toArray(node);
+ const markup:string[]=[];
+ // Yield between artwork objects so controls can respond during a cold load.
+ for(let index=0;index<parts.length;index+=4){await new Promise<void>(resolve=>setTimeout(resolve,0));markup.push(renderToStaticMarkup(<>{parts.slice(index,index+4)}</>));}
+ return rasterMarkup(markup.join(''),bounds,resolution);
+}
+async function rasterMarkup(body:string,bounds:Bounds,resolution=quality):Promise<Sprite>{
+ const markup=`<svg xmlns="http://www.w3.org/2000/svg" width="${Math.ceil(bounds.width*resolution)}" height="${Math.ceil(bounds.height*resolution)}" viewBox="${bounds.x} ${bounds.y} ${bounds.width} ${bounds.height}" style="font-family:system-ui,sans-serif">${body}</svg>`;
  const url=URL.createObjectURL(new Blob([markup],{type:'image/svg+xml'}));
  try{const image=new Image();image.src=url;await image.decode();const canvas=document.createElement('canvas');canvas.width=Math.ceil(bounds.width*resolution);canvas.height=Math.ceil(bounds.height*resolution);context(canvas).drawImage(image,0,0);return {...bounds,image:canvas};}finally{URL.revokeObjectURL(url);}
 }
 export async function createSprites(){
- const revision=scenarioRevision,mapBounds={...renderModel.worldBounds};
- const roadBounds=Object.fromEntries(Object.keys(topics).map(topic=>[topic,roadCacheBounds(topic,renderModel.cityRoutes,terminals)]));
- const staticScale=worldCacheScale(mapBounds,Object.values(roadBounds).reduce((sum,bounds)=>sum+bounds.width*bounds.height,0));
- const terrain=await raster(<><CityTerrain/><ServiceYards/></>,mapBounds,staticScale);
- const bridgeStructures:Sprite[]=[];
- for(const bridge of overpasses){const half=bridge.lanes*11+40,end=bridge.start+bridge.ramp*2+bridge.deck,corners=[bridge.start,end].flatMap(along=>[-half,half].flatMap(across=>[0,bridge.height].map(height=>{const point=bridgePoint(bridge,along,across);return project(point.u,point.v,height);}))),x=Math.min(...corners.map(point=>point.x))-20,y=Math.min(...corners.map(point=>point.y))-20;bridgeStructures.push(await raster(<IsoOverpass bridge={bridge} part="structure"/>,{x,y,width:Math.max(...corners.map(point=>point.x))-x+40,height:Math.max(...corners.map(point=>point.y))-y+40}));}
- const roads:Sprite[]=[];
- for(const topic of Object.keys(topics))roads.push(await raster(<><IsoRoad label={topic} topic={topic} segments={roadSegments(topic)}/>{terminals.filter(terminal=>terminal.topics.includes(topic)).map(terminal=><IsoTerminalConnection key={terminal.id} terminal={terminal} topic={topic}/>)}</>,roadBounds[topic],staticScale));
- const scenery:Scenery[]=await Promise.all((Object.keys(cityBuildings) as Service[]).map(async name=>{const building=cityBuildings[name],point=project(building.u,building.v);const sprite=await raster(<IsoBuilding mainOnly name={name} layout={{...building,u:0,v:0}} onSelect={()=>{}}/>,{x:-building.depth-45,y:-270,width:building.width+building.depth+100,height:470});return {...sprite,x:sprite.x+point.x,y:sprite.y+point.y,depth:building.u+building.v+building.width/2+building.depth,name};}));
- const terminalSprites=await Promise.all(terminals.map(async terminal=>{const point=project(terminal.u,terminal.v);const sprite=await raster(<IsoTerminal terminal={{...terminal,u:0,v:0}}/>,{x:-terminal.depth-105,y:-135,width:terminal.width+terminal.depth+160,height:(terminal.width+terminal.depth)/2+230});return {...sprite,x:sprite.x+point.x,y:sprite.y+point.y,depth:terminal.u+terminal.v+terminal.width/2+terminal.depth,name:terminal.service,terminal:terminal.id};}));
- scenery.push(...terminalSprites);
- for(const bridge of overpasses){const half=bridge.lanes*11+35,end=bridge.start+bridge.ramp*2+bridge.deck;const corners=[bridge.start,end].flatMap(along=>[-half,half].flatMap(across=>[0,bridge.height].map(height=>{const point=bridgePoint(bridge,along,across);return project(point.u,point.v,height);})));const x=Math.min(...corners.map(point=>point.x))-15,y=Math.min(...corners.map(point=>point.y))-15;scenery.push({...await raster(<IsoOverpass bridge={bridge} part="deck"/>,{x,y,width:Math.max(...corners.map(point=>point.x))-x+20,height:Math.max(...corners.map(point=>point.y))-y+20}),depth:bridge.depth,bridge:true});}
+ let activeDrawing:Awaited<ReturnType<typeof createTileDrawing>>|undefined;
+ try{
+ let revision=scenarioRevision;const mapBounds={...renderModel.worldBounds};
+ if(estimateSceneAssetBytes()>sceneAssetBudgetBytes)throw new Error('Building and vehicle sprites exceed the 160 MiB asset budget. Reduce bay counts or vehicle palette variety.');
+ const {renderToStaticMarkup}=await markupRenderer;
+ const terrainMarkup=renderToStaticMarkup(<><CityTerrain/><ServiceYards/>{overpasses.map(bridge=><IsoOverpass key={bridge.id} bridge={bridge} part="structure"/>)}</>);
+ const roads:Record<string,string>={};
+ for(const topic of Object.keys(topics)){
+  await new Promise<void>(resolve=>setTimeout(resolve,0));
+  if(revision!==scenarioRevision)throw new Error('Scenario changed while preparing road artwork.');
+  roads[topic]=renderToStaticMarkup(<><IsoRoad label={topic} topic={topic} segments={roadSegments(topic)}/>{terminals.filter(terminal=>terminal.topics.includes(topic)).map(terminal=><IsoTerminalConnection key={terminal.id} terminal={terminal} topic={topic}/>)}</>);
+ }
+ const scenery:Scenery[]=[];
+ for(const name of Object.keys(cityBuildings) as Service[]){const building=cityBuildings[name],point=project(building.u,building.v);const sprite=await raster(<IsoBuilding mainOnly name={name} layout={{...building,u:0,v:0}} onSelect={()=>{}}/>,{x:-building.depth-45,y:-270,width:building.width+building.depth+100,height:470});scenery.push({...sprite,x:sprite.x+point.x,y:sprite.y+point.y,depth:building.u+building.v+building.width/2+building.depth,name});}
+ for(const terminal of terminals){const point=project(terminal.u,terminal.v);const sprite=await raster(<IsoTerminal terminal={{...terminal,u:0,v:0}}/>,{x:-terminal.depth-105,y:-135,width:terminal.width+terminal.depth+160,height:(terminal.width+terminal.depth)/2+230});scenery.push({...sprite,x:sprite.x+point.x,y:sprite.y+point.y,depth:terminal.u+terminal.v+terminal.width/2+terminal.depth,name:terminal.service,terminal:terminal.id});}
+ const tileDrawing=await createTileDrawing(terrainMarkup,roads);activeDrawing=tileDrawing;
+ for(const bridge of overpasses){
+  if(revision!==scenarioRevision)throw new Error('Scenario changed while preparing bridge artwork.');
+  const artworkKey=`bridge-${bridge.id}`;tileDrawing.registerArtwork(artworkKey,renderToStaticMarkup(<IsoOverpass bridge={bridge} part="deck"/>));
+  for(const bounds of bridgeSpriteTiles(bridge)){
+   const padded={x:bounds.x-bridgeTilePadding,y:bounds.y-bridgeTilePadding,width:bounds.width+bridgeTilePadding*2,height:bounds.height+bridgeTilePadding*2};
+   const sprite=await tileDrawing.render(padded,1,'all',artworkKey);
+   scenery.push({...sprite,...bounds,source:{x:bridgeTilePadding,y:bridgeTilePadding,width:bridgeTilePixels,height:bridgeTilePixels},depth:bridge.depth,bridge:true});
+  }
+ }
  const trees=await Promise.all(visibleDecorations().map(async tree=>{const point=project(tree.u,tree.v);let pending=treeSprites.get(tree.size);if(!pending){pending=raster(<IsoTree u={0} v={0} size={tree.size}/>,{x:-45,y:-110,width:90,height:140});if(treeSprites.size>=32)treeSprites.delete(treeSprites.keys().next().value!);treeSprites.set(tree.size,pending);const requested=pending;pending.catch(()=>{if(treeSprites.get(tree.size)===requested)treeSprites.delete(tree.size);});}const sprite=await pending;return {...sprite,x:sprite.x+point.x,y:sprite.y+point.y,depth:tree.u+tree.v+18};}));
  scenery.push(...trees);scenery.sort((a,b)=>a.depth-b.depth);
  const vehicles=new Map<string,Sprite>();
@@ -52,26 +74,28 @@ export async function createSprites(){
   for(const route of renderModel.cityRoutes.filter(route=>route.topic===topic&&route.moving+route.queue>0))for(const load of renderModel.partitionLoads[topic]){
    if(load.kind==='semi'){kinds.add('tractor');if(load.trailers>0)kinds.add('trailer');}else kinds.add(load.kind);
   }
-  for(const kind of kinds){const frames=await vehicleAtlas(topic,kind,raster);for(const waiting of [false,true])for(let angle=0;angle<articulatedAngles;angle++)vehicles.set(`${topic}-${kind}-${angle}-${waiting}`,frames[Number(waiting)*articulatedAngles+angle]);}
+  for(const kind of kinds){const frames=await vehicleAtlas(topic,kind,rasterMarkup);for(const waiting of [false,true])for(let angle=0;angle<articulatedAngles;angle++)vehicles.set(`${topic}-${kind}-${angle}-${waiting}`,frames[Number(waiting)*articulatedAngles+angle]);}
  }
  const props=await raster(<><IsoLamp u={430} v={435}/><IsoLamp u={670} v={625}/><IsoShrub u={390} v={210}/></>,{x:-90,y:170,width:330,height:550});
- const worlds=new Map<string,HTMLCanvasElement>();
- function worldForFocus(focus:string){
- const existing=worlds.get(focus);if(existing)return existing;
- const world=document.createElement('canvas');world.width=terrain.image.width;world.height=terrain.image.height;
- const drawing=context(world);drawing.setTransform(staticScale,0,0,staticScale,-mapBounds.x*staticScale,-mapBounds.y*staticScale);
- drawing.drawImage(terrain.image,mapBounds.x,mapBounds.y,mapBounds.width,mapBounds.height);
- for(const structure of bridgeStructures)drawing.drawImage(structure.image,structure.x,structure.y,structure.width,structure.height);
- roads.forEach((road,index)=>{drawing.globalAlpha=focus==='all'||focus===Object.keys(topics)[index]?1:.23;drawing.drawImage(road.image,road.x,road.y,road.width,road.height);});
- for(const sprite of scenery){drawing.globalAlpha=!sprite.name||focus==='all'||[...services[sprite.name].produces,...services[sprite.name].consumes].includes(focus as 'orders'|'payments')?1:.3;drawing.drawImage(sprite.image,sprite.x,sprite.y,sprite.width,sprite.height);}
- drawing.globalAlpha=1;drawing.drawImage(props.image,props.x,props.y,props.width,props.height);if(worlds.size>=2){const oldest=[...worlds.keys()].find(key=>key!=='all');if(oldest!==undefined)worlds.delete(oldest);}worlds.set(focus,world);return world;
- }
+ const assetImages=new Set([...scenery,...vehicles.values(),props].map(sprite=>sprite.image));
+ const assetBytes=[...assetImages].reduce((bytes,image)=>bytes+image.width*image.height*4,0);
+ if(assetBytes>sceneAssetBudgetBytes)throw new Error('Building and vehicle sprites exceed the 160 MiB asset budget. Reduce bay counts or vehicle palette variety.');
+ const tiles=createWorldTiles(mapBounds,async tile=>{
+  if(revision!==scenarioRevision)throw new Error('Scenario changed while preparing map tiles.');
+  const padding=tilePadding/tile.resolution;
+  const bounds={x:tile.x-padding,y:tile.y-padding,width:(tilePixels+tilePadding*2)/tile.resolution,height:(tilePixels+tilePadding*2)/tile.resolution};
+  const sprite=await tileDrawing.render(bounds,tile.resolution,tile.focus),drawing=context(sprite.image);
+  drawing.setTransform(tile.resolution,0,0,tile.resolution,-bounds.x*tile.resolution,-bounds.y*tile.resolution);
+  for(const item of scenery)if(overlaps(item,bounds)){drawing.globalAlpha=!item.name||tile.focus==='all'||[...services[item.name].produces,...services[item.name].consumes].includes(tile.focus)?1:.3;const source=item.source;if(source)drawing.drawImage(item.image,source.x,source.y,source.width,source.height,item.x,item.y,item.width,item.height);else drawing.drawImage(item.image,item.x,item.y,item.width,item.height);}
+  drawing.globalAlpha=1;if(overlaps(props,bounds))drawing.drawImage(props.image,props.x,props.y,props.width,props.height);
+  return sprite;
+ });
  if(revision!==scenarioRevision)throw new Error('Scenario changed while preparing sprites; the previous render was cancelled.');
- worldForFocus('all');
- return {worlds,worldForFocus,scenery,vehicles};
+ return {tiles,scenery,vehicles,assetBytes,reuse(){revision=scenarioRevision;},dispose(){tiles.dispose();tileDrawing.dispose();}};
+ }catch(reason){activeDrawing?.dispose();throw reason;}
 }
 export type SpriteCache=Awaited<ReturnType<typeof createSprites>>;
-let loadedSprites:Promise<SpriteCache>|undefined,loadedRevision=-1;
-export function loadSpriteCache(){if(!loadedSprites||loadedRevision!==scenarioRevision){loadedRevision=scenarioRevision;loadedSprites=createSprites();const pending=loadedSprites;pending.catch(()=>{if(loadedSprites===pending)loadedSprites=undefined;});}return loadedSprites;}
+let loadedSprites:Promise<SpriteCache>|undefined,loadedRevision=-1,loadedConfiguration='',completedSprites:SpriteCache|undefined;
+export function loadSpriteCache(){if(!loadedSprites||loadedRevision!==scenarioRevision){loadedRevision=scenarioRevision;loadedConfiguration=JSON.stringify(currentScenario);loadedSprites=createSprites();const pending=loadedSprites;void pending.then(cache=>{if(loadedSprites===pending)completedSprites=cache;},()=>{if(loadedSprites===pending){loadedSprites=undefined;completedSprites=undefined;}});}return loadedSprites;}
 
-export function invalidateSpriteCache(){loadedSprites=undefined;}
+export function invalidateSpriteCache(){if(completedSprites&&loadedConfiguration===JSON.stringify(currentScenario)){loadedRevision=scenarioRevision;completedSprites.reuse();return;}const previous=loadedSprites;loadedSprites=undefined;completedSprites=undefined;if(previous)void previous.then(cache=>cache.dispose(),()=>{});}

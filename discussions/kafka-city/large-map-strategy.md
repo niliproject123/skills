@@ -1,8 +1,8 @@
 # Large-map strategy — 2026-10-08
 
-Status: source review and proposed architecture. No application behavior changed in this review. The user reports a cache-budget error and an unresponsive page. No runtime profiling or browser tests were performed under the TypeScript-only testing restriction.
+Status: the preservation-first implementation now passes actual large-city loading and interaction checks. The original source review below records the causes and proposed options; the implementation follow-up records the changes and remaining limits.
 
-## What currently goes wrong
+## What caused the reported failure
 
 1. `scenarioRuntime.applyScenario` calls `deriveScenario` synchronously on the UI thread. Derivation runs layout, every topic's road search and bridge planning before evaluating the rendering cache budget. A rejected scene can therefore consume substantial CPU before its error becomes visible. This is a plausible explanation for the reported freeze, not a measured timing result.
 2. `computeLayout` can repeat routing for four globally expanded placements. `shortestRoad` combines obstacle/reservation coordinates into a columns-by-rows grid. `searchRoadGrid` allocates four heading states per cell; each explored edge checks obstacles and roads. This work grows with geometry complexity, not simply the number of services.
@@ -91,3 +91,24 @@ Each step should have a concrete acceptance condition: cancellable UI during cal
 - [MDN: OffscreenCanvas](https://developer.mozilla.org/en-US/docs/Web/API/OffscreenCanvas) — Canvas rendering outside the main thread.
 
 Inspection diagnostics: an initial search named nonexistent `src/canvasRenderer.ts` and `src/scenarioStorage.ts`; both reported missing-file errors. The actual implementation was then inspected in `CanvasCity.tsx`, `canvasSprites.tsx`, `scenarioRuntime.ts` and `CityEditor.tsx`. No packages were installed and no tests or runtime measurements were run. Mocked data: none.
+
+## Implementation follow-up
+
+The next user request authorized iteration through actual local loading and interaction. The following parts of Option A are now implemented:
+
+- Cancellable worker preparation with visible progress/errors and obsolete-worker protection.
+- Validated geometry persistence in IndexedDB; complete precomputed geometry for the built-in 15-service/35-topic preset.
+- Geometry reuse for rates, lag and paint edits.
+- Road-search collision memoization and coordinate indexes; strict road constraints remain.
+- Sparse viewport caches, 96 MiB of tile backing allocation, two jobs at a time, zoom-aware pixel density and tile eviction.
+- Worker Canvas 2D drawing from the existing vector artwork, preserving markings, masks, color and opacity.
+- Worker generation of the original vehicle sprite artwork, retaining all orientations and waiting states; building serialization and road-command transfer yield between objects.
+- Sparse bridge deck sprites, exact source cropping, original depth ordering and a 160 MiB active-asset budget checked before allocation.
+- Indexed visible vehicle occlusion and reuse of the full cache for identical scenario reloads.
+- World-based navigation bounds and larger zoom range.
+
+All eight preset derivations and the actual Chromium large-map interaction check pass. No visual simplification was introduced. See `large-city-browser.json` for the final measured run and `task.md` for resolved errors and limitations. Screenshots record overview, close view and topic hover.
+
+Initial asset preparation still takes several seconds; identical reloads avoid rebuilding artwork. State-only edits reuse roads but can rebuild changed art, gauges and traffic sprite sets. This is not a complete incremental renderer yet. The original world-size/topology limits also remain; worker calculation and tiled graphics do not prove unlimited map support. Browser memory estimates cover explicit backing images, not all browser/GPU copies or temporary allocations.
+
+Run TypeScript with `npx tsc --noEmit`. The focused Node check is `node tools/check-startup.mjs`. For the browser check, pass the installed Playwright package directory's parent to `node tools/check-large-browser.mjs`; this workspace used the existing bundled Node dependency directory. No test mocks or package installations were needed.

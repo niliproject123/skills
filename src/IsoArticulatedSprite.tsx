@@ -1,10 +1,9 @@
 import {tint} from './scenarioEncoding';
 import {project,vertices} from './isometric';
-import {topicTheme} from './topicTheme';
 import {IsoRoundedBox} from './IsoRoundedBox';
 export const articulatedAngles=32;
-export function IsoArticulatedSprite({kind,angle,topic,waiting,accent}:{kind:'car'|'van'|'truck'|'tractor'|'trailer';angle:number;topic:string;waiting:boolean;accent?:string}){
- const theta=angle*Math.PI*2/articulatedAngles,cos=Math.cos(theta),sin=Math.sin(theta),theme=accent?{accent,front:tint(accent,-.2),side:tint(accent,-.35)}:topicTheme[topic];
+export function IsoArticulatedSprite({kind,angle,waiting,accent}:{kind:'car'|'van'|'truck'|'tractor'|'trailer';angle:number;topic:string;waiting:boolean;accent:string}){
+ const theta=angle*Math.PI*2/articulatedAngles,cos=Math.cos(theta),sin=Math.sin(theta),theme={accent,front:tint(accent,-.2),side:tint(accent,-.35)};
  const turn=(long:number,across:number,height=0)=>[long*cos-across*sin,long*sin+across*cos,height];
  const box=(start:number,length:number,width:number,height:number,base:number,roof:string)=>{
  return <IsoRoundedBox u={start} v={-width/2} width={length} depth={width} height={height} base={base} angle={theta} cornerSteps={4} radius={Math.min(7,width*.42,length*.3)} roof={roof} front={tint(roof,-.18)} side={tint(roof,-.32)}/>;

@@ -1,0 +1,156 @@
+{
+  "geometry": {
+    "services": 15,
+    "topics": 35,
+    "bridges": 47,
+    "bounds": {
+      "x": -5472,
+      "y": -358.3610816868173,
+      "width": 10611,
+      "height": 5528.56858249706
+    }
+  },
+  "observations": [
+    {
+      "stage": "demo",
+      "data": {
+        "assetBytes": "22771492",
+        "tileBytes": "16224000",
+        "pendingTiles": "0",
+        "zoomLevel": "medium",
+        "poseMs": "1.20",
+        "paintMs": "1.00",
+        "timings": "{\"frames\":1,\"drawMeanMs\":9.900000095367432,\"drawP95Ms\":9.900000095367432,\"frameMeanMs\":0,\"panDrawMeanMs\":null,\"panFrames\":0}",
+        "renderMs": "2.30",
+        "visibleVehicles": "62",
+        "simulationTime": "0.883",
+        "camera": "0.0,0.0,1.00"
+      }
+    },
+    {
+      "stage": "large overview",
+      "loadMs": 11294,
+      "data": {
+        "assetBytes": "115757760",
+        "tileBytes": "25958400",
+        "pendingTiles": "0",
+        "zoomLevel": "medium",
+        "poseMs": "1.60",
+        "paintMs": "5.30",
+        "timings": "{\"frames\":120,\"drawMeanMs\":8.892499997218449,\"drawP95Ms\":12.299999952316284,\"frameMeanMs\":17.082500000000014,\"panDrawMeanMs\":null,\"panFrames\":0}",
+        "renderMs": "7.00",
+        "visibleVehicles": "140",
+        "simulationTime": "4.485",
+        "camera": "0.0,0.0,1.00"
+      }
+    },
+    {
+      "stage": "loading responsiveness",
+      "data": {
+        "maximumDelay": 562.3000001907349,
+        "ticks": 204
+      }
+    },
+    {
+      "stage": "large steady animation",
+      "data": {
+        "assetBytes": "115757760",
+        "tileBytes": "25958400",
+        "pendingTiles": "0",
+        "zoomLevel": "medium",
+        "poseMs": "1.80",
+        "paintMs": "4.50",
+        "timings": "{\"frames\":120,\"drawMeanMs\":7.30166665315628,\"drawP95Ms\":11,\"frameMeanMs\":16.665833333333314,\"panDrawMeanMs\":null,\"panFrames\":0}",
+        "renderMs": "6.30",
+        "visibleVehicles": "140",
+        "simulationTime": "8.068",
+        "camera": "0.0,0.0,1.00"
+      }
+    },
+    {
+      "stage": "zoom and pan",
+      "data": {
+        "assetBytes": "115757760",
+        "tileBytes": "63814400",
+        "pendingTiles": "0",
+        "zoomLevel": "close",
+        "poseMs": "1.10",
+        "paintMs": "0.60",
+        "timings": "{\"frames\":120,\"drawMeanMs\":2.1741666575272878,\"drawP95Ms\":4,\"frameMeanMs\":18.19333333333334,\"panDrawMeanMs\":3.1799999872843423,\"panFrames\":15}",
+        "renderMs": "1.80",
+        "visibleVehicles": "27",
+        "simulationTime": "14.585",
+        "camera": "545.1,236.2,4.06"
+      }
+    },
+    {
+      "stage": "close steady animation",
+      "data": {
+        "assetBytes": "115757760",
+        "tileBytes": "63814400",
+        "pendingTiles": "0",
+        "zoomLevel": "close",
+        "poseMs": "1.70",
+        "paintMs": "0.60",
+        "timings": "{\"frames\":120,\"drawMeanMs\":1.681666660308838,\"drawP95Ms\":2.299999952316284,\"frameMeanMs\":16.665833333333346,\"panDrawMeanMs\":3.189999985694885,\"panFrames\":20}",
+        "renderMs": "2.30",
+        "visibleVehicles": "26",
+        "simulationTime": "18.135",
+        "camera": "545.1,236.2,4.06"
+      }
+    },
+    {
+      "stage": "topic hover and focus tiles",
+      "topic": "inventory-pricing-events",
+      "data": {
+        "assetBytes": "115757760",
+        "tileBytes": "96262400",
+        "pendingTiles": "0",
+        "zoomLevel": "close",
+        "poseMs": "1.70",
+        "paintMs": "0.50",
+        "timings": "{\"frames\":120,\"drawMeanMs\":2.7974999924500783,\"drawP95Ms\":5.099999904632568,\"frameMeanMs\":16.80499999999999,\"panDrawMeanMs\":3.189999985694885,\"panFrames\":20}",
+        "renderMs": "2.50",
+        "visibleVehicles": "26",
+        "simulationTime": "24.114",
+        "camera": "545.1,236.2,4.06"
+      }
+    },
+    {
+      "stage": "repeat large load",
+      "loadMs": 1365,
+      "data": {
+        "assetBytes": "115757760",
+        "tileBytes": "96262400",
+        "pendingTiles": "0",
+        "zoomLevel": "medium",
+        "poseMs": "1.90",
+        "paintMs": "3.70",
+        "timings": "{\"frames\":1,\"drawMeanMs\":9.700000047683716,\"drawP95Ms\":9.700000047683716,\"frameMeanMs\":0,\"panDrawMeanMs\":null,\"panFrames\":0}",
+        "renderMs": "5.70",
+        "visibleVehicles": "140",
+        "simulationTime": "0.767",
+        "camera": "0.0,0.0,1.00"
+      }
+    },
+    {
+      "stage": "persistent layout, state update and worker cancellation",
+      "data": {
+        "first": [
+          "Checking saved layout…",
+          "Calculating roads for 15 services and 35 topics…"
+        ],
+        "second": [
+          "Checking saved layout…",
+          "Reusing saved roads and bridges…"
+        ],
+        "cancellation": "City preparation cancelled.",
+        "unchangedRoads": true
+      }
+    }
+  ],
+  "errors": [],
+  "warnings": [],
+  "mockedData": "none",
+  "exampleData": "built-in simulated Kafka topology and state"
+}

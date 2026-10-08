@@ -19,7 +19,8 @@ try{
  assert.equal(Object.keys(renderModel.topics).length,4);
  const {createPreset,presetNames}=await source('scenarioPresets');
  const {deriveScenario}=await source('scenarioDerive');
- for(const name of presetNames){const model=deriveScenario(createPreset(name)),large=name==='Large city (15 services, 35 topics)';assert.equal(Object.keys(model.services).length,large?15:7);assert.equal(Object.keys(model.topics).length,large?35:4);console.log(`PASS startup: ${name}, ${model.cityRoutes.length} routes, ${model.overpasses.length} bridges`);}
+ const started=performance.now();
+ for(const name of process.argv.includes("--large")?presetNames.filter(name=>name.startsWith("Large")):presetNames){const preset=createPreset(name),model=deriveScenario(preset),large=name==='Large city (15 services, 35 topics)';assert.equal(Object.keys(model.services).length,large?15:7);assert.equal(Object.keys(model.topics).length,large?35:4);console.log(`PASS startup: ${name}, ${model.cityRoutes.length} routes, ${model.overpasses.length} bridges (${Math.round(performance.now()-started)} ms)`);if(large&&process.argv.includes('--save')){const layout={buildings:model.cityBuildings,terminals:model.terminals,routes:model.cityRoutes,overpasses:model.overpasses};await writeFile('src/largeCityLayout.json',JSON.stringify({version:1,key:JSON.stringify([1,preset.topology,{...preset.layout,labels:undefined}]),layout}));}}
  console.log('Mocked data: none. Uses actual default topology, presets, validation and route derivation.');
 }finally{
  if(dirname(resolve(directory))!==resolve(tmpdir()))throw new Error('Unexpected temporary directory; cleanup cancelled.');
