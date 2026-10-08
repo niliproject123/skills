@@ -1,0 +1,18 @@
+{
+  "checks": [
+    "independent sign/gauge hiding",
+    "topic and service filters intersect without relayout",
+    "clicked values and collapsed demo configuration",
+    "live topology, reported inspector values and automatic focus gauge",
+    "rates cross vehicle classes and lag updates without replacing canvas/camera",
+    "unknown values suppress traffic and collector failure shown",
+    "topology update and offline consumer count",
+    "30-second freshness threshold",
+    "disconnection is visible",
+    "return to demo"
+  ],
+  "errors": [],
+  "warnings": [],
+  "expectedNetworkErrors": [],
+  "mockedData": "Synthetic source observations only; actual HTTP/SSE server, disk, browser, scene workers and Canvas rendering."
+}

@@ -2,6 +2,7 @@ import {renderModel} from './scenarioRuntime';
 import {bridgeSpriteTiles,bridgeTilePixels,bridgeTilePadding} from './bridgeSpriteTiles';
 import {visibleDecorations} from './CityTerrain';
 import {articulatedAngles} from './IsoArticulatedSprite';
+import {liveSnapshot} from './liveData';
 
 export const sceneAssetBudgetBytes=160*1024*1024;
 export function estimateSceneAssetBytes(){
@@ -12,6 +13,7 @@ export function estimateSceneAssetBytes(){
  for(const bridge of renderModel.overpasses)area+=bridgeSpriteTiles(bridge).length*(bridgeTilePixels+bridgeTilePadding*2)**2;
  area+=new Set(visibleDecorations().map(tree=>tree.size)).size*90*140;
  const vehicles=new Set<string>();
+ if(liveSnapshot)for(const theme of Object.values(renderModel.themes))for(const kind of ['car','van','truck','tractor','trailer'])vehicles.add(`${kind}/${theme.accent}`);
  for(const route of renderModel.cityRoutes)if(route.moving+route.queue>0)for(const load of renderModel.partitionLoads[route.topic]){const color=renderModel.themes[route.topic].accent;if(load.kind==='semi'){vehicles.add(`tractor/${color}`);if(load.trailers)vehicles.add(`trailer/${color}`);}else vehicles.add(`${load.kind}/${color}`);}
  area+=vehicles.size*90*articulatedAngles*140;
  return area*4;

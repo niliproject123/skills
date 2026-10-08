@@ -1,4 +1,3 @@
-import {ConsumerLagGauge} from './ConsumerLagGauge';
 import {IsoRoundedBox} from './IsoRoundedBox';
 import {IsoGate} from './IsoBuilding';
 import {vertices,screenPosition} from './isometric';
@@ -18,6 +17,5 @@ export function IsoTerminal({terminal}:{terminal:TerminalLayout}){
  <polyline points={vertices(wall==='front'?[[0,depth,56],[width,depth,56]]:[[width,0,56],[width,depth,56]])} fill="none" stroke={topicColor} strokeWidth="4"/>
  <g transform={wall==='front'?`translate(${-depth},${depth/2})`:`translate(${width},${width/2})`}>{Array.from({length:instances},(_,index)=>{const position=(index+1)*(wall==='front'?width:depth)/(instances+1);return <IsoGate key={index} position={position} wall={wall} producer={producer} topic={terminal.topics[0]} name={service} onSelect={()=>{}}/>;})}</g>
  {producer&&<g transform={wall==='front'?`translate(${width-depth},${(depth-width)/2}) scale(-1,1)`:undefined}>{Array.from({length:instances},(_,index)=>{const v=(index+1)*(wall==='side'?depth:width)/(instances+1);return <g key={index}><polygon points={vertices([[width+3,v-12],[width+27,v-12],[width+27,v+12],[width+3,v+12]])} fill="#a89671"/>{[-7,0,7].map(offset=><polyline key={offset} points={vertices([[width+6,v+offset-4],[width+12,v+offset],[width+6,v+offset+4]])} fill="none" stroke="#ffdb75" strokeWidth="2"/>)}</g>;})}</g>}
- {!producer&&<ConsumerLagGauge terminal={terminal}/>}
  </g>;
 }

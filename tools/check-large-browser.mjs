@@ -18,7 +18,7 @@ try{
  const world=page.locator('.canvas-world');
  await page.waitForFunction(()=>document.querySelector('.canvas-world')?.getAttribute('data-pending-tiles')==='0',{},{timeout:60000});
  observations.push({stage:'demo',data:await world.evaluate(element=>({...element.dataset}))});
- await page.getByRole('button',{name:'Configure',exact:true}).click();
+ await page.getByText('Demo tools',{exact:true}).click();await page.getByRole('button',{name:'Configure',exact:true}).click();
  await page.getByRole('button',{name:'SCENARIOS',exact:true}).click();
  await page.getByLabel('Scenario preset').selectOption('Large city (15 services, 35 topics)');
  await page.evaluate(()=>{window.cityResponsiveness.maximumDelay=0;window.cityResponsiveness.ticks=0;});
@@ -63,7 +63,7 @@ try{
  await page.getByRole('button',{name:'Play',exact:false}).click();
  await page.getByRole('button',{name:'Reset view',exact:true}).click();
  await page.waitForFunction(()=>document.querySelector('.canvas-world')?.getAttribute('data-pending-tiles')==='0',{},{timeout:60000});
- await page.getByRole('button',{name:'Configure',exact:true}).click();
+ if(!await page.getByRole('button',{name:'Configure',exact:true}).isVisible())await page.getByText('Demo tools',{exact:true}).click();await page.getByRole('button',{name:'Configure',exact:true}).click();
  await page.getByRole('button',{name:'SCENARIOS',exact:true}).click();
  const repeatStarted=Date.now();await page.getByRole('button',{name:'Load preset',exact:true}).click();
  await page.getByText('Large city (15 services, 35 topics) applied: 15 services, 35 topics.',{exact:true}).waitFor();

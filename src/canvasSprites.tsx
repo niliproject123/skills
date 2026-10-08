@@ -19,6 +19,8 @@ import {IsoOverpass} from './IsoOverpass';
 import {ServiceYards} from './ServiceYards';
 import {terminals,overpasses} from './terminalLayout';
 import {IsoLamp,IsoShrub} from './IsoPrimitives';
+import {liveSnapshot} from './liveData';
+import {parseFocus} from './viewOptions';
 export type Bounds={x:number;y:number;width:number;height:number};
 export type Sprite=Bounds&{image:HTMLCanvasElement;source?:Bounds};
 export type Scenery=Sprite&{depth:number;name?:Service;terminal?:string;bridge?:boolean};
@@ -71,6 +73,7 @@ export async function createSprites(){
  const vehicles=new Map<string,Sprite>();
  for(const topic of Object.keys(topics)){
   const kinds=new Set<VehicleSpriteKind>();
+  if(liveSnapshot)for(const kind of ['car','van','truck','tractor','trailer'] as const)kinds.add(kind);
   for(const route of renderModel.cityRoutes.filter(route=>route.topic===topic&&route.moving+route.queue>0))for(const load of renderModel.partitionLoads[topic]){
    if(load.kind==='semi'){kinds.add('tractor');if(load.trailers>0)kinds.add('trailer');}else kinds.add(load.kind);
   }
@@ -86,7 +89,8 @@ export async function createSprites(){
   const bounds={x:tile.x-padding,y:tile.y-padding,width:(tilePixels+tilePadding*2)/tile.resolution,height:(tilePixels+tilePadding*2)/tile.resolution};
   const sprite=await tileDrawing.render(bounds,tile.resolution,tile.focus),drawing=context(sprite.image);
   drawing.setTransform(tile.resolution,0,0,tile.resolution,-bounds.x*tile.resolution,-bounds.y*tile.resolution);
-  for(const item of scenery)if(overlaps(item,bounds)){drawing.globalAlpha=!item.name||tile.focus==='all'||[...services[item.name].produces,...services[item.name].consumes].includes(tile.focus)?1:.3;const source=item.source;if(source)drawing.drawImage(item.image,source.x,source.y,source.width,source.height,item.x,item.y,item.width,item.height);else drawing.drawImage(item.image,item.x,item.y,item.width,item.height);}
+  const filtered=parseFocus(tile.focus);
+  for(const item of scenery)if(overlaps(item,bounds)){drawing.globalAlpha=!item.name||tile.focus==='all'||(filtered?filtered.services.includes(item.name):[...services[item.name].produces,...services[item.name].consumes].includes(tile.focus))?1:.2;const source=item.source;if(source)drawing.drawImage(item.image,source.x,source.y,source.width,source.height,item.x,item.y,item.width,item.height);else drawing.drawImage(item.image,item.x,item.y,item.width,item.height);}
   drawing.globalAlpha=1;if(overlaps(props,bounds))drawing.drawImage(props.image,props.x,props.y,props.width,props.height);
   return sprite;
  });

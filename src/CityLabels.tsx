@@ -5,6 +5,7 @@ import {terminals} from './terminalLayout';
 import {project} from './isometric';
 import {services,topics,type Service,type Selection} from './model';
 import {topicTheme} from './topicTheme';
+import {objectFocused,signVisible,visibleObjects,defaultViewOptions,type ViewOptions} from './viewOptions';
 export function getCityLabels():{id:string;name:string;point:{x:number;y:number};kind:string;close:boolean;detailed?:boolean;accent?:string;rise?:number;offsetX?:number;offsetY?:number}[]{return [
  ...(Object.keys(cityBuildings) as Service[]).map(name=>{const anchor=serviceSignAnchor(name);return {id:`service-${name}`,name:services[name].name.toUpperCase(),point:project(anchor.u,anchor.v),rise:anchor.rise,offsetX:anchor.offsetX,offsetY:anchor.offsetY,kind:'service',close:false};}),
  ...Object.keys(topics).filter(topic=>renderModel.labelAnchors[`topic-${topic}`]).map(topic=>{const anchor=renderModel.labelAnchors[`topic-${topic}`];return {id:`topic-${topic}`,name:topics[topic].name,point:project(anchor.u,anchor.v),accent:topicTheme[topic].accent,rise:anchor.rise,kind:'topic',close:false};}),
@@ -12,12 +13,17 @@ export function getCityLabels():{id:string;name:string;point:{x:number;y:number}
 
 ];}
 export function CityLabels(){return <div className="city-labels" aria-label="City names">{getCityLabels().map(label=><span key={label.id} data-label={label.id} className={`city-label ${label.kind}`}>{label.name}</span>)}</div>;}
-export function placeLabels(root:HTMLElement,view:{scale:number;x:number;y:number},zoom:number,width:number,height:number,focus:Selection|null=null){
+export function placeLabels(root:HTMLElement,view:{scale:number;x:number;y:number},zoom:number,width:number,height:number,focus:Selection|null=null,options:ViewOptions=defaultViewOptions){
  const occupied:{x:number;y:number;width:number;height:number}[]=[];
+ const objects=visibleObjects(options);
  for(const label of getCityLabels()){const element=root.querySelector<HTMLElement>(`[data-label="${label.id}"]`);if(!element)throw new Error(`Missing HTML label ${label.id}`);
  const settings=currentScenario.visualization.labels;const override=currentScenario.layout.labels?.[label.kind==='terminal'?`terminal-${label.id}`:label.id]??currentScenario.layout.labels?.[label.kind==='service'?label.id.slice(8):label.kind==='topic'?label.id.slice(6):label.id];const point=override?project(override.labelAnchor.x,override.labelAnchor.y):label.point;
  const boxWidth=label.name.length*(label.kind==='service'?8:6.5)+8;let anchorY=view.y+point.y*view.scale,anchorX=view.x+point.x*view.scale;let x=anchorX-boxWidth/2,y=anchorY-20+(override?override.labelOffset.y:-(label.rise!==undefined?label.rise*view.scale:settings?.poleLength??32)+(settings?.offsetY??0));
- const visible=!(label.close&&zoom<=1.35&&!(focus?.kind==='terminal'&&focus.id===label.id))&&x+boxWidth>0&&x<width&&y+22>0&&y<height;
+ const kind=label.kind as 'service'|'topic'|'terminal',id=kind==='terminal'?label.id:label.id.slice(kind==='service'?8:6);
+ const terminal=kind==='terminal'?terminals.find(item=>item.id===id):undefined;
+ const relevant=kind==='service'?objects.services.includes(id):kind==='topic'?objects.topics.includes(id):!!terminal&&objects.services.includes(terminal.service)&&terminal.topics.some(topic=>objects.topics.includes(topic));
+ const mode=kind==='service'?options.serviceSigns:kind==='topic'?options.topicSigns:'automatic';
+ const visible=relevant&&signVisible(mode,zoom,objectFocused(focus,kind,id),kind==='terminal'?1.35:kind==='service'?.85:1.05)&&x+boxWidth>0&&x<width&&y+22>0&&y<height;
  element.hidden=!visible;if(!visible)continue;
 
  for(let attempt=0;attempt<5;attempt++){if(!occupied.some(box=>x<box.x+box.width+5&&x+boxWidth+5>box.x&&y<box.y+box.height+4&&y+22>box.y))break;y-=25;}

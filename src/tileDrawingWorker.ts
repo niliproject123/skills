@@ -65,7 +65,7 @@ self.onmessage=({data})=>{
   const {bounds,resolution,focus,id}=data,canvas=new OffscreenCanvas(Math.ceil(bounds.width*resolution),Math.ceil(bounds.height*resolution)),context=drawing(canvas);
   context.setTransform(resolution,0,0,resolution,-bounds.x*resolution,-bounds.y*resolution);
   if(data.artworkKey){const layer=artworks.get(data.artworkKey);if(!layer)throw new Error(`Missing bridge artwork ${data.artworkKey}.`);drawLayer(context,layer);}
-  else{drawLayer(context,scene.terrain);for(const [topic,layer] of Object.entries(scene.roads)){if(focus==='all'||topic===focus)drawLayer(context,layer);else isolated(context,surface=>drawLayer(surface,layer),.23);}}
+  else{const filtered=focus.startsWith('view:')?JSON.parse(focus.slice(5)).topics as string[]:null;drawLayer(context,scene.terrain);for(const [topic,layer] of Object.entries(scene.roads)){if(focus==='all'||(filtered?filtered.includes(topic):topic===focus))drawLayer(context,layer);else isolated(context,surface=>drawLayer(surface,layer),.16);}}
   const bitmap=canvas.transferToImageBitmap();self.postMessage({id,bitmap},{transfer:[bitmap]});
  }catch(reason){self.postMessage({id:data.id,error:reason instanceof Error?reason.message:String(reason)});}
 };

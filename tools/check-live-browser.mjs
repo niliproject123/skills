@@ -1,0 +1,57 @@
+import {createRequire} from 'node:module';
+import {resolve,join,dirname} from 'node:path';
+import {mkdtemp,writeFile,rm} from 'node:fs/promises';
+import {tmpdir} from 'node:os';
+import assert from 'node:assert/strict';
+import {startMapServer} from '../server/mapServer.mjs';
+import {exampleSnapshot} from './live-fixture.mjs';
+// Real browser/server/renderer. Source observations are explicitly synthetic.
+const browserPackages=process.argv[2];if(!browserPackages)throw new Error('Pass the installed Playwright package directory.');
+const {chromium}=createRequire(resolve(browserPackages,'package.json'))('playwright');
+const storageDirectory=await mkdtemp(join(tmpdir(),'kafka-browser-')),token='browser-check-token-with-more-than-32-characters';
+let running,browser;const errors=[],warnings=[],checks=[];
+try{
+ running=await startMapServer({port:8787,token,storageDirectory});browser=await chromium.launch({headless:true});
+ const context=await browser.newContext({viewport:{width:1440,height:1000}}),page=await context.newPage();
+ page.on('pageerror',error=>errors.push(error.message));page.on('console',message=>{if(message.type()==='error')errors.push(message.text());if(message.type()==='warning')warnings.push(message.text());});
+ await page.goto('http://localhost:5173/',{waitUntil:'networkidle'});
+ const world=page.locator('.canvas-world'),ready=()=>page.waitForFunction(()=>document.querySelector('.canvas-world')?.dataset.pendingTiles==='0',{},{timeout:60000});
+ await ready();
+ const view=page.locator('.view-controls');await view.locator('summary').click();
+ await page.getByLabel('Service signs',{exact:true}).selectOption('always');await page.getByLabel('Topic signs',{exact:true}).selectOption('always');await page.getByLabel('Lag gauges',{exact:true}).selectOption('always');
+ await page.waitForFunction(()=>document.querySelectorAll('.world-gauge:not([hidden])').length>0&&document.querySelectorAll('.city-label.service:not([hidden])').length>0);
+ for(const name of ['Service signs','Topic signs','Lag gauges'])await page.getByLabel(name,{exact:true}).selectOption('hidden');
+ await page.waitForFunction(()=>document.querySelectorAll('.world-gauge:not([hidden]),.city-label.service:not([hidden]),.city-label.topic:not([hidden])').length===0);checks.push('independent sign/gauge hiding');
+ await view.getByRole('checkbox',{name:'payments',exact:true}).check();
+ await page.waitForFunction(()=>document.querySelector('.canvas-world')?.dataset.filteredTopics==='["payments"]');await ready();
+ await view.getByRole('checkbox',{name:'Inventory',exact:true}).check();await page.waitForFunction(()=>document.querySelector('.canvas-world')?.dataset.filteredTopics==='[]');checks.push('topic and service filters intersect without relayout');
+ await view.getByRole('button',{name:'Clear filters'}).click();
+ for(const name of ['Service signs','Topic signs','Lag gauges'])await page.getByLabel(name,{exact:true}).selectOption('always');await view.locator('summary').click();await ready();
+ const select=async(kind,id)=>{
+  const point=await page.evaluate(async({kind,id})=>{const resource=performance.getEntriesByType('resource').map(entry=>entry.name).findLast(name=>/\/src\/canvasPicking\.ts(?:\?|$)/.test(name));if(!resource)throw new Error('Active picker module is absent');const {pick}=await import(resource);const runtimeUrl=performance.getEntriesByType('resource').map(entry=>entry.name).findLast(name=>/\/src\/scenarioRuntime\.ts(?:\?|$)/.test(name)),{renderModel}=await import(runtimeUrl);const root=document.querySelector('.canvas-world'),box=root.getBoundingClientRect(),[offsetX,offsetY,zoom]=root.dataset.camera.split(',').map(Number),bounds=renderModel.worldBounds,scale=Math.min(box.width/bounds.width,box.height/bounds.height)*zoom,x=box.width/2-(bounds.x+bounds.width/2-offsetX)*scale,y=box.height/2-(bounds.y+bounds.height/2-offsetY)*scale;for(let screenY=150;screenY<box.height-155;screenY+=6)for(let screenX=35;screenX<box.width-35;screenX+=6){const target=pick((screenX-x)/scale,(screenY-y)/scale);if(target?.kind===kind&&(!id||(kind==='terminal'?target.id:target.name)===id))return {x:box.x+screenX,y:box.y+screenY,target};}throw new Error(`No visible ${kind} ${id??''} can be clicked`);},{kind,id});await page.mouse.click(point.x,point.y);await page.getByRole('heading',{name:'Current values',exact:true}).waitFor();return point.target;
+ };
+ await select('service');assert.equal(await page.locator('.object-configuration .scenario-content > details').getAttribute('open'),null);await page.getByText('Test configuration',{exact:true}).click();assert.notEqual(await page.locator('.object-configuration .scenario-content > details').getAttribute('open'),null);await page.getByRole('button',{name:'Close item tabs'}).click();checks.push('clicked values and collapsed demo configuration');
+ await page.getByRole('button',{name:'Connect live',exact:true}).click();await page.getByText('Waiting for your collector',{exact:true}).waitFor();assert.equal(await world.count(),0);assert.equal((await page.request.get('http://localhost:5173/discussions/kafka-city/collector-setup.md')).status(),200);
+ const put=async snapshot=>{const response=await fetch('http://127.0.0.1:8787/api/v1/map',{method:'PUT',headers:{authorization:`Bearer ${token}`,'content-type':'application/json'},body:JSON.stringify(snapshot)});assert.equal(response.status,200,await response.text());};
+ const first=exampleSnapshot();await put(first);await page.getByText('Synthetic Kafka integration check · observed',{exact:false}).waitFor({timeout:60000});await ready();
+ assert.equal(await page.locator('.city-label.service').count(),2);assert.equal(await page.locator('.city-label.topic').count(),1);
+ await view.locator('summary').click();await page.getByLabel('Lag gauges',{exact:true}).selectOption('automatic');await page.waitForFunction(()=>document.querySelectorAll('.world-gauge:not([hidden])').length===0);await view.locator('summary').click();
+ await select('terminal','billing-orders');const values=page.locator('.object-values');await values.getByText('120 offsets',{exact:true}).waitFor();await page.waitForFunction(()=>!document.querySelector('[data-gauge="billing-orders"]')?.hidden);assert.equal(await page.getByText('Test configuration',{exact:true}).count(),0);checks.push('live topology, reported inspector values and automatic focus gauge');
+ await page.evaluate(()=>{window.originalStaticCanvas=document.querySelector('.canvas-world canvas');window.originalCamera=document.querySelector('.canvas-world').dataset.camera;});
+ const changed=exampleSnapshot(2);changed.metrics.topics.orders.messagesPerSecond=9000;changed.metrics.consumerGroups['billing-orders'].lag=35000;await put(changed);await values.getByText('35,000 offsets',{exact:true}).waitFor();await page.waitForFunction(()=>document.querySelector('[data-gauge="billing-orders"] span')?.textContent==='35,000');
+ assert.ok(await page.evaluate(()=>window.originalStaticCanvas===document.querySelector('.canvas-world canvas')&&window.originalCamera===document.querySelector('.canvas-world').dataset.camera));await page.waitForTimeout(1000);checks.push('rates cross vehicle classes and lag updates without replacing canvas/camera');
+ const unknown=exampleSnapshot(3);unknown.metrics.topics.orders.messagesPerSecond=null;unknown.metrics.topics.orders.averageMessageBytes=null;unknown.metrics.consumerGroups['billing-orders']={consumptionRate:null,lag:null,source:'synthetic-check'};unknown.status={state:'degraded',message:'Synthetic source unavailable'};await put(unknown);await values.getByText('Unknown',{exact:true}).first().waitFor();await page.waitForFunction(()=>document.querySelector('[data-gauge="billing-orders"] span')?.textContent==='Unknown'&&document.querySelector('.canvas-world')?.dataset.visibleVehicles==='0');await page.getByText('Synthetic source unavailable',{exact:true}).waitFor();checks.push('unknown values suppress traffic and collector failure shown');
+ await page.getByRole('button',{name:'Close item tabs'}).click();
+ const expanded=exampleSnapshot(4);expanded.topology.services.push({id:'audit',name:'Audit'});expanded.topology.topics.push({id:'receipts',name:'receipts',partitionCount:2});expanded.topology.producers.push({id:'billing-receipts',serviceId:'billing',topicId:'receipts',producerCount:1});expanded.topology.consumerGroups.push({id:'audit-receipts',name:'audit-receipts',serviceId:'audit',topicIds:['receipts'],consumerCount:0});expanded.metrics.topics.receipts={messagesPerSecond:100,source:'synthetic-check'};expanded.metrics.consumerGroups['audit-receipts']={consumptionRate:0,lag:200,source:'synthetic-check'};await put(expanded);await page.waitForFunction(()=>document.querySelectorAll('.city-label.service').length===3);await ready();await select('terminal','audit-receipts');await page.locator('.object-values').getByText('200 offsets',{exact:true}).waitFor();assert.equal(await page.locator('.object-values').locator('div').filter({hasText:'Consumer instances'}).getByText('0',{exact:true}).count(),1);checks.push('topology update and offline consumer count');
+ await page.screenshot({path:resolve('discussions/kafka-city/live-inspector.png')});await page.getByRole('button',{name:'Close item tabs'}).click();await view.locator('summary').click();await page.getByLabel('Lag gauges',{exact:true}).selectOption('always');await view.locator('summary').click();await page.mouse.move(300,40);await ready();await page.screenshot({path:resolve('discussions/kafka-city/live-map.png')});
+ await page.waitForFunction(()=>document.querySelector('.live-status')?.textContent.includes('Stale data'),{},{timeout:35000});checks.push('30-second freshness threshold');
+ assert.deepEqual(errors,[],'No browser errors before deliberate server shutdown');assert.deepEqual(warnings,[]);
+ await running.close();running=null;await page.getByText('Live server connection failed.',{exact:false}).waitFor({timeout:20000});checks.push('disconnection is visible');
+ // A stopped server causes an expected EventSource network error. Capture it,
+ // then require that all errors before this deliberate shutdown were absent.
+ const expectedNetworkErrors=errors.filter(error=>/ERR_|Failed to load resource|EventSource/.test(error));const unexpectedErrors=errors.filter(error=>!expectedNetworkErrors.includes(error));
+ await page.getByRole('button',{name:'Demo mode',exact:true}).click();await page.waitForFunction(()=>document.querySelectorAll('.city-label.service').length===7);await ready();checks.push('return to demo');
+ assert.deepEqual(unexpectedErrors,[]);assert.deepEqual(errors,expectedNetworkErrors,'No additional errors during return to demo');assert.deepEqual(warnings,[]);
+ const result={checks,errors:unexpectedErrors,warnings,expectedNetworkErrors,mockedData:'Synthetic source observations only; actual HTTP/SSE server, disk, browser, scene workers and Canvas rendering.'};await writeFile('discussions/kafka-city/live-browser.json',JSON.stringify(result,null,2));console.log(JSON.stringify(result,null,2));
+}catch(error){console.error(JSON.stringify({error:String(error),errors,warnings,checks}));if(browser){const page=browser.contexts()[0]?.pages()[0];if(page)await page.screenshot({path:resolve('discussions/kafka-city/live-failure.png')});}throw error;}
+finally{if(browser)await browser.close();if(running)await running.close();if(dirname(resolve(storageDirectory))!==resolve(tmpdir()))throw new Error('Unexpected cleanup path');await rm(storageDirectory,{recursive:true});}

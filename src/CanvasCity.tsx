@@ -12,18 +12,22 @@ import {CityLabels,placeLabels} from './CityLabels';
 import {linked,drawHighlights} from './canvasHighlights';
 import {groupById,producerById} from './kafkaTopology';
 import {indexMovingObjects} from './canvasOcclusion';
+import {measurementRevision} from './liveData';
+import {WorldGauges,placeGauges} from './WorldGauges';
+import {defaultViewOptions,visibleObjects,type ViewOptions} from './viewOptions';
 
 type DrawItem={depth:number;sprite:HTMLCanvasElement|null;bounds:Bounds;erase:boolean;opacity:number;source?:Bounds;occlusion?:Bounds[];connector?:{x:number;y:number;toX:number;toY:number}};
 const overlap=(a:Bounds,b:Bounds)=>a.x<b.x+b.width&&a.x+a.width>b.x&&a.y<b.y+b.height&&a.y+a.height>b.y;
-export function CanvasCity({paused,speed,selected,onSelect,reset,layoutMode=false,onMoveCampus}:{paused:boolean;speed:number;selected:Selection|null;onSelect:(selection:Selection)=>void;reset:number;layoutMode?:boolean;onMoveCampus?:(service:string,u:number,v:number)=>void}){
+export function CanvasCity({paused,speed,selected,onSelect,reset,layoutMode=false,onMoveCampus,viewOptions=defaultViewOptions}:{paused:boolean;speed:number;selected:Selection|null;onSelect:(selection:Selection)=>void;reset:number;layoutMode?:boolean;onMoveCampus?:(service:string,u:number,v:number)=>void;viewOptions?:ViewOptions}){
  const MAX_VEHICLES=renderModel.visualization.maxVehiclesTotal;
  const host=useRef<HTMLDivElement>(null),staticCanvas=useRef<HTMLCanvasElement>(null),movingCanvas=useRef<HTMLCanvasElement>(null);
- const options=useRef({paused,speed,selected,onSelect,layoutMode,onMoveCampus});options.current={paused,speed,selected,onSelect,layoutMode,onMoveCampus};
+ const options=useRef({paused,speed,selected,onSelect,layoutMode,onMoveCampus,viewOptions});options.current={paused,speed,selected,onSelect,layoutMode,onMoveCampus,viewOptions};
  const camera=useRef({x:0,y:0,zoom:1,dirty:true});
  const [error,setError]=useState<string|null>(null),[ready,setReady]=useState(false);
  const [hovered,setHovered]=useState<Selection|null>(null);
  useEffect(()=>{camera.current={x:0,y:0,zoom:1,dirty:true};},[reset]);
  useEffect(()=>{camera.current.dirty=true;},[selected]);
+ useEffect(()=>{camera.current.dirty=true;},[viewOptions]);
  useLayoutEffect(()=>{
  const revision=scenarioRevision;
  let cancelled=false,frame=0,cache:SpriteCache|null=null,width=0,height=0,pixelRatio=1,last=performance.now(),reported=0;
@@ -37,10 +41,9 @@ export function CanvasCity({paused,speed,selected,onSelect,reset,layoutMode=fals
  const waiting=cityRoutes.reduce((sum,route)=>sum+route.queue,0),moving=count-waiting,totalMoving=cityRoutes.reduce((sum,route)=>sum+route.moving,0);
  let assigned=0;
  const routes=requested===null?cityRoutes:cityRoutes.map((route,index)=>{const vehicles=index===cityRoutes.length-1?moving-assigned:Math.floor(moving*route.moving/totalMoving);assigned+=vehicles;return {...route,moving:vehicles};});
- const trafficUnits=makeTrafficUnits(routes);
- const simulation=new CitySimulation(routes);
- const background=context(staticCanvas.current!),foreground=context(movingCanvas.current!);
- const sizes=()=>{if(cancelled)return;const bounds=host.current!.getBoundingClientRect();width=bounds.width;height=bounds.height;pixelRatio=Math.min(2,devicePixelRatio);for(const canvas of [staticCanvas.current!,movingCanvas.current!]){canvas.width=Math.round(width*pixelRatio);canvas.height=Math.round(height*pixelRatio);}camera.current.dirty=true;};
+ let trafficUnits=makeTrafficUnits(routes),simulation=new CitySimulation(routes),sampleRevision=measurementRevision;
+ const background=context(staticCanvas.current!),foreground=context(movingCanvas.current!),stagingCanvas=document.createElement('canvas'),staging=context(stagingCanvas);let backgroundPainted=false;
+ const sizes=()=>{if(cancelled)return;const bounds=host.current!.getBoundingClientRect();width=bounds.width;height=bounds.height;pixelRatio=Math.min(2,devicePixelRatio);for(const canvas of [staticCanvas.current!,movingCanvas.current!,stagingCanvas]){canvas.width=Math.round(width*pixelRatio);canvas.height=Math.round(height*pixelRatio);}backgroundPainted=false;camera.current.dirty=true;};
  const observer=new ResizeObserver(sizes);observer.observe(host.current!);sizes();
  function transform(){return cameraTransform(width,height,camera.current);}
  let hoverSelection:Selection|null=null,hoverKey='';
@@ -57,13 +60,16 @@ export function CanvasCity({paused,speed,selected,onSelect,reset,layoutMode=fals
  const element=host.current!;element.addEventListener('pointerdown',down);element.addEventListener('pointermove',move);element.addEventListener('pointerup',up);element.addEventListener('pointercancel',cancel);element.addEventListener('pointerleave',leave);element.addEventListener('wheel',wheel,{passive:false});
  function animate(now:number){
  if(cancelled||!cache||revision!==scenarioRevision)return;
+ if(sampleRevision!==measurementRevision){trafficUnits=makeTrafficUnits(cityRoutes);simulation=new CitySimulation(cityRoutes);sampleRevision=measurementRevision;camera.current.dirty=true;}
  if(options.current.paused&&!camera.current.dirty){last=now;frame=requestAnimationFrame(animate);return;}
  try{
  const started=performance.now(),interval=Math.max(0,now-last),cameraMoved=panningChanged;panningChanged=false;if(!options.current.paused)simulation.advance(Math.min(.08,interval/1000)*options.current.speed);last=now;
  const view=transform(),visible:Bounds={x:-view.x/view.scale,y:-view.y/view.scale,width:width/view.scale,height:height/view.scale};
  const apply=(drawing:CanvasRenderingContext2D)=>drawing.setTransform(pixelRatio*view.scale,0,0,pixelRatio*view.scale,pixelRatio*view.x,pixelRatio*view.y);
  const focus=options.current.selected?options.current.selected:hoverSelection;
- if(camera.current.dirty){background.setTransform(1,0,0,1,0,0);background.clearRect(0,0,staticCanvas.current!.width,staticCanvas.current!.height);apply(background);const related=Object.keys(topics).filter(topic=>linked(topic,focus)),name=related.length===1?related[0]:'all';const tiles=cache.tiles.draw(background,visible,pixelRatio*view.scale,name,()=>{camera.current.dirty=true;});element.dataset.tileBytes=String(tiles.bytes);element.dataset.pendingTiles=String(tiles.missing);const notice=element.querySelector<HTMLElement>("[data-tile-status]")!;notice.hidden=tiles.missing===0;notice.textContent=`Preparing ${tiles.missing} visible map sections…`;placeLabels(element,view,camera.current.zoom,width,height,focus);element.dataset.zoomLevel=zoomLevel(camera.current.zoom);camera.current.dirty=false;}
+ const filtered=visibleObjects(options.current.viewOptions),related=filtered.topics.filter(topic=>linked(topic,focus));
+ const isRelevant=(topic:string)=>related.includes(topic);
+ if(camera.current.dirty){staging.setTransform(1,0,0,1,0,0);staging.clearRect(0,0,stagingCanvas.width,stagingCanvas.height);apply(staging);const visibleServices=filtered.services.filter(id=>!focus||focus.kind==='service'&&focus.name===id||[...services[id].produces,...services[id].consumes].some(isRelevant));const name=!filtered.filtered&&!focus?'all':`view:${JSON.stringify({topics:related,services:visibleServices})}`;const tiles=cache.tiles.draw(staging,visible,pixelRatio*view.scale,name,()=>{camera.current.dirty=true;});if(tiles.missing===0||!backgroundPainted){background.setTransform(1,0,0,1,0,0);background.clearRect(0,0,staticCanvas.current!.width,staticCanvas.current!.height);background.drawImage(stagingCanvas,0,0);backgroundPainted=tiles.missing===0;}element.dataset.tileBytes=String(tiles.bytes);element.dataset.pendingTiles=String(tiles.missing);element.dataset.filteredTopics=JSON.stringify(filtered.topics);element.dataset.filteredServices=JSON.stringify(filtered.services);const notice=element.querySelector<HTMLElement>("[data-tile-status]")!;notice.hidden=tiles.missing===0;notice.textContent=`Preparing ${tiles.missing} visible map sections…`;placeLabels(element,view,camera.current.zoom,width,height,focus,options.current.viewOptions);placeGauges(element,view,camera.current.zoom,width,height,focus,options.current.viewOptions);element.dataset.zoomLevel=zoomLevel(camera.current.zoom);camera.current.dirty=false;}
  foreground.setTransform(1,0,0,1,0,0);foreground.clearRect(0,0,movingCanvas.current!.width,movingCanvas.current!.height);apply(foreground);
  let rendered=0;
  ordered.length=0;used=0;
@@ -73,7 +79,7 @@ export function CanvasCity({paused,speed,selected,onSelect,reset,layoutMode=fals
 
  for(let carriage=chain.length-1;carriage>=0;carriage--){const point=chain[carriage];if(!point.visible)continue;const kind=carriage>0?'trailer':unit.kind==='semi'?'tractor':unit.kind,orientation=((Math.round(point.heading/(Math.PI*2)*articulatedAngles)%articulatedAngles)+articulatedAngles)%articulatedAngles,sprite=cache.vehicles.get(`${cityRoutes[unit.route].topic}-${kind}-${orientation}-${unit.waiting}`);if(!sprite)throw new Error(`Missing cached vehicle ${kind}`);
  const bounds={x:point.x+sprite.x,y:point.y+sprite.y,width:sprite.width,height:sprite.height};if(!overlap(bounds,visible))continue;
- const relevant=linked(cityRoutes[unit.route].topic,focus)&&!(unit.waiting&&focus?.kind==='terminal'&&!focus.producer&&focus.id!==cityRoutes[unit.route].terminal);
+ const relevant=isRelevant(cityRoutes[unit.route].topic)&&!(unit.waiting&&focus?.kind==='terminal'&&!focus.producer&&focus.id!==cityRoutes[unit.route].terminal);
  queueDraw(point.depth,sprite.image,bounds.x,bounds.y,bounds.width,bounds.height,false,relevant?1:.18,sprite.source);if(carriage===0)rendered++;}
  }
  const occlusion=indexMovingObjects(ordered,visible);
@@ -87,7 +93,7 @@ export function CanvasCity({paused,speed,selected,onSelect,reset,layoutMode=fals
  if(campusDrag){const offset=project(campusDrag.du,campusDrag.dv);foreground.globalAlpha=.65;for(const sprite of cache.scenery)if(sprite.name===campusDrag.service)foreground.drawImage(sprite.image,sprite.x+offset.x,sprite.y+offset.y,sprite.width,sprite.height);foreground.globalAlpha=1;}
  for(const [id,service] of Object.entries(services))if(service.art==='Notification'){const building=cityBuildings[id],antenna=project(building.u+building.width*.75,building.v+building.depth*.3,195);foreground.globalAlpha=.6+.4*Math.sin(now*.003);foreground.fillStyle='#ffce63';foreground.beginPath();foreground.arc(antenna.x,antenna.y,6,0,Math.PI*2);foreground.fill();foreground.globalAlpha=1;}
  const selection=focus;
- if(selection)drawHighlights(foreground,selection,view.scale);
+ if(selection)drawHighlights(foreground,selection,view.scale,filtered.topics);
  const cost=performance.now()-started;drawSamples.push(cost);intervalSamples.push(interval);if(cameraMoved)panSamples.push(cost);if(drawSamples.length>120){drawSamples.shift();intervalSamples.shift();}if(panSamples.length>120)panSamples.shift();
  if(now-reported>1000){const average=(values:number[])=>values.reduce((sum,value)=>sum+value,0)/values.length;const sorted=drawSamples.slice().sort((a,b)=>a-b);element.dataset.timings=JSON.stringify({frames:drawSamples.length,drawMeanMs:average(drawSamples),drawP95Ms:sorted[Math.floor(sorted.length*.95)],frameMeanMs:average(intervalSamples),panDrawMeanMs:panSamples.length?average(panSamples):null,panFrames:panSamples.length});reported=now;}
  element.dataset.renderMs=cost.toFixed(2);element.dataset.visibleVehicles=String(rendered);element.dataset.simulationTime=simulation.elapsed.toFixed(3);element.dataset.camera=`${camera.current.x.toFixed(1)},${camera.current.y.toFixed(1)},${camera.current.zoom.toFixed(2)}`;
@@ -97,5 +103,5 @@ export function CanvasCity({paused,speed,selected,onSelect,reset,layoutMode=fals
  loadSpriteCache().then(sprites=>{if(cancelled||revision!==scenarioRevision)return;cache=sprites;element.dataset.assetBytes=String(sprites.assetBytes);setReady(true);last=performance.now();frame=requestAnimationFrame(animate);}).catch(reason=>{if(!cancelled&&revision===scenarioRevision){setError(String(reason));console.error(reason);}});
  return()=>{cancelled=true;cancelAnimationFrame(frame);observer.disconnect();element.removeEventListener('pointerdown',down);element.removeEventListener('pointermove',move);element.removeEventListener('pointerup',up);element.removeEventListener('pointercancel',cancel);element.removeEventListener('pointerleave',leave);element.removeEventListener('wheel',wheel);};
  },[]);
- return <div ref={host} className={`canvas-world${layoutMode?' layout-editing':''}`} role="img" aria-label="Interactive isometric Kafka city. Drag to pan, scroll to zoom, click buildings, gates, and roads."><canvas ref={staticCanvas} aria-hidden="true"/><canvas ref={movingCanvas} aria-hidden="true"/><CityLabels/><div className="canvas-message" data-tile-status role="status" hidden/>{hovered?.kind==='terminal'&&<div className="terminal-tooltip"><strong>{hovered.id}</strong><span>{hovered.name} · {hovered.topic}</span><span>{hovered.producer?producerById(hovered.id).instances:groupById(hovered.id).instances} bays{!hovered.producer?` · lag ${groupById(hovered.id).lag.toLocaleString()}`:''}</span></div>}{!ready&&!error&&<div className="canvas-message">Preparing city sprites…</div>}{error&&<div className="canvas-message" role="alert">City rendering stopped: {error}</div>}</div>;
+ return <div ref={host} className={`canvas-world${layoutMode?' layout-editing':''}`} role="img" aria-label="Interactive isometric Kafka city. Drag to pan, scroll to zoom, click buildings, gates, and roads."><canvas ref={staticCanvas} aria-hidden="true"/><canvas ref={movingCanvas} aria-hidden="true"/><CityLabels/><WorldGauges/><div className="canvas-message" data-tile-status role="status" hidden/>{hovered?.kind==='terminal'&&<div className="terminal-tooltip"><strong>{hovered.id}</strong><span>{hovered.name} · {hovered.topic}</span><span>{hovered.producer?producerById(hovered.id).instances:groupById(hovered.id).instances} bays · Click for current values</span></div>}{!ready&&!error&&<div className="canvas-message">Preparing city sprites…</div>}{error&&<div className="canvas-message" role="alert">City rendering stopped: {error}</div>}</div>;
 }
