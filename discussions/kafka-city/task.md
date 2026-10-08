@@ -297,4 +297,10 @@ Adjacent topic bands at shared receiving terminals now reserve full turn clearan
 
 Verification: npx tsc --noEmit passed after all source edits. No runtime, browser, build, unit or performance tests were run, following the TypeScript-only instruction. Mocked data: none. Successful large-city loading, routing speed and visual layout remain runtime-unverified. No packages installed. Git reported LF-to-CRLF warnings for largeCityPreset.ts and scenarioActions.ts.
 
+## 2026-10-08 large-map failure review and strategy
+
+User reported a cache-budget error and an unresponsive page. Confirmed the previous implementation was committed as a679ed3 and pushed; the working tree was clean. Reviewed synchronous layout/road searches, cache allocation, sprite creation, camera bounds and scenario persistence. Recorded findings and a staged strategy in large-map-strategy.md, comparing preservation of current artwork with optional visual simplifications. Proposed worker calculation, complete saved/versioned layouts, sparse road search, viewport tiles, asset reuse, byte-based budgets and independent state updates. The reported freeze is consistent with synchronous derivation before cache validation but was not profiled. Application behavior remains unchanged; the reported bug is not fixed by this documentation.
+
+No tests or runtime checks run for this documentation-only change. Mocked data: none. No packages installed. Initial searches of canvasRenderer.ts and scenarioStorage.ts reported missing-file errors; inspected the actual renderer/runtime/editor modules instead. Browser API references checked against MDN. Git line-ending warnings, if emitted when committing, must be reported.
+
 Branch codex/kafka-city; discussion discussions/kafka-city; task task.md; Windows / Node 20.19.0 / npm 10.8.2 / Vite 6.4.3; configured Vite port 5173; application credentials none.
