@@ -11,6 +11,7 @@ below: a slide missing from it, or a row with no source, fails the check.
 | how it will be read | __MEDIUM__ |
 | language and direction | __LANG__ / __DIR__ |
 | where the content comes from | __SOURCE__ |
+| shows the app's screens | __SCREENS__ |
 | confirmed by the reader on | *(date — until this is filled, no slide may show its numbers)* |
 | read from it on | *(date, and the commit or migration if it has one — "the seed" is not an answer six months from now)* |
 | what it does **not** cover | __OUTOFSCOPE__ |
@@ -22,9 +23,13 @@ One row per slide. The source column is the load-bearing one: it names the file,
 document each slide's content is read from. Where two sources could have produced a number,
 the session stops and asks which — it never picks the likelier one.
 
-| # | slide | what it answers | where its content comes from |
-|---|---|---|---|
-| 01 | __COVER__ | what this is, and for whom | — |
+The picture column is a proposal: the screen a slide shows as a drawn mockup
+(`screens/<name>.svg`), or `—` for none. It stays `—` on every row when the reader said no to
+screens.
+
+| # | slide | what it answers | where its content comes from | picture |
+|---|---|---|---|---|
+| 01 | __COVER__ | what this is, and for whom | — | — |
 
 ## What is left out, and why
 

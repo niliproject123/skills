@@ -21,13 +21,16 @@ correction. `brief.md` in the deck folder is where it lives, and `deck_check.py`
 | how it will be read | — | **always ask.** On screen · printed to pdf · sent as pptx · projected. It decides whether a `.grow` slide is allowed at all, and whether charts may stay as svg |
 | language and direction | `<html lang dir>` of an existing deck, the repository's own text | **always confirm rtl or ltr.** Never infer it from the language of the request. It decides the sidebar's side, how every mixed number must be wrapped, and whether the pptx needs `rtl="1"` on each paragraph |
 | where the content comes from | the seed, a migration, a spec document, a live database | **always ask.** Propose the source you found and how you found it; read nothing into slides until it is confirmed. See below |
+| shows the app's screens | — | **always ask, yes or no.** A deck about software reads as a wall of text without them, and a deck for a reader who never sees the app may not want them. Ask once; a yes is not a list of screens, the slide plan proposes those |
 | what it does not cover | the reader's request, and what you found and dropped | never |
 | how long it is | your own draft plan | never — propose a number of slides |
 
 ## The slide plan
 
-One row per slide: the number, the title, **what question it answers**, and **where its
-content comes from**. It is the second half of `brief.md` and the thing `deck_check.py`
+One row per slide: the number, the title, **what question it answers**, **where its
+content comes from**, and **its picture** — the screen it shows as a drawn mockup
+(`screens/<name>.svg`), or `—`. The picture is proposed, never asked slide by slide: the
+reader sees every row and strikes or adds a screen in the same reply as the rest of the plan. It is the second half of `brief.md` and the thing `deck_check.py`
 enforces — a slide absent from the plan, or a row whose source column is empty, fails.
 
 Write the plan before the first slide. Then every slide has a job, and a slide that answers

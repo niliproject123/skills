@@ -126,8 +126,44 @@ def brief_rows(folder):
         if len(cells) < 4 or not re.fullmatch(r'\d{1,2}', cells[0]):
             continue
         rows['%02d' % int(cells[0])] = {'title': cells[1], 'answers': cells[2],
-                                        'source': cells[3]}
+                                        'source': cells[3],
+                                        'picture': cells[4] if len(cells) > 4 else None}
     return rows, path
+
+
+def screens_answer(path):
+    """The brief's 'shows the app's screens' line: 'yes', 'no', 'unsaid', or None when it has none."""
+    for line in path.read_text(encoding='utf-8').splitlines():
+        cells = [c.strip() for c in line.strip().strip('|').split('|')]
+        if len(cells) == 2 and cells[0].lower().startswith('shows the app'):
+            said = cells[1].strip('* ').lower()
+            return 'yes' if said.startswith('yes') else 'no' if said.startswith('no') else 'unsaid'
+    return None
+
+
+def check_pictures(folder, rows, path, trouble):
+    """Screens are asked once, yes or no; the plan then proposes a picture per slide.
+    A yes with no picture column is a plan the reader never saw the screens in, and a
+    picture naming an svg that was never drawn is an empty frame on the slide."""
+    said = screens_answer(path)
+    if said is None:
+        trouble.append("the brief never says whether the deck shows the app's screens -- ask, yes or no")
+        return
+    if said == 'unsaid':                 # the template's prompt: unanswered() already said so
+        return
+    for no, row in sorted(rows.items()):
+        pic = (row['picture'] or '').strip('-–—* ')
+        if said == 'yes' and row['picture'] is None:
+            trouble.append('slide %s: screens were asked for and the plan proposes no picture '
+                           '(a fifth column: screens/<name>.svg, or -)' % no)
+            continue
+        if said == 'no' and pic:
+            trouble.append('slide %s plans a picture (%s) and the reader said no to screens' % (no, pic))
+            continue
+        for svg in re.findall(r'screens/[\w.-]+\.svg', pic):
+            if not (folder / svg).exists():
+                trouble.append('slide %s plans %s and it was never drawn -- run build_screens.py'
+                               % (no, svg))
 
 
 def unanswered(path):
@@ -158,6 +194,7 @@ def check_brief(folder, slides, rep):
     trouble = []
     for line in unanswered(path):
         trouble.append('%s: still the question the template asked, never answered' % line)
+    check_pictures(folder, rows, path, trouble)
     for s in slides:
         row = rows.get(s['no'])
         if row is None:

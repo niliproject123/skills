@@ -119,6 +119,7 @@ def main():
         'LANG': args.language,
         'DIR': args.direction,
         'SOURCE': '*(the file, table or document this deck is read from)*',
+        'SCREENS': "*(yes or no - asked, never assumed. A yes puts a picture per slide in the plan)*",
         'OUTOFSCOPE': '*(what it deliberately leaves out)*',
         'COVER': say['cover'],
     }), encoding='utf-8')

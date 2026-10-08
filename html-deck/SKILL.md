@@ -56,7 +56,7 @@ again and the deck is current — that is the whole reason the folder has a buil
 Propose it, do not interview. Fill every line you can from the repository, show it as one
 table, and get it corrected in one reply. `references/brief.md` says what to fill from where.
 
-**Four things are always asked**, because no file answers them and a wrong guess rewrites
+**Five things are always asked**, because no file answers them and a wrong guess rewrites
 the deck:
 
 - **where the content comes from** — name the file, table or document you intend to read
@@ -65,6 +65,8 @@ the deck:
 - **who reads it** — it sets every word on every slide
 - **how it will be read** — on screen, printed to pdf, sent as pptx, projected
 - **right-to-left or left-to-right** — never inferred from the language of the request
+- **whether it shows the app's screens** — yes or no, once. A yes is not a list: the slide plan
+  then proposes, per slide, which screen it shows, and that is corrected with the plan
 
 Two rules follow from the first, and cost more than all the rest together:
 
@@ -99,7 +101,7 @@ Pick the layout from the shape of the content, not from habit — `references/la
 the catalogue and the skeleton. A deck where every slide is the same grid of boxes reads as
 a wall.
 
-A slide about an app's screen shows a **drawn mockup** of it: svg drawn by
+When the reader said yes to screens, a slide the plan gives a screen shows a **drawn mockup** of it: svg drawn by
 `templates/build_screens.py` with `scripts/screen_mock.py`, every label, colour and layout read
 from the app's code, grey bars where the user's data would be, checked with
 `screen_mock.py preview` before the slide is written — `references/layouts.md`.

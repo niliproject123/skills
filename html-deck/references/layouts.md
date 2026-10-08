@@ -116,8 +116,9 @@ cannot click that line and rewrite it.
 
 ## Drawn mockups
 
-When markup cannot look like the screen — a chart, the app's own dark theme, a dialog over a
-graph — draw the screen as svg instead. The deck folder gets `build_screens.py` (copy
+Only when the brief says the deck shows the app's screens, and only on the slides its plan
+gives a picture. When markup cannot look like the screen — a chart, the app's own dark theme,
+a dialog over a graph — draw the screen as svg instead. The deck folder gets `build_screens.py` (copy
 `templates/build_screens.py`); it imports the primitives from `scripts/screen_mock.py` and
 writes `screens/*.svg`, one function per screen, named for the screen.
 
