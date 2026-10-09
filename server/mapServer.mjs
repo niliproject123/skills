@@ -3,8 +3,10 @@ import {timingSafeEqual,randomBytes} from 'node:crypto';
 import {mkdir,readFile,writeFile,rename} from 'node:fs/promises';
 import {resolve} from 'node:path';
 import {validateMapSnapshot,PayloadError} from '../shared/mapProtocol.mjs';
+import {serveStatic} from './staticFiles.mjs';
+import {fileURLToPath} from 'node:url';
 
-export async function startMapServer({port=8787,token,storageDirectory=resolve('.kafka-city')}={}){
+export async function startMapServer({port=8787,token,storageDirectory=resolve('.kafka-city'),appDirectory,instructionsFile=fileURLToPath(new URL('../discussions/kafka-city/collector-setup.md',import.meta.url))}={}){
  await mkdir(storageDirectory,{recursive:true});
  if(!token){const tokenPath=resolve(storageDirectory,'access-token.txt');try{token=(await readFile(tokenPath,'utf8')).trim();}catch(error){if(error.code!=='ENOENT')throw new Error(`Cannot read ingestion token: ${error.message}`);token=randomBytes(32).toString('hex');await writeFile(tokenPath,token,{mode:0o600});}}
  if(token.length<24)throw new Error('KAFKA_CITY_INGEST_TOKEN must contain at least 24 characters.');
@@ -16,14 +18,16 @@ export async function startMapServer({port=8787,token,storageDirectory=resolve('
  const matches=supplied=>{const a=Buffer.from(supplied??''),b=Buffer.from(`Bearer ${token}`);return a.length===b.length&&timingSafeEqual(a,b);};
  const server=createServer(async(request,response)=>{
   try{
-   const origin=request.headers.origin;if(origin&&!['http://localhost:5173','http://127.0.0.1:5173'].includes(origin)){send(response,403,{error:'Origin is not allowed.'});return;}
+   const origin=request.headers.origin,currentPort=server.address().port;if(origin&&!['http://localhost:5173','http://127.0.0.1:5173',`http://localhost:${currentPort}`,`http://127.0.0.1:${currentPort}`].includes(origin)){send(response,403,{error:'Origin is not allowed.'});return;}
    const path=new URL(request.url,'http://localhost').pathname;
    if(path==='/api/v1/health'&&request.method==='GET'){send(response,200,{ok:true,hasSnapshot:!!latest,receivedAt,subscribers:subscribers.size});return;}
    if(path==='/api/v1/map'&&request.method==='GET'){send(response,200,envelope());return;}
+   if(path==='/api/v1/instructions'&&request.method==='GET'){const instructions=await readFile(instructionsFile,'utf8');response.writeHead(200,{'Content-Type':'text/plain; charset=utf-8','Cache-Control':'no-store','X-Content-Type-Options':'nosniff'});response.end(instructions);return;}
    if(path==='/api/v1/events'&&request.method==='GET'){
     if(subscribers.size>=32){send(response,503,{error:'Too many live viewers.'});return;}
     response.writeHead(200,{'Content-Type':'text/event-stream','Cache-Control':'no-cache','Connection':'keep-alive','X-Content-Type-Options':'nosniff'});response.write(`event: snapshot\ndata: ${JSON.stringify(envelope())}\n\n`);subscribers.add(response);request.on('close',()=>subscribers.delete(response));return;
    }
+   if(!path.startsWith('/api/')&&appDirectory&&await serveStatic(response,path,appDirectory,request.method))return;
    if(path!=='/api/v1/map'||request.method!=='PUT'){send(response,404,{error:'Unknown endpoint or method.'});return;}
    if(!matches(request.headers.authorization)){send(response,401,{error:'A valid ingestion bearer token is required.'});return;}
    if(!request.headers['content-type']?.startsWith('application/json')){send(response,415,{error:'Content-Type must be application/json.'});return;}

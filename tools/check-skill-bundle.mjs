@@ -1,0 +1,41 @@
+import assert from 'node:assert/strict';
+import {createRequire} from 'node:module';
+import {spawn,spawnSync} from 'node:child_process';
+import {createServer} from 'node:net';
+import {mkdtemp,readFile,writeFile,mkdir,rm} from 'node:fs/promises';
+import {resolve,join,dirname} from 'node:path';
+import {tmpdir} from 'node:os';
+import {createHash} from 'node:crypto';
+import {exampleSnapshot} from './live-fixture.mjs';
+const browserPackages=process.argv[2];if(!browserPackages)throw new Error('Pass the installed Playwright directory.');
+const archive=resolve('releases/kafka-city-skill-v0.1.0.zip'),directory=await mkdtemp(join(tmpdir(),'kafka-city-package-'));
+let child,browser;const errors=[],warnings=[],checks=[];let output='',serverErrors='';
+try{
+ const extraction=spawnSync('python',['-c','import sys, zipfile, pathlib; archive=zipfile.ZipFile(sys.argv[1]); assert archive.testzip() is None; assert all(n.startswith("kafka-city/") and ".." not in n and "\\\\" not in n and "//" not in n for n in archive.namelist()); archive.extractall(sys.argv[2])',archive,directory],{encoding:'utf8'});if(extraction.error)throw extraction.error;if(extraction.status!==0)throw new Error(`Cannot extract bundle: ${extraction.stderr}`);
+ const skill=join(directory,'kafka-city'),manifest=JSON.parse(await readFile(join(skill,'bundle-manifest.json'),'utf8'));
+ for(const [file,checksum] of Object.entries(manifest.files)){assert.ok(!file.startsWith('/')&&!file.includes('..'));assert.equal(createHash('sha256').update(await readFile(join(skill,file))).digest('hex'),checksum,file);assert.ok(!/node_modules|access-token|snapshot\.json|\.kafka-city|\.git\//.test(file));}
+ assert.ok(Object.hasOwn(manifest.files,'SKILL.md'));assert.ok(Object.hasOwn(manifest.files,'references/collector-setup.md'));checks.push('ZIP integrity, file hashes and private-file exclusion');
+ const launcher=join(skill,'scripts/run.mjs'),help=spawnSync(process.execPath,[launcher,'--help'],{encoding:'utf8'});assert.equal(help.status,0,help.stderr);assert.match(help.stdout,/--port/);
+ const invalid=spawnSync(process.execPath,[launcher,'--port','bad'],{encoding:'utf8'});assert.notEqual(invalid.status,0);assert.match(invalid.stderr,/Port must be/);checks.push('launcher help and explicit option errors');
+ const probe=createServer();await new Promise(accept=>probe.listen(0,'127.0.0.1',accept));const port=probe.address().port;await new Promise(accept=>probe.close(accept));
+ const work=join(directory,'user-workspace'),data=join(work,'my-cluster-data');await mkdir(work);
+ child=spawn(process.execPath,[launcher,'--port',String(port),'--data',data],{cwd:work,stdio:['ignore','pipe','pipe']});child.stdout.on('data',chunk=>output+=chunk);child.stderr.on('data',chunk=>serverErrors+=chunk);
+ const base=`http://localhost:${port}`;let healthy=false,lastError;
+ for(let attempt=0;attempt<80;attempt++){if(child.exitCode!==null)throw new Error(`Bundle server exited: ${serverErrors}`);try{const response=await fetch(`${base}/api/v1/health`);if(response.status===200){healthy=true;assert.equal((await response.json()).hasSnapshot,false);break;}}catch(error){lastError=error;}await new Promise(accept=>setTimeout(accept,100));}if(!healthy)throw new Error(`Bundle server did not start: ${lastError}; ${serverErrors}`);
+ const token=(await readFile(join(data,'access-token.txt'),'utf8')).trim();assert.equal(token.length,64);assert.ok(output.includes(data));checks.push('standalone start from user workspace with custom port/data and no npm install');
+ const pageResponse=await fetch(`${base}/?live=1`);assert.equal(pageResponse.status,200);assert.match(pageResponse.headers.get('content-type'),/text\/html/);
+ const instructions=await fetch(`${base}/api/v1/instructions`,{headers:{Origin:base}});assert.equal(instructions.status,200);assert.match(await instructions.text(),/downloadable skill bundle/);
+ assert.equal((await fetch(`${base}/missing.js`)).status,404);assert.equal((await fetch(`${base}/%2e%2e%2fshared%2fmapProtocol.mjs`)).status,403);assert.equal((await fetch(`${base}/.kafka-city/access-token.txt`)).status,404);checks.push('same-origin contract, static files and traversal protection');
+ const {chromium}=createRequire(resolve(browserPackages,'package.json'))('playwright');browser=await chromium.launch({headless:true});const context=await browser.newContext({viewport:{width:1440,height:1000}}),page=await context.newPage();
+ page.on('pageerror',error=>errors.push(error.message));page.on('console',message=>{if(message.type()==='error')errors.push(message.text());if(message.type()==='warning')warnings.push(message.text());});
+ await page.goto(`${base}/?live=1`,{waitUntil:'domcontentloaded'});await page.getByText('Waiting for your collector',{exact:true}).waitFor();assert.equal(await page.locator('.canvas-world').count(),0);assert.equal(await page.getByText('Test configuration',{exact:true}).count(),0);
+ assert.equal(await page.getByRole('link',{name:'Collector setup instructions'}).getAttribute('href'),'/api/v1/instructions');checks.push('compiled product opens in live waiting mode');
+ const first=exampleSnapshot();first.cluster.name='Synthetic downloaded-bundle check';
+ const put=async snapshot=>{const response=await fetch(`${base}/api/v1/map`,{method:'PUT',headers:{Origin:base,authorization:`Bearer ${token}`,'content-type':'application/json'},body:JSON.stringify(snapshot)});assert.equal(response.status,200,await response.text());};
+ await put(first);await page.waitForFunction(()=>document.querySelector('.canvas-world')?.dataset.pendingTiles==='0',{},{timeout:60000});assert.equal(await page.locator('.city-label.service').count(),2);assert.equal(await page.locator('.city-label.topic').count(),1);checks.push('packaged layout/tile/vehicle workers and live map');
+ const snapshot=structuredClone(first);snapshot.sequence=2;snapshot.observedAt=new Date().toISOString();snapshot.metrics.consumerGroups['billing-orders'].lag=30000;await put(snapshot);await page.waitForFunction(()=>document.querySelector('[data-gauge="billing-orders"]')?.getAttribute('aria-label')?.includes('30000')||document.querySelector('.live-status')?.textContent.includes('#2'));checks.push('collector update through the standalone origin');
+ await page.locator('.view-controls summary').click();await page.getByLabel('Lag gauges',{exact:true}).selectOption('always');await page.getByLabel('Topic signs',{exact:true}).selectOption('always');await page.locator('.view-controls summary').click();await page.waitForFunction(()=>document.querySelector('[data-gauge="billing-orders"] span')?.textContent==='30,000');
+ await page.screenshot({path:resolve('discussions/kafka-city/skill-bundle.png')});assert.deepEqual(errors,[]);assert.deepEqual(warnings,[]);assert.equal(serverErrors,'');
+ const result={checks,files:Object.keys(manifest.files).length,errors,warnings,mockedData:'Synthetic topology/measurements only. Actual extracted ZIP, launcher, disk, HTTP server, built frontend and workers; no installed runtime packages or real Kafka.'};await writeFile('discussions/kafka-city/skill-bundle-check.json',JSON.stringify(result,null,2));console.log(JSON.stringify(result,null,2));
+}catch(error){console.error(JSON.stringify({error:String(error),checks,errors,warnings,serverErrors}));throw error;}
+finally{if(browser)await browser.close();if(child&&child.exitCode===null){child.kill();await new Promise(accept=>child.once('exit',accept));}if(dirname(resolve(directory))!==resolve(tmpdir()))throw new Error('Unexpected bundle test cleanup path.');await rm(directory,{recursive:true});}

@@ -1,0 +1,4 @@
+interface:
+  display_name: "Kafka City"
+  short_description: "Run Kafka City and adapt it to your Kafka system"
+  default_prompt: "Use $kafka-city to run the map and connect it to my Kafka environment using the data sources available here."

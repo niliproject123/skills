@@ -4,6 +4,8 @@ Give these instructions to the Codex/Claude session that can access your Kafka d
 
 ## Start the product
 
+For the downloadable skill bundle, extract the ZIP and run `node scripts/run.mjs` from its `kafka-city` folder (Node.js 20.19+). Open the printed URL, normally http://localhost:8787/?live=1. Map and API use the same port; no npm install or Vite is required. `--port 8788` and `--data ./cluster-data` customize the local port and storage. The data directory is resolved from your working directory. Keep collectors/configuration in your own workspace, separate from packaged runtime assets. The bundle's SKILL.md guides the adapting session.
+
 From the Kafka City repository, run these in separate terminals:
 
 ```powershell
@@ -11,7 +13,7 @@ npm run server
 npm run dev
 ```
 
-Open http://localhost:5173/?live=1 to start directly in the live product, or open http://localhost:5173 and click **Connect live**. The ingestion API listens on **127.0.0.1:8787**. Vite proxies `/api` to it. This is a local development product; a production build needs a same-origin reverse proxy for the API and appropriate viewer authentication.
+Open http://localhost:5173/?live=1 to start directly in the live product, or open http://localhost:5173 and click **Connect live**. The ingestion API listens on **127.0.0.1:8787**. Vite proxies `/api` to it. Alternatively, run `npm run build` then `npm start` for the standalone map/API on port 8787. Remote production access needs a secured gateway and appropriate viewer authentication.
 
 On first server startup without `KAFKA_CITY_INGEST_TOKEN`, the server generates an ingestion token in `.kafka-city/access-token.txt` and reuses it on later starts. This directory is ignored by Git. An environment-provided token must contain at least 24 characters. Never include the token in a committed file, browser bundle, URL, screenshot, or collector logs.
 
@@ -66,7 +68,7 @@ Invoke-RestMethod -Method Put -Uri http://127.0.0.1:8787/api/v1/map `
   -ContentType application/json -InFile snapshot.json
 ```
 
-GET `/api/v1/health` reports server readiness; GET `/api/v1/map` returns `{snapshot, receivedAt}`, initially null. GET `/api/v1/events` streams these envelopes as SSE `snapshot` events and heartbeat comments. Writes require the ingestion token. Read endpoints are accessible locally without a token; cross-origin browser access is denied except the local Vite origins. Saved snapshots are in `.kafka-city/snapshot.json`. Corrupt saved data stops startup with an error, rather than replacing it silently.
+GET `/api/v1/health` reports server readiness; GET `/api/v1/map` returns `{snapshot, receivedAt}`, initially null. GET `/api/v1/events` streams these envelopes as SSE `snapshot` events and heartbeat comments. GET `/api/v1/instructions` serves this contract. Writes require the ingestion token. Read endpoints are accessible locally without a token; cross-origin browser access is denied except the local Vite origins and the standalone server's own loopback origins. Saved snapshots are in `.kafka-city/snapshot.json`, or your chosen data directory. Corrupt saved data stops startup with an error, rather than replacing it silently.
 
 ## What the product displays
 

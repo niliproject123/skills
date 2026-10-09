@@ -1,0 +1,15 @@
+{
+  "checks": [
+    "ZIP integrity, file hashes and private-file exclusion",
+    "launcher help and explicit option errors",
+    "standalone start from user workspace with custom port/data and no npm install",
+    "same-origin contract, static files and traversal protection",
+    "compiled product opens in live waiting mode",
+    "packaged layout/tile/vehicle workers and live map",
+    "collector update through the standalone origin"
+  ],
+  "files": 24,
+  "errors": [],
+  "warnings": [],
+  "mockedData": "Synthetic topology/measurements only. Actual extracted ZIP, launcher, disk, HTTP server, built frontend and workers; no installed runtime packages or real Kafka."
+}
