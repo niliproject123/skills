@@ -14,7 +14,7 @@ async function tree(source,destination){for(const entry of (await readdir(resolv
 await tree('skills/kafka-city','');
 // Use a fixed allowlist; never copy the working directory, secrets or sessions.
 for(const file of ['mapServer.mjs','runProduct.mjs','staticFiles.mjs'])await add(`server/${file}`,`assets/app/server/${file}`);
-await add('shared/mapProtocol.mjs','assets/app/shared/mapProtocol.mjs');await tree('dist','assets/app/dist');
+await add('shared/mapProtocol.mjs','assets/app/shared/mapProtocol.mjs');await add('shared/clusterProtocol.mjs','assets/app/shared/clusterProtocol.mjs');await tree('dist','assets/app/dist');
 await add('discussions/kafka-city/collector-setup.md','references/collector-setup.md');await add('discussions/kafka-city/docker-kafka-handoff.md','references/docker-kafka-handoff.md');
 for(const dependency of ['react','react-dom','scheduler'])await add(`node_modules/${dependency}/LICENSE`,`licenses/${dependency}.txt`);
 const {version}=JSON.parse(await readFile(resolve(repository,'package.json'),'utf8'));

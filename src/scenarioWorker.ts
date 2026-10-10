@@ -4,6 +4,7 @@ import {computeLayout} from './mapLayout';
 import type {ScenarioConfig} from './scenarioTypes';
 import largeCityLayout from './largeCityLayout.json';
 import {checkSavedLayout} from './savedLayoutValidation';
+import {applicationTopology} from './clusterModel';
 
 const databaseName='kafka-city-layouts',layoutVersion=1;
 type SavedLayout=ReturnType<typeof computeLayout>;
@@ -34,7 +35,7 @@ async function saveLayout(key:string,layout:SavedLayout){
 self.onmessage=async({data}:{data:ScenarioConfig})=>{
  try{
   const config=validateScenario(data);
-  const key=JSON.stringify([layoutVersion,config.topology,{...config.layout,labels:undefined}]);
+  const key=JSON.stringify([layoutVersion,applicationTopology(config.topology),{...config.layout,labels:undefined}]);
   let layout:SavedLayout|undefined;
   if(largeCityLayout.version===layoutVersion&&largeCityLayout.key===key){checkSavedLayout(largeCityLayout.layout,config);layout=largeCityLayout.layout;self.postMessage({progress:'Loading prepared large-city roads and bridges…'});}
   else layout=await savedLayout(key);

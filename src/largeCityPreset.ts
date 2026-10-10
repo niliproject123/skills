@@ -18,7 +18,7 @@ export function largeCityPreset(config:ScenarioConfig){
   const link=links[index%links.length],source=names[link.from],destination=names[link.to];
   const topic=`${source.toLowerCase()}-${destination.toLowerCase()}-${index<links.length?'events':'updates'}`,producer=`${topic}-output`;
   const rate=[80,400,1400,3600][index%4];
-  config.topology.topics.push({id:topic,name:topic,partitionCount:1});
+  config.topology.topics.push({id:topic,name:topic,partitionCount:1,replicationFactor:3});
   config.topology.producers.push({id:producer,serviceId:source,topicId:topic,producerCount:1});
   config.state.topics[topic]={messagesPerSecond:rate};config.visualization.topicColors[topic]=automaticColor(topic);
   const groupId=`${destination.toLowerCase()}-receiving`;

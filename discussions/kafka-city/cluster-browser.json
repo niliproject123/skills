@@ -1,0 +1,16 @@
+{
+  "checks": [
+    "physical P2 lane, exact leader/replicas/ISR, three links and same camera/canvas",
+    "application context and selected partition preserved",
+    "topic highlights without replica relationship lines",
+    "broker factual inspector and AZ membership",
+    "outside-ISR replica remains present with neutral dim styling",
+    "normal cluster editor changes rack/AZ and explicit leader/ISR without JSON",
+    "live leader/ISR update keeps camera, canvas, roads and vehicle sprites",
+    "live missing placement shows unknown and removes links rather than generating",
+    "explicit district centering changes the camera only on request"
+  ],
+  "errors": [],
+  "warnings": [],
+  "mockedData": "Synthetic collector observations and edited demo state only; browser HTTP/SSE destination routed to an actual isolated server. Actual Chromium, React, Canvas, workers, protocol, persistence and layout; no real Kafka."
+}

@@ -21,6 +21,8 @@ Create the collector in the user's workspace, outside this skill's runtime asset
 
 Unavailable measurements must be null, not invented or retained under a fresh timestamp. Collection failures must send an explicit degraded/error status. Preserve stable IDs, increasing sequence numbers across restarts and true observation timestamps. The map retains strict topology/layout limits; scope oversized systems explicitly rather than silently truncating or weakening road constraints.
 
+Broker metadata and partition replica/leader/ISR placement are optional factual inputs described in the collector contract. Supply them only from actual authorized evidence; metrics alone do not establish replica placement. Omitted placement stays unknown in live mode. Include disconnected brokers that still host configured replicas, and document ID mappings, placement sources and discovery failures. Verify the selected lane's Cluster View against the observed replica set; do not interpret followers or outside-ISR replicas as health recommendations.
+
 ## Verify the result
 
 Check `/api/v1/health`, the accepted `/api/v1/map` snapshot, the live browser map and selected-item values. Verify updates and lag against actual observations; verify failure/stale behavior when practical within the user's authorization. Use [the Docker validation task](references/docker-kafka-handoff.md) only when the user asks to create a test cluster.

@@ -12,5 +12,5 @@ export function visibleObjects(options:ViewOptions){
  return {topics,services,filtered:!!selectedTopics.length||!!selectedServices.length};
 }
 export function signVisible(mode:SignMode,zoom:number,focused:boolean,threshold:number){return mode!=='hidden'&&(mode==='always'||zoom>=threshold||focused);}
-export function objectFocused(selection:Selection|null,kind:'service'|'topic'|'terminal',id:string){return !!selection&&(kind==='terminal'?selection.kind==='terminal'&&selection.id===id:kind==='topic'?selection.kind!=='service'&&(selection.kind==='topic'?selection.name:selection.topic)===id:selection.name===id&&selection.kind!=='topic');}
+export function objectFocused(selection:Selection|null,kind:'service'|'topic'|'terminal',id:string){return !!selection&&(kind==='terminal'?selection.kind==='terminal'&&selection.id===id:kind==='topic'?(selection.kind==='topic'||selection.kind==='partition'?selection.name:selection.kind==='terminal'||selection.kind==='gate'?selection.topic:undefined)===id:selection.name===id&&selection.kind!=='topic'&&selection.kind!=='partition'&&selection.kind!=='broker');}
 export function parseFocus(key:string):{topics:string[];services:string[]}|null{return key.startsWith('view:')?JSON.parse(key.slice(5)):null;}

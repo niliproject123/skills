@@ -1,0 +1,13 @@
+{
+  "checks": [
+    "exact demo orders assignments and an existing replica outside ISR",
+    "deterministic rack-aware demo generation and impossible RF rejection",
+    "single-partition topics distribute across all five brokers",
+    "missing/partial reported placement never synthesized",
+    "storage state excluded from application geometry key",
+    "broker, placement, leader, ISR, unknown-field and bounds validation",
+    "unknown leader/ISR accepted without invented state",
+    "actual authenticated HTTP ingestion and restart preserve replica state"
+  ],
+  "mockedData": "Explicit synthetic source observations and built-in demo scenarios only. Actual TypeScript cluster logic, shared validator, HTTP server and persisted files; no Kafka/provider mocks or real cluster."
+}

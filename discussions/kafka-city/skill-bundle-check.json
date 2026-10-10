@@ -6,9 +6,10 @@
     "same-origin contract, static files and traversal protection",
     "compiled product opens in live waiting mode",
     "packaged layout/tile/vehicle workers and live map",
-    "collector update through the standalone origin"
+    "collector update through the standalone origin",
+    "packaged broker protocol, Cluster View, factual counts and explicit centering"
   ],
-  "files": 24,
+  "files": 25,
   "errors": [],
   "warnings": [],
   "mockedData": "Synthetic topology/measurements only. Actual extracted ZIP, launcher, disk, HTTP server, built frontend and workers; no installed runtime packages or real Kafka."

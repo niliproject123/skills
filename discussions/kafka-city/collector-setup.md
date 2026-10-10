@@ -59,6 +59,35 @@ This example is synthetic. Replace its timestamp, names, topology and measuremen
 
 Map limits: 16 services, 64 topics, 64 producers/groups each, 32 partitions/topic, 16 topics/group and 128 total producer-to-group rendered connections. Maximum payload 1 MiB. Submit an explicitly scoped topology if the cluster exceeds these limits; never silently truncate it. Layout retains all spacing/clearance rules and can reject topologies it cannot fit. API acceptance validates the data contract; the browser separately reports layout/rendering errors.
 
+## Optional broker and replica state
+
+The version-1 snapshot also accepts `cluster.brokers` (at most 64) and each topic's `replicationFactor` and `partitions`. Existing collectors can omit these fields; Cluster View then displays missing placement as unknown. Obtain physical placement from actual authorized metadata/configuration sources. Throughput or lag metrics alone do not establish leader, replica or ISR membership. Do not synthesize placement, infer ISR from lag, or retain old placement under a fresh timestamp after discovery fails. Omit unavailable partition records and report the collection failure in `status`.
+
+```json
+{
+  "cluster": {
+    "id": "my-cluster", "name": "My Kafka cluster",
+    "brokers": [
+      {"id": "broker-1", "name": "Broker 1", "rack": "rack-a", "zone": "az-a"},
+      {"id": "broker-2", "name": "Broker 2", "rack": "rack-b", "zone": "az-b"}
+    ]
+  },
+  "topic": {
+    "id": "orders", "name": "orders", "partitionCount": 2, "replicationFactor": 2,
+    "partitions": [
+      {"partitionId": 0, "leaderBrokerId": "broker-1", "replicaBrokerIds": ["broker-1", "broker-2"], "inSyncReplicaBrokerIds": ["broker-1"]},
+      {"partitionId": 1, "leaderBrokerId": "broker-2", "replicaBrokerIds": ["broker-1", "broker-2"], "inSyncReplicaBrokerIds": ["broker-1", "broker-2"]}
+    ]
+  }
+}
+```
+
+This is a synthetic fragment: merge `cluster` into the full snapshot and put `topic` inside `topology.topics`; `topic` is not a top-level payload field. Preserve Kafka's numeric partition IDs (zero-based); normalize numeric broker IDs to stable IDs such as `broker-1`. All referenced brokers must be listed, including a broker hosting a configured replica even if disconnected. Document the actual broker ID mapping and placement source in the collector. `rack` and `zone` are optional independent factual labels.
+
+Each supplied partition needs a distinct, nonempty replica set (at most 32), a leader belonging to that set or `null`, and an ISR subset or `null`. An empty ISR array means the reported set is empty; null means unavailable. A null leader means unavailable/no elected leader, never a chosen substitute. Partial partition coverage is accepted and shown explicitly. For explicit placement, the inspector reports replication factor from the actual replica-set size; the optional topic RF is configuration metadata and does not change the reported set.
+
+Application View is unchanged by physical placement. Select a physical lane, switch to Cluster, and inspect its copies, leader/followers and ISR. Only selected partitions draw lane-to-copy links. Live placement updates reuse the application roads, camera and sprite caches. Broker counts cover known placements; partial coverage is disclosed. Dense brokers use numbered topic modules in overview, resolving a selected partition to its exact copy. The Broker District has a separate 64 MiB sprite budget; an oversized district produces a visible error requiring an explicitly scoped topology.
+
 ## Send a prepared JSON file
 
 ```powershell

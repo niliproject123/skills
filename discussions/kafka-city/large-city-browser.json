@@ -14,98 +14,108 @@
     {
       "stage": "demo",
       "data": {
+        "worldView": "application",
         "assetBytes": "22771492",
         "tileBytes": "16224000",
         "pendingTiles": "0",
         "filteredTopics": "[\"orders\",\"payments\",\"inventory\",\"fulfilments\"]",
         "filteredServices": "[\"Orders\",\"Payment\",\"Analytics\",\"Notification\",\"Inventory\",\"Shipping\",\"Fraud\"]",
         "zoomLevel": "medium",
-        "poseMs": "1.60",
-        "paintMs": "0.40",
-        "timings": "{\"frames\":94,\"drawMeanMs\":5.458510622065118,\"drawP95Ms\":22.59999990463257,\"frameMeanMs\":21.630851063829788,\"panDrawMeanMs\":null,\"panFrames\":0}",
-        "renderMs": "2.10",
+        "poseMs": "0.70",
+        "paintMs": "1.00",
+        "replicaConnections": "0",
+        "timings": "{\"frames\":1,\"drawMeanMs\":9.099999904632568,\"drawP95Ms\":9.099999904632568,\"frameMeanMs\":0,\"panDrawMeanMs\":null,\"panFrames\":0}",
+        "renderMs": "1.70",
         "visibleVehicles": "62",
-        "simulationTime": "2.050",
+        "simulationTime": "0.817",
         "camera": "0.0,0.0,1.00"
       }
     },
     {
       "stage": "large overview",
-      "loadMs": 31780,
+      "loadMs": 6290,
       "data": {
+        "worldView": "application",
         "assetBytes": "115757760",
         "tileBytes": "25958400",
         "pendingTiles": "0",
         "filteredTopics": "[\"orders-payments-events\",\"orders-customers-events\",\"payments-inventory-events\",\"payments-catalog-events\",\"inventory-shipping-events\",\"inventory-pricing-events\",\"shipping-notifications-events\",\"shipping-search-events\",\"notifications-recommendations-events\",\"customers-catalog-events\",\"customers-billing-events\",\"catalog-pricing-events\",\"catalog-fraud-events\",\"pricing-search-events\",\"pricing-support-events\",\"search-recommendations-events\",\"search-analytics-events\",\"recommendations-audit-events\",\"billing-fraud-events\",\"fraud-support-events\",\"support-analytics-events\",\"analytics-audit-events\",\"orders-payments-updates\",\"orders-customers-updates\",\"payments-inventory-updates\",\"payments-catalog-updates\",\"inventory-shipping-updates\",\"inventory-pricing-updates\",\"shipping-notifications-updates\",\"shipping-search-updates\",\"notifications-recommendations-updates\",\"customers-catalog-updates\",\"customers-billing-updates\",\"catalog-pricing-updates\",\"catalog-fraud-updates\"]",
         "filteredServices": "[\"Orders\",\"Payments\",\"Inventory\",\"Shipping\",\"Notifications\",\"Customers\",\"Catalog\",\"Pricing\",\"Search\",\"Recommendations\",\"Billing\",\"Fraud\",\"Support\",\"Analytics\",\"Audit\"]",
         "zoomLevel": "medium",
-        "poseMs": "6.20",
-        "paintMs": "25.20",
-        "timings": "{\"frames\":120,\"drawMeanMs\":24.295000008742015,\"drawP95Ms\":50,\"frameMeanMs\":32.08250000000001,\"panDrawMeanMs\":null,\"panFrames\":0}",
-        "renderMs": "31.70",
+        "poseMs": "1.00",
+        "paintMs": "3.10",
+        "replicaConnections": "0",
+        "timings": "{\"frames\":120,\"drawMeanMs\":6.960000002384186,\"drawP95Ms\":12.700000047683716,\"frameMeanMs\":16.66583333333334,\"panDrawMeanMs\":null,\"panFrames\":0}",
+        "renderMs": "4.10",
         "visibleVehicles": "140",
-        "simulationTime": "13.198",
+        "simulationTime": "2.600",
         "camera": "0.0,0.0,1.00"
       }
     },
     {
       "stage": "loading responsiveness",
       "data": {
-        "maximumDelay": 1249.7999999523163,
-        "ticks": 504
+        "maximumDelay": 405.2999999523163,
+        "ticks": 116
       }
     },
     {
       "stage": "large steady animation",
       "data": {
+        "worldView": "application",
         "assetBytes": "115757760",
         "tileBytes": "25958400",
         "pendingTiles": "0",
         "filteredTopics": "[\"orders-payments-events\",\"orders-customers-events\",\"payments-inventory-events\",\"payments-catalog-events\",\"inventory-shipping-events\",\"inventory-pricing-events\",\"shipping-notifications-events\",\"shipping-search-events\",\"notifications-recommendations-events\",\"customers-catalog-events\",\"customers-billing-events\",\"catalog-pricing-events\",\"catalog-fraud-events\",\"pricing-search-events\",\"pricing-support-events\",\"search-recommendations-events\",\"search-analytics-events\",\"recommendations-audit-events\",\"billing-fraud-events\",\"fraud-support-events\",\"support-analytics-events\",\"analytics-audit-events\",\"orders-payments-updates\",\"orders-customers-updates\",\"payments-inventory-updates\",\"payments-catalog-updates\",\"inventory-shipping-updates\",\"inventory-pricing-updates\",\"shipping-notifications-updates\",\"shipping-search-updates\",\"notifications-recommendations-updates\",\"customers-catalog-updates\",\"customers-billing-updates\",\"catalog-pricing-updates\",\"catalog-fraud-updates\"]",
         "filteredServices": "[\"Orders\",\"Payments\",\"Inventory\",\"Shipping\",\"Notifications\",\"Customers\",\"Catalog\",\"Pricing\",\"Search\",\"Recommendations\",\"Billing\",\"Fraud\",\"Support\",\"Analytics\",\"Audit\"]",
         "zoomLevel": "medium",
-        "poseMs": "13.20",
-        "paintMs": "21.40",
-        "timings": "{\"frames\":120,\"drawMeanMs\":33.21749999523163,\"drawP95Ms\":52.5,\"frameMeanMs\":44.72000000000001,\"panDrawMeanMs\":null,\"panFrames\":0}",
-        "renderMs": "36.60",
+        "poseMs": "2.30",
+        "paintMs": "4.80",
+        "replicaConnections": "0",
+        "timings": "{\"frames\":120,\"drawMeanMs\":6.055833327770233,\"drawP95Ms\":12.400000095367432,\"frameMeanMs\":16.66583333333333,\"panDrawMeanMs\":null,\"panFrames\":0}",
+        "renderMs": "7.20",
         "visibleVehicles": "140",
-        "simulationTime": "17.005",
+        "simulationTime": "6.150",
         "camera": "0.0,0.0,1.00"
       }
     },
     {
       "stage": "zoom and pan",
       "data": {
+        "worldView": "application",
         "assetBytes": "115757760",
         "tileBytes": "63814400",
         "pendingTiles": "0",
         "filteredTopics": "[\"orders-payments-events\",\"orders-customers-events\",\"payments-inventory-events\",\"payments-catalog-events\",\"inventory-shipping-events\",\"inventory-pricing-events\",\"shipping-notifications-events\",\"shipping-search-events\",\"notifications-recommendations-events\",\"customers-catalog-events\",\"customers-billing-events\",\"catalog-pricing-events\",\"catalog-fraud-events\",\"pricing-search-events\",\"pricing-support-events\",\"search-recommendations-events\",\"search-analytics-events\",\"recommendations-audit-events\",\"billing-fraud-events\",\"fraud-support-events\",\"support-analytics-events\",\"analytics-audit-events\",\"orders-payments-updates\",\"orders-customers-updates\",\"payments-inventory-updates\",\"payments-catalog-updates\",\"inventory-shipping-updates\",\"inventory-pricing-updates\",\"shipping-notifications-updates\",\"shipping-search-updates\",\"notifications-recommendations-updates\",\"customers-catalog-updates\",\"customers-billing-updates\",\"catalog-pricing-updates\",\"catalog-fraud-updates\"]",
         "filteredServices": "[\"Orders\",\"Payments\",\"Inventory\",\"Shipping\",\"Notifications\",\"Customers\",\"Catalog\",\"Pricing\",\"Search\",\"Recommendations\",\"Billing\",\"Fraud\",\"Support\",\"Analytics\",\"Audit\"]",
         "zoomLevel": "close",
-        "poseMs": "2.80",
-        "paintMs": "1.10",
-        "timings": "{\"frames\":120,\"drawMeanMs\":7.3658333341280615,\"drawP95Ms\":12.899999856948853,\"frameMeanMs\":33.60999999999998,\"panDrawMeanMs\":14.785714285714286,\"panFrames\":14}",
-        "renderMs": "4.20",
-        "visibleVehicles": "26",
-        "simulationTime": "40.917",
+        "poseMs": "3.20",
+        "paintMs": "0.70",
+        "replicaConnections": "0",
+        "timings": "{\"frames\":120,\"drawMeanMs\":3.319166678190231,\"drawP95Ms\":17,\"frameMeanMs\":17.77583333333332,\"panDrawMeanMs\":8.789473709307218,\"panFrames\":19}",
+        "renderMs": "4.10",
+        "visibleVehicles": "29",
+        "simulationTime": "11.333",
         "camera": "545.1,236.2,4.06"
       }
     },
     {
       "stage": "close steady animation",
       "data": {
+        "worldView": "application",
         "assetBytes": "115757760",
         "tileBytes": "63814400",
         "pendingTiles": "0",
         "filteredTopics": "[\"orders-payments-events\",\"orders-customers-events\",\"payments-inventory-events\",\"payments-catalog-events\",\"inventory-shipping-events\",\"inventory-pricing-events\",\"shipping-notifications-events\",\"shipping-search-events\",\"notifications-recommendations-events\",\"customers-catalog-events\",\"customers-billing-events\",\"catalog-pricing-events\",\"catalog-fraud-events\",\"pricing-search-events\",\"pricing-support-events\",\"search-recommendations-events\",\"search-analytics-events\",\"recommendations-audit-events\",\"billing-fraud-events\",\"fraud-support-events\",\"support-analytics-events\",\"analytics-audit-events\",\"orders-payments-updates\",\"orders-customers-updates\",\"payments-inventory-updates\",\"payments-catalog-updates\",\"inventory-shipping-updates\",\"inventory-pricing-updates\",\"shipping-notifications-updates\",\"shipping-search-updates\",\"notifications-recommendations-updates\",\"customers-catalog-updates\",\"customers-billing-updates\",\"catalog-pricing-updates\",\"catalog-fraud-updates\"]",
         "filteredServices": "[\"Orders\",\"Payments\",\"Inventory\",\"Shipping\",\"Notifications\",\"Customers\",\"Catalog\",\"Pricing\",\"Search\",\"Recommendations\",\"Billing\",\"Fraud\",\"Support\",\"Analytics\",\"Audit\"]",
         "zoomLevel": "close",
-        "poseMs": "2.50",
-        "paintMs": "0.90",
-        "timings": "{\"frames\":120,\"drawMeanMs\":4.5716666658719385,\"drawP95Ms\":9.900000095367432,\"frameMeanMs\":23.05499999999993,\"panDrawMeanMs\":12.964999985694885,\"panFrames\":20}",
-        "renderMs": "3.70",
-        "visibleVehicles": "25",
-        "simulationTime": "44.534",
+        "poseMs": "0.60",
+        "paintMs": "0.30",
+        "replicaConnections": "0",
+        "timings": "{\"frames\":120,\"drawMeanMs\":1.0508333305517832,\"drawP95Ms\":1.4000000953674316,\"frameMeanMs\":16.666666666666668,\"panDrawMeanMs\":9.545000028610229,\"panFrames\":20}",
+        "renderMs": "0.90",
+        "visibleVehicles": "26",
+        "simulationTime": "14.866",
         "camera": "545.1,236.2,4.06"
       }
     },
@@ -113,38 +123,93 @@
       "stage": "topic hover and focus tiles",
       "topic": "inventory-pricing-events",
       "data": {
+        "worldView": "application",
         "assetBytes": "115757760",
         "tileBytes": "96262400",
         "pendingTiles": "0",
         "filteredTopics": "[\"orders-payments-events\",\"orders-customers-events\",\"payments-inventory-events\",\"payments-catalog-events\",\"inventory-shipping-events\",\"inventory-pricing-events\",\"shipping-notifications-events\",\"shipping-search-events\",\"notifications-recommendations-events\",\"customers-catalog-events\",\"customers-billing-events\",\"catalog-pricing-events\",\"catalog-fraud-events\",\"pricing-search-events\",\"pricing-support-events\",\"search-recommendations-events\",\"search-analytics-events\",\"recommendations-audit-events\",\"billing-fraud-events\",\"fraud-support-events\",\"support-analytics-events\",\"analytics-audit-events\",\"orders-payments-updates\",\"orders-customers-updates\",\"payments-inventory-updates\",\"payments-catalog-updates\",\"inventory-shipping-updates\",\"inventory-pricing-updates\",\"shipping-notifications-updates\",\"shipping-search-updates\",\"notifications-recommendations-updates\",\"customers-catalog-updates\",\"customers-billing-updates\",\"catalog-pricing-updates\",\"catalog-fraud-updates\"]",
         "filteredServices": "[\"Orders\",\"Payments\",\"Inventory\",\"Shipping\",\"Notifications\",\"Customers\",\"Catalog\",\"Pricing\",\"Search\",\"Recommendations\",\"Billing\",\"Fraud\",\"Support\",\"Analytics\",\"Audit\"]",
         "zoomLevel": "close",
-        "poseMs": "2.60",
-        "paintMs": "1.60",
-        "timings": "{\"frames\":120,\"drawMeanMs\":7.070000000794729,\"drawP95Ms\":12.599999904632568,\"frameMeanMs\":28.8875,\"panDrawMeanMs\":12.964999985694885,\"panFrames\":20}",
-        "renderMs": "4.80",
-        "visibleVehicles": "29",
-        "simulationTime": "64.390",
+        "poseMs": "0.70",
+        "paintMs": "0.40",
+        "replicaConnections": "0",
+        "timings": "{\"frames\":120,\"drawMeanMs\":1.6658333520094553,\"drawP95Ms\":2.6000001430511475,\"frameMeanMs\":16.664999999999996,\"panDrawMeanMs\":9.545000028610229,\"panFrames\":20}",
+        "renderMs": "1.20",
+        "visibleVehicles": "27",
+        "simulationTime": "18.883",
         "camera": "545.1,236.2,4.06"
       }
     },
     {
-      "stage": "repeat large load",
-      "loadMs": 2326,
+      "stage": "large broker distribution",
       "data": {
+        "brokers": [
+          {
+            "broker": "broker-1",
+            "replicas": 27
+          },
+          {
+            "broker": "broker-2",
+            "replicas": 8
+          },
+          {
+            "broker": "broker-3",
+            "replicas": 29
+          },
+          {
+            "broker": "broker-4",
+            "replicas": 6
+          },
+          {
+            "broker": "broker-5",
+            "replicas": 35
+          }
+        ]
+      }
+    },
+    {
+      "stage": "large Cluster View",
+      "data": {
+        "worldView": "cluster",
+        "assetBytes": "115757760",
+        "tileBytes": "96262400",
+        "pendingTiles": "0",
+        "filteredTopics": "[\"orders-payments-events\",\"orders-customers-events\",\"payments-inventory-events\",\"payments-catalog-events\",\"inventory-shipping-events\",\"inventory-pricing-events\",\"shipping-notifications-events\",\"shipping-search-events\",\"notifications-recommendations-events\",\"customers-catalog-events\",\"customers-billing-events\",\"catalog-pricing-events\",\"catalog-fraud-events\",\"pricing-search-events\",\"pricing-support-events\",\"search-recommendations-events\",\"search-analytics-events\",\"recommendations-audit-events\",\"billing-fraud-events\",\"fraud-support-events\",\"support-analytics-events\",\"analytics-audit-events\",\"orders-payments-updates\",\"orders-customers-updates\",\"payments-inventory-updates\",\"payments-catalog-updates\",\"inventory-shipping-updates\",\"inventory-pricing-updates\",\"shipping-notifications-updates\",\"shipping-search-updates\",\"notifications-recommendations-updates\",\"customers-catalog-updates\",\"customers-billing-updates\",\"catalog-pricing-updates\",\"catalog-fraud-updates\"]",
+        "filteredServices": "[\"Orders\",\"Payments\",\"Inventory\",\"Shipping\",\"Notifications\",\"Customers\",\"Catalog\",\"Pricing\",\"Search\",\"Recommendations\",\"Billing\",\"Fraud\",\"Support\",\"Analytics\",\"Audit\"]",
+        "zoomLevel": "close",
+        "poseMs": "1.00",
+        "paintMs": "0.10",
+        "replicaConnections": "0",
+        "timings": "{\"frames\":120,\"drawMeanMs\":1.9658333480358123,\"drawP95Ms\":2.700000047683716,\"frameMeanMs\":16.666666666666636,\"panDrawMeanMs\":9.545000028610229,\"panFrames\":20}",
+        "renderMs": "1.50",
+        "visibleVehicles": "12",
+        "simulationTime": "19.799",
+        "camera": "-530.6,413.6,5.23",
+        "brokerBytes": "8658000",
+        "knownReplicas": "105"
+      }
+    },
+    {
+      "stage": "repeat large load",
+      "loadMs": 690,
+      "data": {
+        "worldView": "application",
         "assetBytes": "115757760",
         "tileBytes": "96262400",
         "pendingTiles": "0",
         "filteredTopics": "[\"orders-payments-events\",\"orders-customers-events\",\"payments-inventory-events\",\"payments-catalog-events\",\"inventory-shipping-events\",\"inventory-pricing-events\",\"shipping-notifications-events\",\"shipping-search-events\",\"notifications-recommendations-events\",\"customers-catalog-events\",\"customers-billing-events\",\"catalog-pricing-events\",\"catalog-fraud-events\",\"pricing-search-events\",\"pricing-support-events\",\"search-recommendations-events\",\"search-analytics-events\",\"recommendations-audit-events\",\"billing-fraud-events\",\"fraud-support-events\",\"support-analytics-events\",\"analytics-audit-events\",\"orders-payments-updates\",\"orders-customers-updates\",\"payments-inventory-updates\",\"payments-catalog-updates\",\"inventory-shipping-updates\",\"inventory-pricing-updates\",\"shipping-notifications-updates\",\"shipping-search-updates\",\"notifications-recommendations-updates\",\"customers-catalog-updates\",\"customers-billing-updates\",\"catalog-pricing-updates\",\"catalog-fraud-updates\"]",
         "filteredServices": "[\"Orders\",\"Payments\",\"Inventory\",\"Shipping\",\"Notifications\",\"Customers\",\"Catalog\",\"Pricing\",\"Search\",\"Recommendations\",\"Billing\",\"Fraud\",\"Support\",\"Analytics\",\"Audit\"]",
         "zoomLevel": "medium",
-        "poseMs": "3.30",
-        "paintMs": "8.90",
-        "timings": "{\"frames\":1,\"drawMeanMs\":44.90000009536743,\"drawP95Ms\":44.90000009536743,\"frameMeanMs\":0,\"panDrawMeanMs\":null,\"panFrames\":0}",
-        "renderMs": "12.30",
+        "poseMs": "3.90",
+        "paintMs": "7.20",
+        "replicaConnections": "0",
+        "timings": "{\"frames\":120,\"drawMeanMs\":6.505000017086664,\"drawP95Ms\":16.299999952316284,\"frameMeanMs\":21.526666666666642,\"panDrawMeanMs\":9.545000028610229,\"panFrames\":20}",
+        "renderMs": "11.10",
         "visibleVehicles": "140",
-        "simulationTime": "0.607",
-        "camera": "0.0,0.0,1.00"
+        "simulationTime": "0.577",
+        "camera": "0.0,0.0,1.00",
+        "brokerBytes": "8658000",
+        "knownReplicas": "105"
       }
     },
     {

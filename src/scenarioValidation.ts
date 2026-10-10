@@ -1,4 +1,5 @@
 import type {ScenarioConfig} from './scenarioTypes';
+import {validateClusterTopology} from '../shared/clusterProtocol.mjs';
 function fail(path:string,message:string):never{throw new Error(`${path}: ${message}`);}
 function object(value:unknown,path:string):Record<string,any>{if(!value||typeof value!=='object'||Array.isArray(value))fail(path,'expected an object');return value as Record<string,any>;}
 function list(value:unknown,path:string,min=0,max=64):any[]{if(!Array.isArray(value)||value.length<min||value.length>max)fail(path,`expected ${min}–${max} entries`);return value;}
@@ -17,6 +18,7 @@ export function validateScenario(value:unknown):ScenarioConfig {
  for(const groupId of groupIds)if(producerIds.has(groupId))fail('terminals',`producer/group IDs must be distinct: ${groupId}`);
  services.forEach(service=>text(service.name,`service ${service.id}.name`));
  topics.forEach(topic=>{text(topic.name,`topic ${topic.id}.name`);number(topic.partitionCount,`topic ${topic.id}.partitionCount`,1,32,true);});
+ validateClusterTopology(config.cluster,topics,fail);
  const producerPairs=new Set<string>();
  producers.forEach(producer=>{reference(producer.serviceId,serviceIds,`producer ${producer.id}.serviceId`);reference(producer.topicId,topicIds,`producer ${producer.id}.topicId`);number(producer.producerCount,`producer ${producer.id}.producerCount`,1,32,true);const key=`${producer.serviceId}/${producer.topicId}`;if(producerPairs.has(key))fail('producers',`combine duplicate service/topic producer counts: ${key}`);producerPairs.add(key);});
  groups.forEach(group=>{text(group.name,`group ${group.id}.name`);reference(group.serviceId,serviceIds,`group ${group.id}.serviceId`);const subscriptions=list(group.topicIds,`group ${group.id}.topicIds`,1,16);if(new Set(subscriptions).size!==subscriptions.length)fail(`group ${group.id}.topicIds`,'duplicate subscription');subscriptions.forEach(id=>reference(id,topicIds,`group ${group.id}.topicIds`));number(group.consumerCount,`group ${group.id}.consumerCount`,1,32,true);});

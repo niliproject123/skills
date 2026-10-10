@@ -1,8 +1,11 @@
 import {topicRoadGeometry} from './roadMesh';
 import {topics,type Selection} from './model';
 import {pickStructure} from './terminalPicking';
+import {pickPartitionLane} from './partitionLanes';
 export function pick(x:number,y:number):Selection|null{
- const structure=pickStructure(x,y);if(structure)return structure;
+ const structure=pickStructure(x,y);if(structure&&structure.kind!=='topic')return structure;
+ const lane=pickPartitionLane(x,y);if(lane)return lane;
+ if(structure)return structure;
  const u=y+x/2,v=y-x/2;
  for(const topic of Object.keys(topics)){
  const geometry=topicRoadGeometry(topic);

@@ -4,6 +4,7 @@ import type {ScenarioConfig,DerivedRenderModel,Route} from './scenarioTypes';
 import {automaticColor,snapshotPartitions,tint,groupSnapshot} from './scenarioEncoding';
 import {worldGeometry} from './scenarioLayout';
 import {validateScenario} from './scenarioValidation';
+import {deriveCluster} from './clusterModel';
 export function deriveScenario(input:ScenarioConfig,savedLayout?:ReturnType<typeof computeLayout>):DerivedRenderModel {
  const config=validateScenario(input),visual=config.visualization,partitionLoads=snapshotPartitions(config),layout=savedLayout??computeLayout(config.topology,config.layout),{buildings,terminals}=layout;
  const services:DerivedRenderModel['services']={},topics:DerivedRenderModel['topics']={},themes:DerivedRenderModel['themes']={};
@@ -27,5 +28,5 @@ export function deriveScenario(input:ScenarioConfig,savedLayout?:ReturnType<type
  for(const group of consumerGroups)group.waiting=routes.filter(route=>route.terminal===group.id).reduce((sum,route)=>sum+route.queue,0);
  const geometry=worldGeometry(config,buildings,terminals,routes);
  // Raster allocation is bounded by the viewport tile cache, not logical map area.
- return {labelAnchors:labelAnchors(config,buildings,terminals,routes),services,topics,producers,consumerGroups,partitionLoads,cityBuildings:buildings,terminals,cityRoutes:routes,themes,terrainOutline:geometry.terrain,worldBounds:geometry.bounds,visualization:structuredClone(visual),overpasses:layout.overpasses.map(bridge=>({...bridge,lanes:topics[bridge.topic].partitions,depth:bridge.u+bridge.v+45}))};
+ return {cluster:deriveCluster(config),labelAnchors:labelAnchors(config,buildings,terminals,routes),services,topics,producers,consumerGroups,partitionLoads,cityBuildings:buildings,terminals,cityRoutes:routes,themes,terrainOutline:geometry.terrain,worldBounds:geometry.bounds,visualization:structuredClone(visual),overpasses:layout.overpasses.map(bridge=>({...bridge,lanes:topics[bridge.topic].partitions,depth:bridge.u+bridge.v+45}))};
 }

@@ -15,7 +15,7 @@ export function ObjectValues({configuration,selection}:{configuration:ScenarioCo
   const topic=topology.topics.find(item=>item.id===selection.name)!,groups=topology.consumerGroups.filter(item=>item.topicIds.includes(topic.id)),producers=topology.producers.filter(item=>item.topicId===topic.id);
   rows.push(['Topic',topic.name],['Partitions',number(topic.partitionCount)],['Throughput',number(topicRate(topic.id),' msg/s')],['Average message size',live?number(live.metrics.topics[topic.id].averageMessageBytes,' bytes'):'Not measured in demo'],['Producer services',producers.map(item=>topology.services.find(service=>service.id===item.serviceId)!.name).join(', ')||'Unknown / external'],['Consumer groups',groups.map(item=>item.name).join(', ')||'None']);
   if(live)rows.push(['Source',live.metrics.topics[topic.id].source]);
- }else{
+ }else if(selection.kind==='terminal'||selection.kind==='gate'){
   const terminalId=selection.kind==='terminal'?selection.id:selection.producer?topology.producers.find(item=>item.serviceId===selection.name&&item.topicId===selection.topic)?.id:topology.consumerGroups.find(item=>item.serviceId===selection.name&&item.topicIds.includes(selection.topic))?.id;
   if(!terminalId)return <p>Select a terminal yard to see its current values.</p>;
   if(selection.producer){const producer=topology.producers.find(item=>item.id===terminalId)!;rows.push(['Output dock',producer.id],['Producer instances',number(producer.producerCount)],['Topic',topology.topics.find(item=>item.id===producer.topicId)!.name],['Topic throughput',number(topicRate(producer.topicId),' msg/s')]);if(live)rows.push(['Source',live.metrics.topics[producer.topicId].source]);}

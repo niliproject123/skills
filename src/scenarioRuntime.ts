@@ -3,6 +3,7 @@ import {deriveScenario} from './scenarioDerive';
 import type {ScenarioConfig,DerivedRenderModel} from './scenarioTypes';
 import {automaticSpatialLayout,rememberSpatialLayout} from './spatialLayout';
 export let scenarioRevision=0;
+export let clusterRevision=0;
 export let currentScenario=structuredClone(defaultScenario);
 // Stable collection identities let existing visual components consume only the derived model.
 export const renderModel:DerivedRenderModel=deriveScenario(currentScenario);
@@ -19,5 +20,6 @@ export function applyMeasurements(config:ScenarioConfig){
  for(const key of ['services','topics','partitionLoads'] as const){for(const property of Object.keys(renderModel[key]))delete (renderModel[key] as Record<string,unknown>)[property];Object.assign(renderModel[key],next[key]);}
  renderModel.consumerGroups.splice(0,renderModel.consumerGroups.length,...next.consumerGroups);
  renderModel.cityRoutes.splice(0,renderModel.cityRoutes.length,...next.cityRoutes);
+ if(JSON.stringify(renderModel.cluster)!==JSON.stringify(next.cluster)){Object.assign(renderModel.cluster,next.cluster);clusterRevision++;}
  currentScenario=structuredClone(config);
 }

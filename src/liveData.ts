@@ -6,6 +6,7 @@ export let measurementRevision=0;
 export function setLiveSnapshot(snapshot:MapSnapshot|null){liveSnapshot=snapshot;measurementRevision++;}
 export function scenarioFromSnapshot(snapshot:MapSnapshot,previous?:ScenarioConfig):ScenarioConfig{
  const visualization=structuredClone(previous?.visualization??defaultScenario.visualization);visualization.serviceStyles={};
+ const cluster={brokers:structuredClone(snapshot.cluster.brokers??[]),placementMode:'reported' as const};
  const retained=previous?.visualization.topicColors??{},palette=['#de7952','#798fcd','#67a981','#bd83bc','#c9a65b','#669eae'];
  visualization.topicColors=Object.fromEntries(snapshot.topology.topics.filter(topic=>retained[topic.id]).map(topic=>[topic.id,retained[topic.id]]));
  for(const topic of snapshot.topology.topics)if(!visualization.topicColors[topic.id]){const used=Object.values(visualization.topicColors),color=palette.find(value=>!used.includes(value))??palette[used.length%palette.length];visualization.topicColors[topic.id]=color;}
@@ -14,6 +15,6 @@ export function scenarioFromSnapshot(snapshot:MapSnapshot,previous?:ScenarioConf
   // measurements below and never presents this rendering value as measured.
   topics:Object.fromEntries(snapshot.topology.topics.map(item=>[item.id,{messagesPerSecond:snapshot.metrics.topics[item.id].messagesPerSecond??0}])),
   consumerGroups:Object.fromEntries(snapshot.topology.consumerGroups.map(item=>[item.id,{consumptionRate:snapshot.metrics.consumerGroups[item.id].consumptionRate??0,lag:snapshot.metrics.consumerGroups[item.id].lag??0}]))
- }};
+ },cluster};
 }
 export function measuredLag(id:string,demoValue:number){return liveSnapshot?liveSnapshot.metrics.consumerGroups[id]?.lag??null:demoValue;}

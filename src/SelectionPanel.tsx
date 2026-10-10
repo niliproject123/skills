@@ -1,7 +1,10 @@
-import {services,topics,type Selection} from './model';
+import {services,topics,storageSelection,type Selection} from './model';
+import {ClusterInspector} from './ClusterInspector';
+import {currentScenario} from './scenarioRuntime';
 import {consumerGroups,groupById,producerById,partitionLoads} from './kafkaTopology';
 export function SelectionPanel({selection,onClose}:{selection:Selection|null;onClose:()=>void}) {
  if(!selection)return null;
+ if(storageSelection(selection))return <ClusterInspector configuration={currentScenario} selection={selection} onSelect={onClose}/>;
  if(selection.kind==='terminal'){
  const connection=selection.producer?producerById(selection.id):groupById(selection.id);
  return <aside aria-label="Selection details"><button className="close" onClick={onClose} aria-label="Close selection">×</button><small>{selection.producer?'PRODUCER TERMINAL':'CONSUMER GROUP'}</small><h2 style={{overflowWrap:'anywhere'}}>{'name' in connection?connection.name:connection.id}</h2><p>Service: {selection.name}</p><p>Topics: {'topic' in connection?connection.topic:connection.topics.join(', ')}</p><p>Active bays: {connection.instances}</p>{'lag' in connection&&<><p>Lag: {connection.lag.toLocaleString()}</p><p>Incoming: {connection.incomingRate.toLocaleString()} msg/s</p><p>Consumption: {connection.consumptionRate.toLocaleString()} msg/s</p><p className="status">{connection.status} - {connection.waiting} visible queued batches</p></>}<footer>Simulated consumer-group state · each vehicle represents a batch.</footer></aside>;

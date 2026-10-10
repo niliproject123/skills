@@ -4,8 +4,11 @@ import {bridgePoint,bridgeHeight,bridgeEnd} from './bridgeGeometry';
 import {services,topics,type Topic,type Selection} from './model';
 import {project} from './isometric';
 import {highlightDirections} from './highlightDirections';
-export function linked(topic:Topic,selected:Selection|null){return !selected||selected.kind==='topic'&&selected.name===topic||(selected.kind==='gate'||selected.kind==='terminal')&&selected.topic===topic||selected.kind==='service'&&[...services[selected.name].produces,...services[selected.name].consumes].includes(topic);}
+import {renderModel} from './scenarioRuntime';
+import {drawPartitionLane} from './partitionLanes';
+export function linked(topic:Topic,selected:Selection|null){return !selected||(selected.kind==='topic'||selected.kind==='partition')&&selected.name===topic||(selected.kind==='gate'||selected.kind==='terminal')&&selected.topic===topic||selected.kind==='service'&&[...services[selected.name].produces,...services[selected.name].consumes].includes(topic)||selected.kind==='broker'&&renderModel.cluster.partitions[topic]?.some(partition=>partition.replicaBrokerIds.includes(selected.name));}
 export function drawHighlights(drawing:CanvasRenderingContext2D,selection:Selection,scale:number,visibleTopics=Object.keys(topics)){
+ if(selection.kind==='partition'){if(visibleTopics.includes(selection.name))drawPartitionLane(drawing,selection.name,selection.partitionId,scale);return;}
  drawing.strokeStyle='#fff0a3';drawing.lineWidth=3/scale;drawing.globalAlpha=.8;
  for(const topic of visibleTopics)if(linked(topic,selection))for(const curve of topicRoadGeometry(topic).curves){
  drawing.beginPath();curve.points.forEach(({u,v},index)=>{const point=project(u,v);if(index===0)drawing.moveTo(point.x,point.y);else drawing.lineTo(point.x,point.y);});drawing.stroke();

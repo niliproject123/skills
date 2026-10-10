@@ -1,4 +1,5 @@
 // Shared by the HTTP server and browser. No Kafka/provider SDK is required.
+import {validateClusterTopology} from './clusterProtocol.mjs';
 export class PayloadError extends Error {}
 const fail=(path,message)=>{throw new PayloadError(`${path}: ${message}`);};
 function object(value,path){if(!value||typeof value!=='object'||Array.isArray(value))fail(path,'expected an object');return value;}
@@ -11,12 +12,13 @@ function reference(value,ids,path){if(!ids.has(value))fail(path,`unknown referen
 export function validateMapSnapshot(input,now=Date.now()){
  const snapshot=object(input,'snapshot');fields(snapshot,['version','sequence','cluster','observedAt','topology','metrics','status'],'snapshot');
  if(snapshot.version!==1)fail('version','only version 1 is supported');count(snapshot.sequence,'sequence',1);
- const cluster=object(snapshot.cluster,'cluster');fields(cluster,['id','name'],'cluster');text(cluster.id,'cluster.id',true);text(cluster.name,'cluster.name');
+ const cluster=object(snapshot.cluster,'cluster');fields(cluster,['id','name','brokers'],'cluster');text(cluster.id,'cluster.id',true);text(cluster.name,'cluster.name');
  const observed=Date.parse(snapshot.observedAt);if(typeof snapshot.observedAt!=='string'||!Number.isFinite(observed)||observed>now+30000||observed<now-86400000)fail('observedAt','expected an ISO timestamp within the last 24 hours and at most 30 seconds in the future');
  const topology=object(snapshot.topology,'topology');fields(topology,['services','topics','producers','consumerGroups'],'topology');
  const services=entries(topology.services,'services',16),topics=entries(topology.topics,'topics',64),producers=entries(topology.producers,'producers',64),groups=entries(topology.consumerGroups,'consumerGroups',64);
  for(const item of topology.services){fields(item,['id','name'],'service');text(item.name,'service.name');}
- for(const item of topology.topics){fields(item,['id','name','partitionCount'],'topic');text(item.name,'topic.name');count(item.partitionCount,'partitionCount',1,32);}
+ for(const item of topology.topics){fields(item,['id','name','partitionCount','replicationFactor','partitions'],'topic');text(item.name,'topic.name');count(item.partitionCount,'partitionCount',1,32);}
+ validateClusterTopology(cluster.brokers===undefined?undefined:{brokers:cluster.brokers},topology.topics,fail);
  const pairs=new Set();
  for(const item of topology.producers){fields(item,['id','serviceId','topicId','producerCount'],'producer');reference(item.serviceId,services,'producer.serviceId');reference(item.topicId,topics,'producer.topicId');count(item.producerCount,'producerCount',0,32);const pair=`${item.serviceId}/${item.topicId}`;if(pairs.has(pair))fail('producers','combine duplicate service/topic entries');pairs.add(pair);}
  for(const item of topology.consumerGroups){fields(item,['id','name','serviceId','topicIds','consumerCount'],'consumerGroup');text(item.name,'consumerGroup.name');reference(item.serviceId,services,'consumerGroup.serviceId');if(producers.has(item.id))fail('consumerGroups','producer and group IDs must be distinct');if(!Array.isArray(item.topicIds)||!item.topicIds.length||item.topicIds.length>16||new Set(item.topicIds).size!==item.topicIds.length)fail('topicIds','expected 1–16 distinct topic IDs');for(const id of item.topicIds)reference(id,topics,'consumerGroup.topicIds');count(item.consumerCount,'consumerCount',0,32);}
