@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 """The gate a deck passes before anyone outside the room sees it.
 
-Four checks, each one a defect that actually shipped:
+Five checks, each one a defect that actually shipped:
 
   fit     every slide fits the 1280x720 frame. A slide that overflows is **clipped** on
           screen by `overflow:hidden`, so it looks finished while its last rows are gone,
@@ -12,16 +12,21 @@ Four checks, each one a defect that actually shipped:
   marks   `data-no`, the corner badge and the ids agree, and no contents link is dead.
   brief   every slide has a row in `brief.md`, and every row names where its content
           came from. A slide whose source column is empty is a slide nobody may write.
+  edit    every line of words on a slide can be clicked and rewritten by the reader.
+          Read in the same headless browser, after edit.js armed the page. A deck whose
+          lines edit.js never armed passed the other four and could not be edited at all.
+          A line meant to stay fixed carries data-fixed.
 
 Exit code is the result: 0 if every check passed, 1 otherwise. Nothing is written.
 
-The fit check needs the deck **served**, because the stylesheet lives at `/_deck/` and a
+The fit and edit checks need the deck **served**, because the stylesheet lives at `/_deck/` and a
 `file://` page has no styling to measure. Give it the base url of the running viewer.
 
 Usage
     python deck_check.py <deck-folder> --url http://127.0.0.1:8899
     python deck_check.py <deck.html>  --url http://127.0.0.1:8899 --only fit
     python deck_check.py <deck-folder> --no-fit          # the three checks that need no browser
+    python deck_check.py <deck-folder> --url ... --only edit
     python deck_check.py <deck-folder> --url ... --allow-grow
 """
 import argparse
@@ -56,6 +61,28 @@ MEASURE_JS = """
     across: s.scrollWidth - s.clientWidth,
     height: Math.round(s.getBoundingClientRect().height)
   }));
+}
+"""
+
+# Every text node on a slide whose element edit.js did not arm. Same exclusions as FIXED in
+# edit.js -- keep the two in step.
+UNEDITABLE_JS = """
+() => {
+  const FIXED = '.slide-no, .toc, [data-fixed], [data-chrome], script, style, svg, button, .undo-btn';
+  const out = [];
+  document.querySelectorAll('section.slide').forEach(s => {
+    const walk = document.createTreeWalker(s, NodeFilter.SHOW_TEXT);
+    for (let n = walk.nextNode(); n; n = walk.nextNode()) {
+      const words = n.nodeValue.trim();
+      const el = n.parentElement;
+      if (!words || el.closest(FIXED)) continue;
+      const armed = el.closest('[data-edit]');
+      if (armed && armed.isContentEditable) continue;
+      out.push({no: s.dataset.no || '', name: s.dataset.name || '', words: words.slice(0, 60)});
+    }
+  });
+  return {slides: document.querySelectorAll('section.slide').length,
+          armed: document.querySelectorAll('section.slide [data-edit]').length, out};
 }
 """
 
@@ -243,6 +270,26 @@ def check_fit(url, rep, allow_grow):
         rep.ok('fit', '%d slides inside %dx%d' % (len(measured), FRAME_W, FRAME_H))
 
 
+def check_edit(url, rep):
+    from playwright.sync_api import sync_playwright
+    with sync_playwright() as p:
+        browser = p.chromium.launch()
+        page = browser.new_page(viewport={'width': FRAME_W + 420, 'height': 1000})
+        errors = []
+        page.on('pageerror', lambda e: errors.append(str(e)))
+        page.goto(url, wait_until='networkidle')
+        found = page.evaluate(UNEDITABLE_JS)
+        browser.close()
+    for e in errors:
+        rep.bad('edit', 'page error, edit.js may not have armed the page: %s' % e)
+    for u in found['out']:
+        rep.bad('edit', 'slide %s %s: "%s" cannot be edited -- put it in an element of its own, '
+                        'or mark it data-fixed if it must stay' % (u['no'], u['name'], u['words']))
+    if not errors and not found['out']:
+        rep.ok('edit', '%d slides, %d editable lines, every line of words editable'
+               % (found['slides'], found['armed']))
+
+
 def main():
     ap = argparse.ArgumentParser(description='check a deck before it is sent')
     ap.add_argument('deck', help='a deck .html, or a folder of them')
@@ -250,7 +297,7 @@ def main():
     ap.add_argument('--no-fit', action='store_true', help='skip the browser measurement')
     ap.add_argument('--allow-grow', action='store_true',
                     help='permit .grow slides -- a screen-only deck, never sent as pptx or pdf')
-    ap.add_argument('--only', choices=['fit', 'nav', 'marks', 'brief'], default=None)
+    ap.add_argument('--only', choices=['fit', 'nav', 'marks', 'brief', 'edit'], default=None)
     args = ap.parse_args()
 
     target = Path(args.deck)
@@ -280,6 +327,14 @@ def main():
                                '(serve.py) and pass its base url, or say --no-fit')
             else:
                 check_fit(args.url.rstrip('/') + '/' + deck.name, rep, args.allow_grow)
+        if want('edit'):
+            if args.no_fit:
+                print('  SKIP  edit   --no-fit: nothing says the reader can edit these slides')
+            elif not args.url:
+                rep.bad('edit', 'no --url, so editing was never checked. Serve the deck and '
+                                'pass its base url, or say --no-fit')
+            else:
+                check_edit(args.url.rstrip('/') + '/' + deck.name, rep)
 
     print('')
     if rep.failed:

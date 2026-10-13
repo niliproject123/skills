@@ -127,7 +127,7 @@ Run it after adding, deleting, renaming or reordering a slide, together with
 python <skill>/scripts/deck_check.py <deck-folder> --url http://127.0.0.1:8899
 ```
 
-Four checks, each one a defect that actually shipped. Exit code is the result.
+Five checks, each one a defect that actually shipped. Exit code is the result.
 
 | | |
 |---|---|
@@ -135,6 +135,7 @@ Four checks, each one a defect that actually shipped. Exit code is the result.
 | `nav` | the sidebar and the contents match the slides |
 | `marks` | `data-no`, the corner badge and the ids agree; no contents link is dead |
 | `brief` | every slide has a row in `brief.md`, and every row names its source |
+| `edit` | **every line of words on a slide can be rewritten by the reader.** Read in the headless browser after `edit.js` armed the page. Any element with words of its own is editable, whatever its class; a line meant to stay fixed carries `data-fixed` |
 
 **A slide that overflows is clipped, not scrolled** — `overflow:hidden` on the frame means
 it looks finished on screen while its last rows are gone, and it reaches the pdf and the
@@ -165,7 +166,7 @@ into a deck folder.
 | `deck_views.py` | what each screen slide *looks* like: table, tree, form, board |
 | `deck_edit.py` | write to a deck by line number; refuses an unbalanced or marked-up file |
 | `deck_nav.py` | the sidebar and the contents, from one scan |
-| `deck_check.py` | fit · nav · marks · brief, before it is sent |
+| `deck_check.py` | fit · nav · marks · brief · edit, before it is sent |
 | `reorder_slides.py` | put the slides in the order written in `slide-order.txt` |
 | `md_table.py` | a markdown document of tables becomes a deck |
 | `screen_mock.py` | primitives for drawn mockups; `preview` renders them headless to look at |

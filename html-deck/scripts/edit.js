@@ -46,6 +46,16 @@
     '.reply .rt'
   ].join(',');
 
+  /* never armed: the corner badge, the contents (deck_nav.py rewrites it), chrome, and
+     anything the author marked data-fixed */
+  var FIXED = '.slide-no, .toc, [data-fixed], [data-chrome], script, style, svg, button, .undo-btn';
+  function ownWords(el) {
+    for (var c = el.firstChild; c; c = c.nextSibling) {
+      if (c.nodeType === 3 && c.nodeValue.trim()) return true;
+    }
+    return false;
+  }
+
   var dirty = false;
 
   function txt(el) {
@@ -74,6 +84,26 @@
       el.dataset.orig = txt(el);
       el.setAttribute('contenteditable', PLAIN);
       if (el.contentEditable !== PLAIN) {        // engines that ignore the value
+        el.setAttribute('contenteditable', 'true');
+        el.dataset.richPaste = '1';
+      }
+      el.setAttribute('spellcheck', 'false');
+      paint(el);
+    });
+    /* Any other line of words on the slide is editable too. TARGETS names the layouts of
+       deck.css; a deck that adds its own classes used to get no editable line at all, and
+       nothing said so. These are numbered in a series of their own (s05-x01), so the ids
+       TARGETS gives -- the ones changes.json already holds -- do not move. A line meant
+       to stay fixed carries data-fixed; deck_check.py's edit check reads the same rule. */
+    var x = 0;
+    slide.querySelectorAll('*').forEach(function (el) {
+      if (!ownWords(el) || el.closest(FIXED) || el.closest('[data-edit]')
+          || el.querySelector('[data-edit]')) return;
+      x += 1;
+      el.dataset.edit = 's' + slide.dataset.no + '-x' + (x < 10 ? '0' + x : x);
+      el.dataset.orig = txt(el);
+      el.setAttribute('contenteditable', PLAIN);
+      if (el.contentEditable !== PLAIN) {
         el.setAttribute('contenteditable', 'true');
         el.dataset.richPaste = '1';
       }

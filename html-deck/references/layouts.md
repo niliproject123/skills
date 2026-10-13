@@ -110,8 +110,11 @@ and still fine — `.two`, `.rail` and `.facts` supersede them in new work.
 Palette is in `:root` — `--navy --blue --teal --red --yellow --purple --line`.
 Use the variables, never raw hex, so a deck restyles in one place.
 
-Anything you add here must also be added to `TARGETS` in `edit.js`, or the reader
-cannot click that line and rewrite it.
+A deck may add its own classes. `edit.js` arms any element on a slide that holds words of
+its own, whatever its class: `TARGETS` keeps the ids of the layouts above stable (`s05-03`),
+and every other line gets an id in its own series (`s05-x01`). Mark a line that must not
+be rewritten `data-fixed`; the contents block (`.toc`, written by `deck_nav.py`) is never armed. Words that share an element with an editable child cannot be
+edited -- put them in an element of their own; `deck_check.py`'s `edit` check names them.
 
 
 ## Drawn mockups
