@@ -1,0 +1,14 @@
+{
+  "source": "src",
+  "extensions": [".tsx", ".jsx", ".html"],
+  "stylesheet": "src/index.css",
+  "entry": "src/main.tsx",
+  "appRootId": "root",
+  "check": ["npx", "tsc", "--noEmit"],
+  "howToRun": "npm run marks",
+  "labels": {
+    "notCommitted": "Not committed yet",
+    "panelHeading": "What changed here · mark ",
+    "badgeHint": "Click to see what changed here"
+  }
+}
