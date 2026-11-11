@@ -57,6 +57,7 @@
   }
 
   var dirty = false;
+  var drawingsUnsaved = false;     /* set by draw.js through deckEdit.drawingsChanged */
 
   function txt(el) {
     /* The undo button lives inside the element it undoes, so its glyph must never
@@ -197,7 +198,7 @@
     /* the remark trail is whatever the reader has typed so far, so its length moves
        under the nav button while they work */
     if (window.__noteNavSync) window.__noteNavSync();
-    dirty = s.changed > 0;
+    dirty = s.changed > 0 || drawingsUnsaved;
     if (dirty) flash('יש שינויים שלא נשמרו — לחצו ״שמור״', true);
   }
 
@@ -248,6 +249,12 @@
     doc.querySelectorAll('.mark-flash').forEach(function (el) {
       el.classList.remove('mark-flash');
       if (!el.classList.length) el.removeAttribute('class');
+    });
+    /* nav.js marks the slide list's link for the slide in view. Which one depends on where
+       the reader had scrolled, so it was saved into the file, and after a reload two
+       links stayed lit: the saved one and the one nav.js marked. */
+    doc.querySelectorAll('#slidebar a.here').forEach(function (el) {
+      el.classList.remove('here');
     });
     doc.querySelectorAll('[class=""]').forEach(function (el) {
       el.removeAttribute('class');
@@ -300,6 +307,7 @@
           paint(el);
         });
         dirty = false;
+        drawingsUnsaved = false;
         recount();
         flash('נשמר אל ' + res.j.file + ' · ' + res.j.notes + ' הערות בקובץ · ' +
               'גיבוי ' + res.j.backups +
@@ -313,380 +321,13 @@
       });
   }
 
-  /* ---------- list of this session's changes ---------- */
-  var drawer = document.getElementById('drawer');
-  function esc(s) {
-    return (s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-  }
-  /* A remark can sit on a slide or on a panel that follows one. Both report the same
-     heading, so the drawer stays one list rather than two. Without this, a line outside
-     a slide has no .slide to close on and the drawer throws instead of listing it. */
-  function place(el) {
-    var s = el.closest('.slide');
-    if (s) return { no: s.dataset.no, name: s.dataset.name };
-    var q = el.closest('.qz');
-    if (q) {
-      var t = q.querySelector('.qz-ttl');
-      return { no: q.dataset.qz, name: (t ? t.textContent : '') + ' — מסד נתונים' };
-    }
-    return { no: '—', name: '' };
-  }
 
-  function render() {
-    var rows = [];
-    var vis = seen();
-    var mine = marks.map(function (el, i) {
-      var s = el.closest('.slide'), c = vis[i];
-      var what = el.hasAttribute('data-updated')
-        ? el.getAttribute('data-updated') + ' — כל השקופית'
-        : txt(el).slice(0, 110) || 'ללא טקסט';
-      return '<div class="item mine" data-mark="' + el.dataset.mark + '"><div class="w">' +
-        s.dataset.no + ' · ' + esc(s.dataset.name) + ' <b class="up-lbl">עודכן</b></div>' +
-        (c ? '<div class="ask"><b>ביקשת:</b> ' + esc(c.ask) + '</div>' +
-             '<div class="was">' + esc(c.was) + '</div>' : '') +
-        '<div class="now">' + esc(what) + '</div></div>';
-    }).join('');
-    /* a line that was taken out has no element left to point at, so it is listed only */
-    mine += CH.filter(function (c) { return c.removed; }).map(function (c) {
-      return '<div class="item mine gone"><div class="w">' + esc(c.slide) +
-        ' <b class="up-lbl">הוסר</b></div>' +
-        '<div class="ask"><b>ביקשת:</b> ' + esc(c.ask) + '</div>' +
-        '<div class="was">' + esc(c.was) + '</div>' +
-        '<div class="now">' + esc(c.note || '') + '</div></div>';
-    }).join('');
-    document.querySelectorAll('[data-edit]').forEach(function (el) {
-      if (changed(el) || hasNote(el)) rows.push(el);
-    });
-    var h = '<h2>מה שיניתי</h2><div class="where">נשמר אל <code>' + esc(DOC) +
-            '</code> · הערות מסומנות ב-<code>michael:</code> או <code>מיכאל:</code>' +
-            ' · שורה שרוקנתם נספרת כבקשת מחיקה</div>';
-    if (mine) h += '<h3 class="grp">מה שינינו מאז שקראתם — ' + marks.length + '</h3>' + mine;
-    if (mine) h += '<h3 class="grp">מה שאתם שיניתם</h3>';
-    if (!rows.length) {
-      h += '<div class="empty">עדיין לא שיניתם דבר.<br><br>לחצו על כל שורה במצגת וכתבו ' +
-           'עליה ישירות.<br><br><b>למחוק שורה</b> — פשוט רוקנו אותה. אין צורך לסמן דבר: ' +
-           'הנוסח שמחקתם נשמר מסומן בקו, ואמצא אותו.<br><br><b>להעיר בלי לתקן נוסח</b> — ' +
-           'התחילו את ההערה במילה <code>מיכאל:</code> והיא תודגש.</div>';
-    }
-    rows.forEach(function (el) {
-      var s = place(el), gone = el.hasAttribute('data-cut');
-      var label = gone ? ' <b class="cut-lbl">נמחק</b>' : (hasNote(el) ? ' <b>הערה</b>' : '');
-      h += '<div class="item' + (gone ? ' cut-row' : hasNote(el) ? ' note-row' : '') +
-        '" data-go="' + el.dataset.edit + '"><div class="w">' + s.no + ' · ' +
-        esc(s.name) + label + '</div>' +
-        (changed(el) || gone ? '<div class="was">' +
-          esc(gone ? el.getAttribute('data-cut') : el.dataset.orig) + '</div>' : '') +
-        (gone ? '' : '<div class="now">' + esc(txt(el)) + '</div>') + '</div>';
-    });
-    drawer.innerHTML = h;
-    drawer.querySelectorAll('.item').forEach(function (it) {
-      it.onclick = function () {
-        if (it.dataset.mark) {
-          var m = document.querySelector('[data-mark="' + it.dataset.mark + '"]');
-          if (m) goToMark(marks.indexOf(m));
-          return;
-        }
-        var t = document.querySelector('[data-edit="' + it.dataset.go + '"]');
-        if (!t) return;
-        /* the panel may be switched off; scrolling to something hidden lands nowhere */
-        if (t.closest('.qz') && window.qzReveal) window.qzReveal();
-        t.scrollIntoView({ behavior: 'smooth', block: 'center' });
-        t.focus();
-      };
-    });
-  }
-
-  document.getElementById('btn-list').onclick = function () {
-    drawer.classList.toggle('open');
-    if (drawer.classList.contains('open')) render();
-  };
   document.getElementById('btn-save').onclick = save;
-  document.getElementById('btn-clr').onclick = function () {
-    if (!confirm('להחזיר את כל השינויים שנעשו מאז פתיחת העמוד?')) return;
-    document.querySelectorAll('[data-edit]').forEach(function (el) {
-      if (changed(el)) { el.textContent = el.dataset.orig; paint(el); }
-    });
-    recount();
-    render();
-  };
   window.addEventListener('beforeunload', function (e) {
     if (dirty) { e.preventDefault(); e.returnValue = ''; }
   });
   document.addEventListener('keydown', function (e) {
     if ((e.ctrlKey || e.metaKey) && e.key === 's') { e.preventDefault(); save(); }
-  });
-
-  /* ---------- what I changed since they last read the deck ---------- */
-  /* Marked green in the file itself, not injected, so the marks survive a reload and
-     a handover. A counter alone is useless -- "9 changed" does not tell them WHERE --
-     so the button walks them through the marks one at a time, and the drawer lists
-     them. Clearing is a separate button, because it is a separate decision. */
-  function marked() {
-    return document.querySelectorAll('.updated, .slide[data-updated]');
-  }
-  var marks = [].slice.call(marked());
-  marks.forEach(function (el, i) { el.dataset.mark = 'm' + (i + 1); });
-  var at = -1;
-
-  /* A green outline says THAT something changed; it cannot say what it replaced or
-     which remark asked for it. That record lives in changes.json beside the deck --
-     kept out of the deck file so the reader's own copy keeps its shape. */
-  var CH = [];
-  function seen() { return CH.filter(function (c) { return !c.removed; }); }
-
-  fetch('changes.json', { cache: 'no-store' })
-    .then(function (r) {
-      if (!r.ok) throw new Error('HTTP ' + r.status);
-      return r.json();
-    })
-    .then(function (j) {
-      CH = j[DOC] || [];
-      if (seen().length !== marks.length) {
-        flash('רשומת השינויים אינה תואמת את הסימונים (' + seen().length + ' מול ' +
-              marks.length + ') — ״ביקשת״ ו״היה״ עלולים להצביע על המקום הלא נכון', true);
-        CH = [];
-        return;
-      }
-      if (drawer.classList.contains('open')) render();
-    })
-    .catch(function (e) {
-      flash('רשומת השינויים לא נטענה (' + e.message + ') — הסימונים עובדים, ' +
-            'אך בלי ״ביקשת״ ו״היה״', true);
-    });
-
-  /* One card, two callers: what I changed, and what the reader wrote. A second panel
-     would be a second thing to strip before saving and a second entry in the leak list,
-     so both render into #chg. */
-  var panel;
-  function card(head, body) {
-    if (!panel) {
-      panel = document.createElement('div');
-      panel.id = 'chg';
-      document.body.appendChild(panel);
-    }
-    panel.innerHTML = '<button class="x" type="button">\u00d7</button>' +
-      '<div class="hd">' + head + '</div>' + body;
-    panel.classList.add('on');
-    panel.querySelector('.x').onclick = function () { panel.classList.remove('on'); };
-  }
-
-  /* the card that answers "what did I ask for, and what did it say before" */
-  function showRecord(i) {
-    var c = seen()[i];
-    if (!c) {
-      card('אין רשומה לשינוי הזה',
-           '<div class="was">changes.json לא נטען, או שאינו תואם את הסימונים.</div>');
-      return;
-    }
-    card(esc(c.slide),
-      '<div class="k">ביקשת</div><div class="ask">' + esc(c.ask) + '</div>' +
-      '<div class="k">היה כתוב</div><div class="was">' + esc(c.was) + '</div>' +
-      '<div class="k">עכשיו</div><div class="now">הטקסט המסומן בירוק בשקופית</div>');
-  }
-
-  function goToMark(i) {
-    if (!marks.length) return;
-    at = (i + marks.length) % marks.length;
-    var el = marks[at];
-    el.scrollIntoView({ behavior: 'smooth', block: 'center' });
-    marks.forEach(function (m) { m.classList.remove('mark-flash'); });
-    el.classList.add('mark-flash');
-    nav.textContent = 'עודכן ' + (at + 1) + ' מתוך ' + marks.length;
-    nav.title = 'המקום הבא ששיניתי';
-    showRecord(at);
-  }
-
-  var nav;
-  if (marks.length) {
-    nav = document.createElement('button');
-    nav.id = 'btn-seen';
-    nav.type = 'button';
-    nav.textContent = 'עודכן: ' + marks.length;
-    nav.title = 'מעבר למקום הראשון ששיניתי';
-    nav.onclick = function () { goToMark(at + 1); };
-
-    /* forward-only meant that overshooting cost a lap of the whole deck */
-    var prev = document.createElement('button');
-    prev.id = 'btn-seen-prev';
-    prev.type = 'button';
-    prev.dataset.chrome = '1';
-    prev.className = 'step';
-    prev.textContent = '\u2039';
-    prev.title = 'המקום הקודם ששיניתי';
-    prev.onclick = function () { goToMark(at - 1); };
-
-    var next = document.createElement('button');
-    next.id = 'btn-seen-next';
-    next.type = 'button';
-    next.dataset.chrome = '1';
-    next.className = 'step';
-    next.textContent = '\u203a';
-    next.title = 'המקום הבא ששיניתי';
-    next.onclick = function () { goToMark(at + 1); };
-
-    var clr = document.createElement('button');
-    clr.id = 'btn-seen-clr';
-    clr.type = 'button';
-    clr.textContent = 'נקרא';
-    clr.title = 'מסיר את הסימון הירוק מכל מה שעודכן, ושומר';
-    clr.onclick = function () {
-      if (!confirm('להסיר את סימוני העדכון מ-' + marked().length + ' מקומות ולשמור?')) return;
-      document.querySelectorAll('.updated').forEach(function (el) {
-        el.classList.remove('updated', 'mark-flash');
-        if (!el.classList.length) el.removeAttribute('class');
-      });
-      document.querySelectorAll('.slide[data-updated]').forEach(function (el) {
-        el.removeAttribute('data-updated');
-      });
-      marks.forEach(function (el) { el.removeAttribute('data-mark'); });
-      marks = [];
-      if (panel) panel.classList.remove('on');
-      prev.remove();
-      nav.remove();
-      next.remove();
-      clr.remove();
-      save();
-    };
-    var sp = document.querySelector('#bar .spacer');
-    sp.before(prev);
-    sp.before(nav);
-    sp.before(next);
-    sp.before(clr);
-  }
-
-  /* ---------- the reader's own remarks, walked the same way ---------- */
-  /* A remark is a line the reader typed "מיכאל:" into, or one they emptied. Both are
-     painted in place, and until now that was the whole story: on a deck this long a
-     remark five slides back was found by scrolling. Rebuilt on every call, because
-     unlike the green marks this list changes while the page is open. */
-  function noteList() {
-    return [].slice.call(document.querySelectorAll('[data-edit]'))
-      .filter(function (el) { return hasNote(el); });
-  }
-  var noteAt = -1;
-
-  function showNote(el) {
-    var p = place(el);
-    var gone = el.hasAttribute('data-cut');
-    var body;
-    if (gone) {
-      body = '<div class="k">ביקשתם</div>' +
-             '<div class="ask">רוקנתם את השורה — כלומר בקשה להוריד אותה</div>' +
-             '<div class="k">היה כתוב</div><div class="was">' +
-             esc(el.getAttribute('data-cut')) + '</div>' +
-             '<div class="k">עכשיו</div><div class="now">השורה ריקה</div>';
-    } else {
-      body = '<div class="k">ההערה שלכם</div><div class="ask">' + esc(txt(el)) + '</div>' +
-             (changed(el)
-               ? '<div class="k">היה כתוב</div><div class="was">' +
-                 esc(el.dataset.orig) + '</div>'
-               : '<div class="k">הנוסח לא שונה</div>' +
-                 '<div class="was">ההערה נוספה לשורה, והנוסח עצמו נשאר.</div>');
-    }
-    card('' + p.no + ' · ' + esc(p.name) + (gone ? ' — למחיקה' : ' — הערה'), body);
-  }
-
-  function goToNote(i) {
-    var list = noteList();
-    if (!list.length) { syncNoteNav(); return; }
-    noteAt = (i + list.length) % list.length;
-    var el = list[noteAt];
-    if (el.closest('.qz') && window.qzReveal) window.qzReveal();
-    el.scrollIntoView({ behavior: 'smooth', block: 'center' });
-    document.querySelectorAll('.mark-flash').forEach(function (m) {
-      m.classList.remove('mark-flash');
-    });
-    el.classList.add('mark-flash');
-    syncNoteNav();
-    showNote(el);
-  }
-
-  var noteNav, notePrev, noteNext;
-  function syncNoteNav() {
-    if (!noteNav) return;
-    var n = noteList().length;
-    noteNav.textContent = (n && noteAt >= 0)
-      ? 'הערה ' + (noteAt + 1) + ' מתוך ' + n
-      : 'דילוג להערות';
-    /* a deck with no remarks yet should not carry three dead buttons; the cluster
-       appears the moment the reader writes one, and recount() calls this on every
-       keystroke, so it appears as they type */
-    var show = n > 0 ? '' : 'none';
-    notePrev.style.display = noteNav.style.display = noteNext.style.display = show;
-    if (noteAt >= n) noteAt = -1;
-  }
-  window.__noteNavSync = syncNoteNav;
-
-  (function buildNoteNav() {
-    if (!NOTE_TRAIL) return;
-    notePrev = document.createElement('button');
-    notePrev.id = 'btn-note-prev';
-    notePrev.type = 'button';
-    notePrev.dataset.chrome = '1';
-    notePrev.className = 'step note';
-    notePrev.textContent = '\u2039';
-    notePrev.title = 'ההערה הקודמת שלכם';
-    notePrev.onclick = function () { goToNote(noteAt - 1); };
-
-    noteNav = document.createElement('button');
-    noteNav.id = 'btn-note';
-    noteNav.type = 'button';
-    noteNav.dataset.chrome = '1';
-    noteNav.className = 'note';
-    noteNav.title = 'מעבר להערה שכתבתם';
-    noteNav.onclick = function () { goToNote(noteAt + 1); };
-
-    noteNext = document.createElement('button');
-    noteNext.id = 'btn-note-next';
-    noteNext.type = 'button';
-    noteNext.dataset.chrome = '1';
-    noteNext.className = 'step note';
-    noteNext.textContent = '\u203a';
-    noteNext.title = 'ההערה הבאה שלכם';
-    noteNext.onclick = function () { goToNote(noteAt + 1); };
-
-    var sp = document.querySelector('#bar .spacer');
-    sp.before(notePrev);
-    sp.before(noteNav);
-    sp.before(noteNext);
-    syncNoteNav();
-  })();
-
-  /* ---------- click anything marked, and read what it is ---------- */
-  /* The marks say THAT something is there; opening the card is how you find out what,
-     without hunting for the row in the drawer. The click is never swallowed -- the line
-     is still contenteditable and still takes the caret -- so this adds a card and takes
-     nothing away. */
-  document.addEventListener('click', function (e) {
-    if (!e.target.closest) return;
-    if (e.target.closest('#bar') || e.target.closest('#drawer') ||
-        e.target.closest('#chg') || e.target.closest('.undo-btn')) return;
-
-    var up = e.target.closest('.updated, .slide[data-updated]');
-    if (up && marks.length) {
-      var i = marks.indexOf(up);
-      if (i !== -1) {
-        at = i;
-        document.querySelectorAll('.mark-flash').forEach(function (m) {
-          m.classList.remove('mark-flash');
-        });
-        up.classList.add('mark-flash');
-        if (nav) nav.textContent = 'עודכן ' + (at + 1) + ' מתוך ' + marks.length;
-        showRecord(at);
-        return;
-      }
-    }
-    var el = e.target.closest('[data-edit]');
-    if (el && hasNote(el)) {
-      var list = noteList();
-      noteAt = list.indexOf(el);
-      document.querySelectorAll('.mark-flash').forEach(function (m) {
-        m.classList.remove('mark-flash');
-      });
-      el.classList.add('mark-flash');
-      syncNoteNav();
-      showNote(el);
-    }
   });
 
   var s0 = stats();
@@ -698,4 +339,38 @@
   if (cuts) msg.push(cuts + ' שורות שסומנו למחיקה');
   flash(msg.length ? msg.join(' · ') + ' · Ctrl+S לשמירה'
                    : 'מוכן · לחצו על כל שורה כדי לערוך · Ctrl+S לשמירה', false);
+
+  /* ---------- what the sibling files share ---------- */
+  /* The drawer, the two trails, the full-screen view and the drawings live in files of
+     their own (edit_changes.js, lightbox.js, draw.js). They work on the same page state,
+     so the pieces they need are handed over here rather than duplicated. A drawing is not
+     a line of text, so stats() cannot see it: draw.js reports its unsaved work through
+     drawingsChanged(), and save() clears it. */
+  window.deckEdit = {
+    DOC: DOC, NOTE_TRAIL: NOTE_TRAIL, MARK: MARK,
+    txt: txt, changed: changed, hasNote: hasNote, paint: paint,
+    recount: recount, flash: flash, save: save,
+    drawingsChanged: function () { drawingsUnsaved = true; recount(); }
+  };
+
+  /* Loaded from here, not from the deck's own <script> tags, so a deck written before
+     these files existed gets them too. The tags carry data-chrome, so cleanHTML takes
+     them out again before a save. A file that fails to load is said on the status bar:
+     the deck still edits, but the reader must know a part of the page is missing. */
+  var HERE = document.currentScript.src.replace(/edit\.js(\?.*)?$/, '');
+  var css = document.createElement('link');
+  css.rel = 'stylesheet';
+  css.href = HERE + 'draw.css';
+  css.dataset.chrome = '1';
+  document.head.appendChild(css);
+  ['edit_changes.js', 'lightbox.js', 'draw.js'].forEach(function (name) {
+    var s = document.createElement('script');
+    s.src = HERE + name;
+    s.async = false;                     /* run in this order: draw.js uses lightbox.js */
+    s.dataset.chrome = '1';
+    s.onerror = function () {
+      flash('הקובץ ' + name + ' לא נטען — חלק מכלי העריכה חסר בדף', true);
+    };
+    document.head.appendChild(s);
+  });
 })();

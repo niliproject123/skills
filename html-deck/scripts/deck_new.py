@@ -13,7 +13,7 @@ A deck is not a file, it is a folder, and the folder is what makes the next roun
                             fragments/ - so no number in the deck was typed by a person
       data.json             what the builder produced
       fragments/            generated blocks the slides include
-      changes.json          the reader's remarks, paired with the marks in the deck
+      changes.json          what you changed after handover and why -- one entry per green mark
       .bak/                 what the editor saved over, newest last
 
 `--direction` has no default **on purpose**. Right-to-left is not a detail a session may

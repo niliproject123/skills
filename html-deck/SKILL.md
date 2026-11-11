@@ -42,7 +42,7 @@ its own conventions, in that project's own skill.
   fragments/           generated blocks the slides include
   build_screens.py     draws screens/*.svg, the mockups of the app's screens (when it has any)
   .preview/            what screen_mock.py preview rendered, for the author's eyes only
-  changes.json         the reader's remarks, paired with the marks in the deck
+  changes.json         what you changed after handover and why — one entry per green mark
   .bak/                what the editor saved over, newest last
 ```
 
@@ -136,6 +136,7 @@ Five checks, each one a defect that actually shipped. Exit code is the result.
 | `marks` | `data-no`, the corner badge and the ids agree; no contents link is dead |
 | `brief` | every slide has a row in `brief.md`, and every row names its source |
 | `edit` | **every line of words on a slide can be rewritten by the reader.** Read in the headless browser after `edit.js` armed the page. Any element with words of its own is editable, whatever its class; a line meant to stay fixed carries `data-fixed` |
+| `drawings` | the full-screen view and drawing tools loaded, and every drawing still fits its picture: same shape (a swapped picture of another shape fails), nothing runs off it, no empty label |
 
 **A slide that overflows is clipped, not scrolled** — `overflow:hidden` on the frame means
 it looks finished on screen while its last rows are gone, and it reaches the pdf and the
@@ -147,6 +148,23 @@ pptx slide or one pdf page. Split it, or shrink it, or declare the deck screen-o
 
 Serve the folder, hand over the URL, and let them edit in the page. The loop — remarks,
 green marks, `changes.json`, picking up where they left off — is `references/the-reader.md`.
+
+**Pictures.** A click on any slide picture opens it full screen (Esc, ×, or the dark area
+closes it). There the reader draws **boxes and arrows with a label** — pick the tool, drag,
+type, Enter; click a drawing and Delete to remove it, double-click to relabel, "נקה תמונה"
+to empty one picture, and "נקה ציורים" on the bar to empty the whole deck. The session
+draws the same thing with `deck_draw.py`, in percent of the picture:
+
+```
+python <skill>/scripts/deck_draw.py <deck.html> list
+python <skill>/scripts/deck_draw.py <deck.html> box   --slide 03 --at 10,20,30,15 --label "..."
+python <skill>/scripts/deck_draw.py <deck.html> arrow --slide 03 --at 60,80,42,35 --label "..."
+python <skill>/scripts/deck_draw.py <deck.html> clear [--slide 03]
+```
+
+A drawing is svg inside the slide (`span.drawn-on > img + svg.drawings`), so it is saved,
+printed and exported like any other content; the editable pptx rebuilds it from native
+shapes. Clearing the last drawing on a picture gives back the bare `<img>`, byte for byte.
 
 ### 8. The export
 
@@ -166,12 +184,18 @@ into a deck folder.
 | `deck_views.py` | what each screen slide *looks* like: table, tree, form, board |
 | `deck_edit.py` | write to a deck by line number; refuses an unbalanced or marked-up file |
 | `deck_nav.py` | the sidebar and the contents, from one scan |
-| `deck_check.py` | fit · nav · marks · brief · edit, before it is sent |
+| `deck_check.py` | fit · nav · marks · brief · edit · drawings, before it is sent |
+| `deck_draw.py` | boxes and arrows with labels over a slide picture; list; clear |
 | `reorder_slides.py` | put the slides in the order written in `slide-order.txt` |
 | `md_table.py` | a markdown document of tables becomes a deck |
 | `screen_mock.py` | primitives for drawn mockups; `preview` renders them headless to look at |
 | `to_pptx.py` | a picture per slide — identical to the deck, not editable |
-| `to_pptx_native.py` | native shapes and tables — editable in PowerPoint |
+| `to_pptx_native.py` | native shapes and tables — editable in PowerPoint; pictures as images, drawings as shapes (`pptx_pictures.py`) |
+| `edit.js` | the editing layer; loads `edit_changes.js` (drawer, trails), `lightbox.js` (full screen), `draw.js` + `draw.css` (drawings) itself, so an old deck gets them too |
+
+Tests, on a real deck with nothing mocked: `tests/drawings_test.py <deck-folder>` (browser:
+full screen, drawing, save, resize, clear) and `tests/drawings_export_test.py <deck-folder>`
+(both pptx exporters and the pdf).
 
 ## Rules
 
@@ -189,6 +213,11 @@ into a deck folder.
   hold in context. Write down what you need to know and fetch it in one or two calls.
 - **Match everything, then write.** Resolve every anchor and count first; write no file
   until all of them pass. `deck_edit.py` enforces this rather than trusting you to remember.
+- **Changing a deck the reader already has? Ask them whether to mark the changes.** If yes,
+  mark each one green and give each mark an entry in `changes.json` — they review by
+  walking the marks, so an unmarked change is invisible.
+  `deck_edit.py` (`"mark": true`) and `deck_draw.py` (`--mark`) do the marking; how is in
+  `references/the-reader.md`.
 - Only the changed lines go in a script. Generating a list? Loop over data — do not type out
   markup that differs by three words per row.
 - One `<section>` per slide, in order. Keep a single deck file under 600 lines; split into

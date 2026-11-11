@@ -141,6 +141,10 @@ What makes a drawn mockup trustworthy, and what this deck format checks for:
   headless to `.preview/*.png` and refuses one that does not parse — a browser shows a
   broken svg as an empty frame, and the slide just looks sparse. Then `deck_check.py` for fit
 
+To point at part of a picture — a box around a field, an arrow at a button — draw on it
+rather than editing the svg: `deck_draw.py box|arrow --slide NN --at ... --label ...`
+(SKILL.md, *The reader*). The reader can relabel or delete them in the browser.
+
 ```html
 <div class="screen drawn">
   <div class="facts">

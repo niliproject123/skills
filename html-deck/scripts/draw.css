@@ -1,0 +1,41 @@
+/* The full-screen picture view (lightbox.js) and its drawing tools (draw.js).
+   Editing chrome only: loaded by edit.js, never printed, never exported. How a saved
+   drawing looks on the slide is in deck.css, because that is deck content. */
+.slide img{cursor:zoom-in}
+html.lightbox-open{overflow:hidden}
+
+#lightbox{display:none;position:fixed;inset:0;z-index:9000;background:rgba(13,20,30,.88);
+  flex-direction:column;align-items:center;justify-content:center;gap:14px;padding:16px;
+  box-sizing:border-box}
+#lightbox.on{display:flex}
+#lightbox .lb-stage{display:flex;align-items:center;justify-content:center;max-width:100%}
+#lightbox .lb-frame{display:block;position:relative;width:fit-content;margin:0;
+  touch-action:none;user-select:none}
+#lightbox .lb-frame img{display:block;max-width:none;margin:0;cursor:default;
+  -webkit-user-drag:none;user-select:none}
+#lightbox.tool-on .lb-frame,#lightbox.tool-on .lb-frame img{cursor:crosshair}
+#lightbox .lb-x{position:absolute;top:10px;inset-inline-end:14px;width:40px;height:40px;
+  border:0;border-radius:50%;background:rgba(255,255,255,.14);color:#fff;font-size:26px;
+  line-height:1;cursor:pointer}
+#lightbox .lb-x:hover{background:rgba(255,255,255,.28)}
+
+/* drawings are clickable in the view only, and only when no tool is picked: with a tool
+   picked, a drag that starts on an old drawing must draw a new one */
+#lightbox svg.drawings g.dw{pointer-events:visiblePainted;cursor:pointer}
+#lightbox svg.drawings rect{pointer-events:stroke}
+#lightbox.tool-on svg.drawings g.dw{pointer-events:none}
+#lightbox svg.drawings g.dw-sel{filter:drop-shadow(0 0 4px #FFD400) drop-shadow(0 0 2px #FFD400)}
+
+#lightbox .lb-tools{display:flex;gap:8px;align-items:center;flex-wrap:wrap;
+  justify-content:center;font-family:inherit}
+#lightbox .lb-tools button{border:0;border-radius:7px;padding:8px 14px;font:inherit;
+  font-size:14px;font-weight:700;cursor:pointer;background:#2B3A4D;color:#fff}
+#lightbox .lb-tools button:hover{background:#3A4E66}
+#lightbox .lb-tools button.on{background:#E5484D}
+#lightbox .lb-tools .t-clr{background:#5A2A2D}
+#lightbox .lb-tools .t-hint{color:#AFC0D3;font-size:12.5px}
+#lightbox .lb-label{position:fixed;transform:translate(-50%,8px);z-index:9001;min-width:240px;
+  padding:7px 10px;border:2px solid #E5484D;border-radius:7px;font:inherit;font-size:15px;
+  background:#fff;color:#1B2733;outline:none}
+
+#bar #btn-draw-clr{background:#5A2A2D;color:#fff}

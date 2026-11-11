@@ -8,7 +8,7 @@ its exact position -- and rebuilds each slide from native PowerPoint shapes: rec
 and text boxes. Every line is real text the reader can click and rewrite.
 
 What is kept: geometry, fills, borders, corner radius, text (bold, colour, size),
-RTL direction, alignment. What is not: shadows, gradients (the first colour is used),
+RTL direction, alignment, pictures (as images) and the drawings over them (as shapes). What is not: shadows, gradients (the first colour is used),
 web-font rendering (the run names the CSS family; PowerPoint substitutes if it is not
 installed), and line breaks may fall a word earlier or later than in the browser.
 
@@ -30,6 +30,8 @@ from pptx.enum.shapes import MSO_SHAPE
 from pptx.enum.text import PP_ALIGN, MSO_ANCHOR
 from pptx.oxml.ns import qn
 from pptx.util import Emu, Pt
+
+import pptx_pictures
 
 sys.stdout.reconfigure(encoding='utf-8')
 
@@ -118,6 +120,7 @@ MEASURE_JS = r"""
       const cs = getComputedStyle(el);
       if (cs.display === 'none' || cs.visibility === 'hidden') return;
       if (['SCRIPT','STYLE'].includes(el.tagName)) return;
+      if (el.matches('svg.drawings')) return;   // drawings: pptx_pictures.py
       const b = box(el, cs);
       if (b.width < 1 || b.height < 1) return;
       const kids = [...el.children];
@@ -308,6 +311,7 @@ def build(measured, out, title):
                     sh = clip(sh, y0, y1)
                     if sh:
                         (add_rect if sh['t'] == 'rect' else add_text)(slide, sh, k, off)
+                pptx_pictures.add_to_slide(slide, s['extra'], k, off)
                 print('  %s %s%s %-28s %3d shapes%s' % (deck, s['no'], chr(97 + pi) if pi or y1 < s['h'] - 4 else ' ', s['name'][:28],
                                                         len(s['shapes']), '  scaled %.0f%%' % (k * 100) if k < 1 else ''))
     prs.save(out)
@@ -355,6 +359,7 @@ def sheet(measured, out, cols=4):
                     d.text((anchor_x, y), text, fill=tuple(c), font=f, anchor='ra' if sh['dir'] == 'rtl' else 'la', **kw)
                 except (ValueError, KeyError):
                     d.text((x, y), text, fill=tuple(c), font=f)
+        pptx_pictures.sheet_draw(d, s['extra'], k, oy_page)
         d.text((4, 2), s['no'], fill='red', font=font(14, True))
         img.paste(page, (ox, oy))
     img.save(out)
@@ -384,7 +389,7 @@ def main():
     measured = []
     with sync_playwright() as p:
         browser = p.chromium.launch()
-        ctx = browser.new_context(viewport={'width': 1440, 'height': 900}, device_scale_factor=1)
+        ctx = browser.new_context(viewport={'width': 1440, 'height': 900}, device_scale_factor=2)
         for deck in decks:
             page = ctx.new_page()
             page.goto(a.base + deck, wait_until='networkidle')
@@ -397,6 +402,10 @@ def main():
             slides = page.evaluate(MEASURE_JS)
             if not slides:
                 raise SystemExit('no slides in ' + deck)
+            extra = page.evaluate(pptx_pictures.MEASURE_JS)
+            pptx_pictures.shoot(page, extra)
+            for s, x in zip(slides, extra):
+                s['extra'] = x
             measured.append((deck, slides))
             page.close()
         browser.close()

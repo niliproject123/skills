@@ -16,6 +16,10 @@ Five checks, each one a defect that actually shipped:
           Read in the same headless browser, after edit.js armed the page. A deck whose
           lines edit.js never armed passed the other four and could not be edited at all.
           A line meant to stay fixed carries data-fixed.
+          Checked in the same page: the full-screen view and the drawing tools loaded, and
+          every drawing over a picture still fits it -- its svg has the picture's shape (a
+          picture swapped for one of another shape leaves every box pointing at the wrong
+          place) and no box or arrow runs off the picture.
 
 Exit code is the result: 0 if every check passed, 1 otherwise. Nothing is written.
 
@@ -83,6 +87,38 @@ UNEDITABLE_JS = """
   });
   return {slides: document.querySelectorAll('section.slide').length,
           armed: document.querySelectorAll('section.slide [data-edit]').length, out};
+}
+"""
+
+
+# Every drawing over a picture (draw.js / deck_draw.py), against the picture it sits on.
+DRAWINGS_JS = """
+() => {
+  const out = [];
+  let n = 0;
+  document.querySelectorAll('section.slide svg.drawings').forEach(svg => {
+    const s = svg.closest('section.slide'), img = svg.parentElement.querySelector(':scope > img');
+    const where = (s.dataset.no || '') + ' ' + (s.dataset.name || '');
+    if (!svg.parentElement.classList.contains('drawn-on') || !img) {
+      out.push(where + ': a drawing svg that is not beside its picture in a .drawn-on'); return;
+    }
+    const r = img.getBoundingClientRect(), vb = svg.viewBox.baseVal;
+    const pic = r.width / r.height, drawn = vb.width / vb.height;
+    if (Math.abs(pic - drawn) / pic > 0.02)
+      out.push(where + ': the picture is ' + pic.toFixed(3) + ' wide per unit of height, its drawings were made on ' +
+               drawn.toFixed(3) + ' -- they no longer sit on what they point at');
+    svg.querySelectorAll('g.dw').forEach(g => {
+      n += 1;
+      g.querySelectorAll('rect, line, polygon').forEach(el => {
+        const b = el.getBBox(), slack = 3;
+        if (b.x < -slack || b.y < -slack || b.x + b.width > vb.width + slack || b.y + b.height > vb.height + slack)
+          out.push(where + ': a ' + g.dataset.kind + ' runs off its picture');
+      });
+      const t = g.querySelector('text');
+      if (t && !t.textContent.trim()) out.push(where + ': a ' + g.dataset.kind + ' with an empty label');
+    });
+  });
+  return {n, out, tools: !!(window.deckLightbox && window.deckDraw)};
 }
 """
 
@@ -279,6 +315,7 @@ def check_edit(url, rep):
         page.on('pageerror', lambda e: errors.append(str(e)))
         page.goto(url, wait_until='networkidle')
         found = page.evaluate(UNEDITABLE_JS)
+        drawn = page.evaluate(DRAWINGS_JS)
         browser.close()
     for e in errors:
         rep.bad('edit', 'page error, edit.js may not have armed the page: %s' % e)
@@ -288,6 +325,13 @@ def check_edit(url, rep):
     if not errors and not found['out']:
         rep.ok('edit', '%d slides, %d editable lines, every line of words editable'
                % (found['slides'], found['armed']))
+    if not drawn['tools']:
+        rep.bad('drawings', 'the full-screen view or the drawing tools did not load '
+                            '(lightbox.js / draw.js, loaded by edit.js)')
+    for line in drawn['out']:
+        rep.bad('drawings', 'slide ' + line)
+    if drawn['tools'] and not drawn['out']:
+        rep.ok('drawings', '%d drawing(s), each on its picture' % drawn['n'])
 
 
 def main():

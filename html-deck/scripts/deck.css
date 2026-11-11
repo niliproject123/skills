@@ -220,6 +220,13 @@ img.mock-img{display:block;width:100%;height:auto;border-radius:10px;
   box-shadow:0 4px 16px rgba(0,0,0,.18)}
 img.mock-img.tall{width:auto;height:455px;margin:0 auto}
 .mock-cap{font-size:11px;color:#7a8794;margin-top:6px;text-align:end}
+/* boxes and arrows drawn over a picture (draw.js, deck_draw.py). The svg covers the
+   picture exactly, so the drawings stay on what they point at at any size; a .tall
+   picture is centred, so its frame shrinks to it */
+.drawn-on{display:block;position:relative}
+.drawn-on:has(> img.tall){width:fit-content;margin:0 auto}
+.drawn-on > svg.drawings{position:absolute;inset:0;width:100%;height:100%;overflow:visible;
+  pointer-events:none}
 /* a numbered callout in the facts column - the same number the mockup's badge carries */
 .facts .f .k .n{display:inline-block;width:20px;height:20px;border-radius:50%;margin-inline-end:6px;
   background:#ffd700;color:#0d1117;font-weight:800;font-size:12px;text-align:center;line-height:20px}

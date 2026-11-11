@@ -216,6 +216,31 @@ def check(src):
     return bad
 
 
+def is_marked(op):
+    """Does this op leave a green mark? mark:true, an attr that sets one, or inserted markup
+    that carries one."""
+    if op.get('mark'):
+        return True
+    if op['op'] == 'attr':
+        return 'data-updated' in op['set'] or 'updated' in op['set'].get('class', '').split()
+    return op['op'] in ('after', 'in') and 'updated' in op.get('html', '')
+
+
+def remind_marks(ops):
+    """The reader reviews a deck they already have by walking the green marks; an edit
+    without one is invisible to them. Say so -- whether it matters is the author's call."""
+    plain = [op['at'] for op in ops if op['op'] != 'del' and not is_marked(op)]
+    gone = [op['at'] for op in ops if op['op'] == 'del']
+    if plain:
+        print('not marked green: %s -- if the reader already has this deck, they will not find '
+              'these in the walk of changes -- ask them whether to mark. To mark: "mark": true (set/attr) or class "updated" '
+              '(after/in), and an entry each in changes.json (references/the-reader.md)'
+              % ', '.join(plain))
+    if gone:
+        print('deleted: %s -- a deleted line has no mark to carry; if the reader already has '
+              'this deck, record it as a {"removed": true} entry in changes.json' % ', '.join(gone))
+
+
 def main():
     a = sys.argv[1:]
     if not a:
@@ -252,6 +277,7 @@ def main():
     f.close()
     print('%s: %d op(s) applied, %d -> %d lines'
           % (os.path.basename(path), len(ops), src.count('\n') + 1, out.count('\n') + 1))
+    remind_marks(ops)
     return 0
 
 
