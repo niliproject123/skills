@@ -19,7 +19,7 @@
    tests/drawings_test.py compares the two. A picture whose last drawing is removed is
    unwrapped again, so the file goes back to what it was. */
 (function () {
-  var E = window.deckEdit, LB = window.deckLightbox;
+  var E = window.deckEdit, LB = window.deckLightbox, say = E.say;
   var SVGNS = 'http://www.w3.org/2000/svg';
   var COLOR = '#E5484D';
   var WIDTH = 1000;                   /* viewBox width; the height follows the picture */
@@ -179,7 +179,7 @@
     if (g) g.classList.add('dw-sel');
   }
   function removeSelected() {
-    if (!selected) { E.flash('לא נבחר סימון — לחצו על סימון ואז מחקו', true); return; }
+    if (!selected) { E.flash(say('לא נבחר סימון — לחצו על סימון ואז מחקו', 'No drawing selected — click one, then delete'), true); return; }
     selected.remove();
     selected = null;
     syncBack();
@@ -188,26 +188,31 @@
   LB.onOpen(function () {
     var row = LB.tools();
     row.innerHTML = '';
-    var box = button('t-kind', '▭ מלבן', 'גררו על התמונה כדי לסמן אזור', function () { setTool('box'); });
+    var box = button('t-kind', say('▭ מלבן', '▭ box'), say('גררו על התמונה כדי לסמן אזור', 'Drag on the picture to mark an area'), function () { setTool('box'); });
     box.dataset.kind = 'box';
-    var arrow = button('t-kind', '↗ חץ', 'גררו מהמקום שהחץ יוצא ממנו אל המקום שהוא מצביע עליו',
+    var arrow = button('t-kind', say('↗ חץ', '↗ arrow'),
+                       say('גררו מהמקום שהחץ יוצא ממנו אל המקום שהוא מצביע עליו',
+                           'Drag from where the arrow starts to where it points'),
                        function () { setTool('arrow'); });
     arrow.dataset.kind = 'arrow';
     row.appendChild(box);
     row.appendChild(arrow);
-    row.appendChild(button('t-del', 'מחק סימון', 'מוחק את הסימון שנבחר (Delete)', removeSelected));
-    row.appendChild(button('t-clr', 'נקה תמונה', 'מוחק את כל הסימונים בתמונה הזאת', function () {
+    row.appendChild(button('t-del', say('מחק סימון', 'delete drawing'),
+                              say('מוחק את הסימון שנבחר (Delete)', 'Deletes the selected drawing (Delete)'), removeSelected));
+    row.appendChild(button('t-clr', say('נקה תמונה', 'clear picture'),
+                              say('מוחק את כל הסימונים בתמונה הזאת', 'Deletes every drawing on this picture'), function () {
       var svg = svgOf(LB.frame());
       var n = svg ? svg.querySelectorAll('g.dw').length : 0;
-      if (!n) { E.flash('אין סימונים בתמונה הזאת', true); return; }
-      if (!confirm('למחוק ' + n + ' סימונים מהתמונה הזאת?')) return;
+      if (!n) { E.flash(say('אין סימונים בתמונה הזאת', 'No drawings on this picture'), true); return; }
+      if (!confirm(say('למחוק ' + n + ' סימונים מהתמונה הזאת?', 'Delete ' + n + ' drawings from this picture?'))) return;
       svg.querySelectorAll('g.dw').forEach(function (g) { g.remove(); });
       selected = null;
       syncBack();
     }));
     var hint = document.createElement('span');
     hint.className = 't-hint';
-    hint.textContent = 'בחרו כלי וגררו על התמונה · לחיצה על סימון בוחרת אותו · לחיצה כפולה משנה את הכיתוב';
+    hint.textContent = say('בחרו כלי וגררו על התמונה · לחיצה על סימון בוחרת אותו · לחיצה כפולה משנה את הכיתוב',
+                           'Pick a tool and drag on the picture · a click selects a drawing · a double click changes its label');
     row.appendChild(hint);
     tool = null; selected = null;
     document.getElementById('lightbox').classList.remove('tool-on');
@@ -247,7 +252,7 @@
     var b = point(d.svg, e);
     if (Math.abs(b.x - d.a.x) < SMALLEST && Math.abs(b.y - d.a.y) < SMALLEST) {
       d.g.remove();
-      E.flash('הסימון קטן מדי — גררו על התמונה כדי לצייר', true);
+      E.flash(say('הסימון קטן מדי — גררו על התמונה כדי לצייר', 'Too small to draw — drag across the picture'), true);
       return;
     }
     d.g.dataset.a = JSON.stringify(d.a);
@@ -272,7 +277,7 @@
     var input = document.createElement('input');
     input.className = 'lb-label';
     input.value = now;
-    input.placeholder = 'כיתוב (לא חובה) · Enter';
+    input.placeholder = say('כיתוב (לא חובה) · Enter', 'label (optional) · Enter');
     input.dir = 'auto';
     input.style.left = cx + 'px';
     input.style.top = cy + 'px';
@@ -310,10 +315,12 @@
   clearAll.id = 'btn-draw-clr';
   clearAll.type = 'button';
   clearAll.dataset.chrome = '1';
-  clearAll.title = 'מוחק את כל הסימונים מכל התמונות במצגת (נשמר רק בלחיצה על ״שמור״)';
+  clearAll.title = say('מוחק את כל הסימונים מכל התמונות במצגת (נשמר רק בלחיצה על ״שמור״)',
+                         'Deletes every drawing on every picture in the deck (written only when you press save)');
   clearAll.onclick = function () {
     var n = document.querySelectorAll('.slide svg.drawings g.dw').length;
-    if (!confirm('למחוק את כל ' + n + ' הסימונים מכל התמונות במצגת?')) return;
+    if (!confirm(say('למחוק את כל ' + n + ' הסימונים מכל התמונות במצגת?',
+                     'Delete all ' + n + ' drawings from every picture in the deck?'))) return;
     document.querySelectorAll('.slide .drawn-on').forEach(function (w) {
       var img = w.querySelector('img');
       w.before(img);
@@ -322,11 +329,11 @@
     if (LB.isOpen()) LB.refresh();
     E.drawingsChanged();
     countAll();
-    E.flash(n + ' סימונים נמחקו — לחצו ״שמור״ כדי לכתוב לקובץ', true);
+    E.flash(n + say(' סימונים נמחקו — לחצו ״שמור״ כדי לכתוב לקובץ', ' drawings deleted — press save to write the file'), true);
   };
   function countAll() {
     var n = document.querySelectorAll('.slide svg.drawings g.dw').length;
-    clearAll.textContent = 'נקה ציורים · ' + n;
+    clearAll.textContent = say('נקה ציורים · ', 'clear drawings · ') + n;
     clearAll.style.display = n ? '' : 'none';
   }
   document.querySelector('#bar .spacer').before(clearAll);

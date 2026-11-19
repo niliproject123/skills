@@ -7,7 +7,7 @@
   var E = window.deckEdit;
   var DOC = E.DOC, NOTE_TRAIL = E.NOTE_TRAIL;
   var txt = E.txt, changed = E.changed, hasNote = E.hasNote, paint = E.paint;
-  var recount = E.recount, flash = E.flash, save = E.save;
+  var recount = E.recount, flash = E.flash, save = E.save, say = E.say;
 
   /* ---------- list of this session's changes ---------- */
   var drawer = document.getElementById('drawer');
@@ -23,7 +23,7 @@
     var q = el.closest('.qz');
     if (q) {
       var t = q.querySelector('.qz-ttl');
-      return { no: q.dataset.qz, name: (t ? t.textContent : '') + ' — מסד נתונים' };
+      return { no: q.dataset.qz, name: (t ? t.textContent : '') + say(' — מסד נתונים', ' — database') };
     }
     return { no: '—', name: '' };
   }
@@ -34,39 +34,49 @@
     var mine = marks.map(function (el, i) {
       var s = el.closest('.slide'), c = vis[i];
       var what = el.hasAttribute('data-updated')
-        ? el.getAttribute('data-updated') + ' — כל השקופית'
-        : txt(el).slice(0, 110) || 'ללא טקסט';
+        ? el.getAttribute('data-updated') + say(' — כל השקופית', ' — the whole slide')
+        : txt(el).slice(0, 110) || say('ללא טקסט', 'no text');
       return '<div class="item mine" data-mark="' + el.dataset.mark + '"><div class="w">' +
-        s.dataset.no + ' · ' + esc(s.dataset.name) + ' <b class="up-lbl">עודכן</b></div>' +
-        (c ? '<div class="ask"><b>ביקשת:</b> ' + esc(c.ask) + '</div>' +
+        s.dataset.no + ' · ' + esc(s.dataset.name) + ' <b class="up-lbl">' + say('עודכן', 'updated') + '</b></div>' +
+        (c ? '<div class="ask"><b>' + say('ביקשת:', 'You asked:') + '</b> ' + esc(c.ask) + '</div>' +
              '<div class="was">' + esc(c.was) + '</div>' : '') +
         '<div class="now">' + esc(what) + '</div></div>';
     }).join('');
     /* a line that was taken out has no element left to point at, so it is listed only */
     mine += CH.filter(function (c) { return c.removed; }).map(function (c) {
       return '<div class="item mine gone"><div class="w">' + esc(c.slide) +
-        ' <b class="up-lbl">הוסר</b></div>' +
-        '<div class="ask"><b>ביקשת:</b> ' + esc(c.ask) + '</div>' +
+        ' <b class="up-lbl">' + say('הוסר', 'removed') + '</b></div>' +
+        '<div class="ask"><b>' + say('ביקשת:', 'You asked:') + '</b> ' + esc(c.ask) + '</div>' +
         '<div class="was">' + esc(c.was) + '</div>' +
         '<div class="now">' + esc(c.note || '') + '</div></div>';
     }).join('');
     document.querySelectorAll('[data-edit]').forEach(function (el) {
       if (changed(el) || hasNote(el)) rows.push(el);
     });
-    var h = '<h2>מה שיניתי</h2><div class="where">נשמר אל <code>' + esc(DOC) +
-            '</code> · הערות מסומנות ב-<code>michael:</code> או <code>מיכאל:</code>' +
-            ' · שורה שרוקנתם נספרת כבקשת מחיקה</div>';
-    if (mine) h += '<h3 class="grp">מה שינינו מאז שקראתם — ' + marks.length + '</h3>' + mine;
-    if (mine) h += '<h3 class="grp">מה שאתם שיניתם</h3>';
+    var h = say('<h2>מה שיניתי</h2><div class="where">נשמר אל <code>' + esc(DOC) +
+                '</code> · הערות מסומנות ב-<code>michael:</code> או <code>מיכאל:</code>' +
+                ' · שורה שרוקנתם נספרת כבקשת מחיקה</div>',
+                '<h2>What I changed</h2><div class="where">Saved to <code>' + esc(DOC) +
+                '</code> · remarks start with <code>michael:</code>' +
+                ' · a line you empty counts as a request to delete it</div>');
+    if (mine) h += '<h3 class="grp">' + say('מה שינינו מאז שקראתם — ', 'What we changed since you read it — ') +
+                   marks.length + '</h3>' + mine;
+    if (mine) h += '<h3 class="grp">' + say('מה שאתם שיניתם', 'What you changed') + '</h3>';
     if (!rows.length) {
-      h += '<div class="empty">עדיין לא שיניתם דבר.<br><br>לחצו על כל שורה במצגת וכתבו ' +
-           'עליה ישירות.<br><br><b>למחוק שורה</b> — פשוט רוקנו אותה. אין צורך לסמן דבר: ' +
-           'הנוסח שמחקתם נשמר מסומן בקו, ואמצא אותו.<br><br><b>להעיר בלי לתקן נוסח</b> — ' +
-           'התחילו את ההערה במילה <code>מיכאל:</code> והיא תודגש.</div>';
+      h += say('<div class="empty">עדיין לא שיניתם דבר.<br><br>לחצו על כל שורה במצגת וכתבו ' +
+               'עליה ישירות.<br><br><b>למחוק שורה</b> — פשוט רוקנו אותה. אין צורך לסמן דבר: ' +
+               'הנוסח שמחקתם נשמר מסומן בקו, ואמצא אותו.<br><br><b>להעיר בלי לתקן נוסח</b> — ' +
+               'התחילו את ההערה במילה <code>מיכאל:</code> והיא תודגש.</div>',
+               '<div class="empty">You have not changed anything yet.<br><br>Click any line in the deck ' +
+               'and write on it directly.<br><br><b>To delete a line</b> — just empty it. Nothing else ' +
+               'to mark: the wording you deleted is kept struck through, and I will find it.<br><br>' +
+               '<b>To remark without changing the wording</b> — start the remark with ' +
+               '<code>michael:</code> and it is highlighted.</div>');
     }
     rows.forEach(function (el) {
       var s = place(el), gone = el.hasAttribute('data-cut');
-      var label = gone ? ' <b class="cut-lbl">נמחק</b>' : (hasNote(el) ? ' <b>הערה</b>' : '');
+      var label = gone ? ' <b class="cut-lbl">' + say('נמחק', 'deleted') + '</b>'
+                       : (hasNote(el) ? ' <b>' + say('הערה', 'remark') + '</b>' : '');
       h += '<div class="item' + (gone ? ' cut-row' : hasNote(el) ? ' note-row' : '') +
         '" data-go="' + el.dataset.edit + '"><div class="w">' + s.no + ' · ' +
         esc(s.name) + label + '</div>' +
@@ -97,7 +107,8 @@
     if (drawer.classList.contains('open')) render();
   };
   document.getElementById('btn-clr').onclick = function () {
-    if (!confirm('להחזיר את כל השינויים שנעשו מאז פתיחת העמוד?')) return;
+    if (!confirm(say('להחזיר את כל השינויים שנעשו מאז פתיחת העמוד?',
+                     'Undo every change made since the page opened?'))) return;
     document.querySelectorAll('[data-edit]').forEach(function (el) {
       if (changed(el)) { el.textContent = el.dataset.orig; paint(el); }
     });
@@ -131,16 +142,19 @@
     .then(function (j) {
       CH = j[DOC] || [];
       if (seen().length !== marks.length) {
-        flash('רשומת השינויים אינה תואמת את הסימונים (' + seen().length + ' מול ' +
-              marks.length + ') — ״ביקשת״ ו״היה״ עלולים להצביע על המקום הלא נכון', true);
+        flash(say('רשומת השינויים אינה תואמת את הסימונים (', 'changes.json does not match the marks (') +
+              seen().length + say(' מול ', ' vs ') + marks.length +
+              say(') — ״ביקשת״ ו״היה״ עלולים להצביע על המקום הלא נכון',
+                  ') — "You asked" and "Was" could point at the wrong place'), true);
         CH = [];
         return;
       }
       if (drawer.classList.contains('open')) render();
     })
     .catch(function (e) {
-      flash('רשומת השינויים לא נטענה (' + e.message + ') — הסימונים עובדים, ' +
-            'אך בלי ״ביקשת״ ו״היה״', true);
+      flash(say('רשומת השינויים לא נטענה (', 'changes.json did not load (') + e.message +
+            say(') — הסימונים עובדים, אך בלי ״ביקשת״ ו״היה״',
+                ') — the marks work, but without "You asked" and "Was"'), true);
     });
 
   /* One card, two callers: what I changed, and what the reader wrote. A second panel
@@ -163,14 +177,16 @@
   function showRecord(i) {
     var c = seen()[i];
     if (!c) {
-      card('אין רשומה לשינוי הזה',
-           '<div class="was">changes.json לא נטען, או שאינו תואם את הסימונים.</div>');
+      card(say('אין רשומה לשינוי הזה', 'No record for this change'),
+           '<div class="was">' + say('changes.json לא נטען, או שאינו תואם את הסימונים.',
+                                     'changes.json did not load, or does not match the marks.') + '</div>');
       return;
     }
     card(esc(c.slide),
-      '<div class="k">ביקשת</div><div class="ask">' + esc(c.ask) + '</div>' +
-      '<div class="k">היה כתוב</div><div class="was">' + esc(c.was) + '</div>' +
-      '<div class="k">עכשיו</div><div class="now">הטקסט המסומן בירוק בשקופית</div>');
+      '<div class="k">' + say('ביקשת', 'You asked') + '</div><div class="ask">' + esc(c.ask) + '</div>' +
+      '<div class="k">' + say('היה כתוב', 'Was') + '</div><div class="was">' + esc(c.was) + '</div>' +
+      '<div class="k">' + say('עכשיו', 'Now') + '</div><div class="now">' +
+      say('הטקסט המסומן בירוק בשקופית', 'the text marked green on the slide') + '</div>');
   }
 
   function goToMark(i) {
@@ -180,8 +196,8 @@
     el.scrollIntoView({ behavior: 'smooth', block: 'center' });
     marks.forEach(function (m) { m.classList.remove('mark-flash'); });
     el.classList.add('mark-flash');
-    nav.textContent = 'עודכן ' + (at + 1) + ' מתוך ' + marks.length;
-    nav.title = 'המקום הבא ששיניתי';
+    nav.textContent = say('עודכן ', 'updated ') + (at + 1) + say(' מתוך ', ' of ') + marks.length;
+    nav.title = say('המקום הבא ששיניתי', 'The next place I changed');
     showRecord(at);
   }
 
@@ -190,8 +206,8 @@
     nav = document.createElement('button');
     nav.id = 'btn-seen';
     nav.type = 'button';
-    nav.textContent = 'עודכן: ' + marks.length;
-    nav.title = 'מעבר למקום הראשון ששיניתי';
+    nav.textContent = say('עודכן: ', 'updated: ') + marks.length;
+    nav.title = say('מעבר למקום הראשון ששיניתי', 'Go to the first place I changed');
     nav.onclick = function () { goToMark(at + 1); };
 
     /* forward-only meant that overshooting cost a lap of the whole deck */
@@ -201,7 +217,7 @@
     prev.dataset.chrome = '1';
     prev.className = 'step';
     prev.textContent = '\u2039';
-    prev.title = 'המקום הקודם ששיניתי';
+    prev.title = say('המקום הקודם ששיניתי', 'The previous place I changed');
     prev.onclick = function () { goToMark(at - 1); };
 
     var next = document.createElement('button');
@@ -210,16 +226,18 @@
     next.dataset.chrome = '1';
     next.className = 'step';
     next.textContent = '\u203a';
-    next.title = 'המקום הבא ששיניתי';
+    next.title = say('המקום הבא ששיניתי', 'The next place I changed');
     next.onclick = function () { goToMark(at + 1); };
 
     var clr = document.createElement('button');
     clr.id = 'btn-seen-clr';
     clr.type = 'button';
-    clr.textContent = 'נקרא';
-    clr.title = 'מסיר את הסימון הירוק מכל מה שעודכן, ושומר';
+    clr.textContent = say('נקרא', 'read');
+    clr.title = say('מסיר את הסימון הירוק מכל מה שעודכן, ושומר',
+                    'Takes the green mark off everything that was updated, and saves');
     clr.onclick = function () {
-      if (!confirm('להסיר את סימוני העדכון מ-' + marked().length + ' מקומות ולשמור?')) return;
+      if (!confirm(say('להסיר את סימוני העדכון מ-' + marked().length + ' מקומות ולשמור?',
+                       'Take the update marks off ' + marked().length + ' places and save?'))) return;
       document.querySelectorAll('.updated').forEach(function (el) {
         el.classList.remove('updated', 'mark-flash');
         if (!el.classList.length) el.removeAttribute('class');
@@ -259,20 +277,25 @@
     var gone = el.hasAttribute('data-cut');
     var body;
     if (gone) {
-      body = '<div class="k">ביקשתם</div>' +
-             '<div class="ask">רוקנתם את השורה — כלומר בקשה להוריד אותה</div>' +
-             '<div class="k">היה כתוב</div><div class="was">' +
+      body = '<div class="k">' + say('ביקשתם', 'You asked') + '</div>' +
+             '<div class="ask">' + say('רוקנתם את השורה — כלומר בקשה להוריד אותה',
+                                       'You emptied the line — a request to take it out') + '</div>' +
+             '<div class="k">' + say('היה כתוב', 'Was') + '</div><div class="was">' +
              esc(el.getAttribute('data-cut')) + '</div>' +
-             '<div class="k">עכשיו</div><div class="now">השורה ריקה</div>';
+             '<div class="k">' + say('עכשיו', 'Now') + '</div><div class="now">' +
+             say('השורה ריקה', 'the line is empty') + '</div>';
     } else {
-      body = '<div class="k">ההערה שלכם</div><div class="ask">' + esc(txt(el)) + '</div>' +
+      body = '<div class="k">' + say('ההערה שלכם', 'Your remark') + '</div><div class="ask">' +
+             esc(txt(el)) + '</div>' +
              (changed(el)
-               ? '<div class="k">היה כתוב</div><div class="was">' +
+               ? '<div class="k">' + say('היה כתוב', 'Was') + '</div><div class="was">' +
                  esc(el.dataset.orig) + '</div>'
-               : '<div class="k">הנוסח לא שונה</div>' +
-                 '<div class="was">ההערה נוספה לשורה, והנוסח עצמו נשאר.</div>');
+               : '<div class="k">' + say('הנוסח לא שונה', 'The wording did not change') + '</div>' +
+                 '<div class="was">' + say('ההערה נוספה לשורה, והנוסח עצמו נשאר.',
+                                           'The remark was added to the line; the wording stayed.') + '</div>');
     }
-    card('' + p.no + ' · ' + esc(p.name) + (gone ? ' — למחיקה' : ' — הערה'), body);
+    card('' + p.no + ' · ' + esc(p.name) +
+         (gone ? say(' — למחיקה', ' — to delete') : say(' — הערה', ' — remark')), body);
   }
 
   function goToNote(i) {
@@ -295,8 +318,8 @@
     if (!noteNav) return;
     var n = noteList().length;
     noteNav.textContent = (n && noteAt >= 0)
-      ? 'הערה ' + (noteAt + 1) + ' מתוך ' + n
-      : 'דילוג להערות';
+      ? say('הערה ', 'remark ') + (noteAt + 1) + say(' מתוך ', ' of ') + n
+      : say('דילוג להערות', 'go to remarks');
     /* a deck with no remarks yet should not carry three dead buttons; the cluster
        appears the moment the reader writes one, and recount() calls this on every
        keystroke, so it appears as they type */
@@ -314,7 +337,7 @@
     notePrev.dataset.chrome = '1';
     notePrev.className = 'step note';
     notePrev.textContent = '\u2039';
-    notePrev.title = 'ההערה הקודמת שלכם';
+    notePrev.title = say('ההערה הקודמת שלכם', 'Your previous remark');
     notePrev.onclick = function () { goToNote(noteAt - 1); };
 
     noteNav = document.createElement('button');
@@ -322,7 +345,7 @@
     noteNav.type = 'button';
     noteNav.dataset.chrome = '1';
     noteNav.className = 'note';
-    noteNav.title = 'מעבר להערה שכתבתם';
+    noteNav.title = say('מעבר להערה שכתבתם', 'Go to a remark you wrote');
     noteNav.onclick = function () { goToNote(noteAt + 1); };
 
     noteNext = document.createElement('button');
@@ -331,7 +354,7 @@
     noteNext.dataset.chrome = '1';
     noteNext.className = 'step note';
     noteNext.textContent = '\u203a';
-    noteNext.title = 'ההערה הבאה שלכם';
+    noteNext.title = say('ההערה הבאה שלכם', 'Your next remark');
     noteNext.onclick = function () { goToNote(noteAt + 1); };
 
     var sp = document.querySelector('#bar .spacer');
@@ -360,7 +383,7 @@
           m.classList.remove('mark-flash');
         });
         up.classList.add('mark-flash');
-        if (nav) nav.textContent = 'עודכן ' + (at + 1) + ' מתוך ' + marks.length;
+        if (nav) nav.textContent = say('עודכן ', 'updated ') + (at + 1) + say(' מתוך ', ' of ') + marks.length;
         showRecord(at);
         return;
       }

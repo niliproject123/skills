@@ -78,6 +78,9 @@ td[data-cut],th[data-cut]{display:table-cell}
   border-radius:8px;box-shadow:0 6px 26px rgba(36,52,71,.22);padding:14px 16px;
   z-index:62;display:none;direction:rtl;text-align:right}
 #chg.on{display:block}
+/* an ltr deck reads the card left to right, its close button on the right */
+html[dir="ltr"] #chg{direction:ltr;text-align:left}
+html[dir="ltr"] #chg .x{left:auto;right:10px}
 #chg .x{position:absolute;top:8px;left:10px;border:0;background:none;font-size:19px;
   line-height:1;color:var(--muted);cursor:pointer;padding:2px 5px}
 #chg .hd{font-size:13px;font-weight:800;color:var(--navy-deep);margin-bottom:10px;

@@ -9,7 +9,7 @@
 
    Loaded by edit.js. Exposes window.deckLightbox for draw.js. */
 (function () {
-  var E = window.deckEdit;
+  var E = window.deckEdit, say = E.say;
   var view, stage, tools, current = null, frame = null;
   var openers = [], closers = [];
   var ROOM_ACROSS = 0.92;           /* share of the window the picture may take across */
@@ -20,7 +20,7 @@
     view.id = 'lightbox';
     view.dataset.chrome = '1';
     view.innerHTML = '<div class="lb-tools"></div><div class="lb-stage"></div>' +
-      '<button type="button" class="lb-x" title="סגירה (Esc)">×</button>';
+      '<button type="button" class="lb-x" title="' + say('סגירה', 'Close') + ' (Esc)">×</button>';
     document.body.appendChild(view);
     stage = view.querySelector('.lb-stage');
     tools = view.querySelector('.lb-tools');
@@ -41,7 +41,8 @@
     if (!current) return;
     var r = current.getBoundingClientRect();
     if (!r.width || !r.height) {
-      E.flash('לא ניתן להציג את התמונה במסך מלא: אין לה גודל בשקופית', true);
+      E.flash(say('לא ניתן להציג את התמונה במסך מלא: אין לה גודל בשקופית',
+                  'The picture cannot open full screen: it has no size on the slide'), true);
       close();
       return;
     }

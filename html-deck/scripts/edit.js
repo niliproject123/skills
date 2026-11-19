@@ -15,6 +15,12 @@
   /* the reader writes the marker in either language; both must highlight and count */
   var MARK = /(michael|מיכאל)\s*:/i;
 
+  /* The bar, the cards and the messages speak the deck's language: <html lang="he"> gets
+     Hebrew, any other lang English. A deck with no lang falls back on its direction. */
+  var ROOT = document.documentElement;
+  var HEBREW = ROOT.lang ? /^(he|iw)\b/i.test(ROOT.lang) : ROOT.dir === 'rtl';
+  function say(hebrew, english) { return HEBREW ? hebrew : english; }
+
   /* A deck whose whole content IS the remarks -- the questions deck, where every row
      is a comment and one column is the reader's own -- has nothing to jump between,
      so the three-button trail is noise there.  Such a deck sets data-notes="off" on
@@ -168,7 +174,7 @@
       btn.className = 'undo-btn';
       btn.type = 'button';
       btn.contentEditable = 'false';
-      btn.title = 'החזר לנוסח שהיה בפתיחת העמוד';
+      btn.title = say('החזר לנוסח שהיה בפתיחת העמוד', 'Back to the wording the page opened with');
       btn.textContent = '↺';
       btn.onclick = function (e) {
         e.stopPropagation();
@@ -199,7 +205,7 @@
        under the nav button while they work */
     if (window.__noteNavSync) window.__noteNavSync();
     dirty = s.changed > 0 || drawingsUnsaved;
-    if (dirty) flash('יש שינויים שלא נשמרו — לחצו ״שמור״', true);
+    if (dirty) flash(say('יש שינויים שלא נשמרו — לחצו ״שמור״', 'Unsaved changes — press save'), true);
   }
 
   document.addEventListener('input', function (e) {
@@ -269,7 +275,7 @@
       if (!el.classList.length) el.removeAttribute('class');
     });
     var bar = doc.querySelector('#status');
-    if (bar) { bar.textContent = 'טוען…'; bar.removeAttribute('style'); }
+    if (bar) { bar.textContent = say('טוען…', 'loading…'); bar.removeAttribute('style'); }
     var c = doc.querySelector('#cnt'), n = doc.querySelector('#notes');
     if (c) c.textContent = '0';
     if (n) n.textContent = '0';
@@ -292,9 +298,12 @@
       return html.indexOf(s) !== -1;
     });
     if (leak.length) {
-      alert('השמירה בוטלה: סימוני העריכה לא נוקו מהקובץ (' + leak.join(', ') + ').\n' +
-            'דווחו על כך — הקובץ לא נשמר.');
-      flash('השמירה בוטלה — נותרו סימוני עריכה: ' + leak.join(', '), true);
+      alert(say('השמירה בוטלה: סימוני העריכה לא נוקו מהקובץ (',
+                'Save cancelled: the editing marks were not cleaned out of the file (') +
+            leak.join(', ') + ').\n' +
+            say('דווחו על כך — הקובץ לא נשמר.', 'Report this — the file was not saved.'));
+      flash(say('השמירה בוטלה — נותרו סימוני עריכה: ', 'Save cancelled — editing marks left: ') +
+            leak.join(', '), true);
       return;
     }
     fetch(API, { method: 'POST', headers: { 'Content-Type': 'text/html; charset=utf-8' },
@@ -309,15 +318,18 @@
         dirty = false;
         drawingsUnsaved = false;
         recount();
-        flash('נשמר אל ' + res.j.file + ' · ' + res.j.notes + ' הערות בקובץ · ' +
-              'גיבוי ' + res.j.backups +
-              (pulled.length ? ' · הוסרו ' + pulled.length +
-               ' רכיבים שתוסף דפדפן הוסיף לדף (' + pulled.join(', ') + ')' : ''), false);
+        flash(say('נשמר אל ', 'Saved to ') + res.j.file + ' · ' + res.j.notes +
+              say(' הערות בקובץ · גיבוי ', ' remarks in the file · backup ') + res.j.backups +
+              (pulled.length ? say(' · הוסרו ', ' · removed ') + pulled.length +
+               say(' רכיבים שתוסף דפדפן הוסיף לדף (', ' elements a browser extension added to the page (') +
+               pulled.join(', ') + ')' : ''), false);
       })
       .catch(function (e) {
-        flash('השמירה נכשלה: ' + e.message, true);
-        alert('השמירה נכשלה, והקובץ לא עודכן.\n\n' + e.message +
-              '\n\nודאו שהשרת רץ ונסו שוב. הטקסט נשאר על המסך.');
+        flash(say('השמירה נכשלה: ', 'Save failed: ') + e.message, true);
+        alert(say('השמירה נכשלה, והקובץ לא עודכן.\n\n', 'Save failed, and the file was not changed.\n\n') +
+              e.message +
+              say('\n\nודאו שהשרת רץ ונסו שוב. הטקסט נשאר על המסך.',
+                  '\n\nCheck that the server is running and try again. The text is still on the screen.'));
       });
   }
 
@@ -335,10 +347,11 @@
   document.getElementById('cnt').textContent = 0;
   document.getElementById('notes').textContent = s0.notes;
   var msg = [];
-  if (s0.notes - cuts > 0) msg.push((s0.notes - cuts) + ' הערות בקובץ');
-  if (cuts) msg.push(cuts + ' שורות שסומנו למחיקה');
-  flash(msg.length ? msg.join(' · ') + ' · Ctrl+S לשמירה'
-                   : 'מוכן · לחצו על כל שורה כדי לערוך · Ctrl+S לשמירה', false);
+  if (s0.notes - cuts > 0) msg.push((s0.notes - cuts) + say(' הערות בקובץ', ' remarks in the file'));
+  if (cuts) msg.push(cuts + say(' שורות שסומנו למחיקה', ' lines marked for deletion'));
+  flash(msg.length ? msg.join(' · ') + say(' · Ctrl+S לשמירה', ' · Ctrl+S to save')
+                   : say('מוכן · לחצו על כל שורה כדי לערוך · Ctrl+S לשמירה',
+                         'Ready · click any line to edit it · Ctrl+S to save'), false);
 
   /* ---------- what the sibling files share ---------- */
   /* The drawer, the two trails, the full-screen view and the drawings live in files of
@@ -347,7 +360,7 @@
      a line of text, so stats() cannot see it: draw.js reports its unsaved work through
      drawingsChanged(), and save() clears it. */
   window.deckEdit = {
-    DOC: DOC, NOTE_TRAIL: NOTE_TRAIL, MARK: MARK,
+    DOC: DOC, NOTE_TRAIL: NOTE_TRAIL, MARK: MARK, say: say,
     txt: txt, changed: changed, hasNote: hasNote, paint: paint,
     recount: recount, flash: flash, save: save,
     drawingsChanged: function () { drawingsUnsaved = true; recount(); }
@@ -369,7 +382,8 @@
     s.async = false;                     /* run in this order: draw.js uses lightbox.js */
     s.dataset.chrome = '1';
     s.onerror = function () {
-      flash('הקובץ ' + name + ' לא נטען — חלק מכלי העריכה חסר בדף', true);
+      flash(say('הקובץ ' + name + ' לא נטען — חלק מכלי העריכה חסר בדף',
+                name + ' did not load — part of the editing tools is missing from the page'), true);
     };
     document.head.appendChild(s);
   });
