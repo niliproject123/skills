@@ -16,6 +16,7 @@ const DEFAULTS = {
   entry: null,
   overlayFile: null,
   appRootId: 'root',
+  componentsThatReachTheDom: [],
   check: null,
   howToRun: null,
   labels: {
@@ -62,6 +63,7 @@ export function readSettings(argv) {
     entry: toNative(picked('entry')),
     overlayFile: toNative(fromFile.overlayFile ?? null),
     appRootId: fromFile.appRootId ?? DEFAULTS.appRootId,
+    componentsThatReachTheDom: fromFile.componentsThatReachTheDom ?? DEFAULTS.componentsThatReachTheDom,
     check: argv.includes('--no-check') ? null : (fromFile.check ?? DEFAULTS.check),
     checkSkipped: argv.includes('--no-check'),
     notes: flag('notes') ? resolve(flag('notes')) : null,
@@ -71,6 +73,10 @@ export function readSettings(argv) {
 
   if (settings.check != null && (!Array.isArray(settings.check) || !settings.check.length)) {
     fail('"check" must be a command as a list of words, e.g. ["npx", "tsc", "--noEmit"], or null.');
+  }
+  const reaching = settings.componentsThatReachTheDom;
+  if (!Array.isArray(reaching) || reaching.some((name) => typeof name !== 'string' || !/^[A-Z][A-Za-z0-9]*$/.test(name))) {
+    fail('"componentsThatReachTheDom" must be a list of capitalised component names, e.g. ["Box", "Stack", "Chip"].');
   }
   if (settings.entry && !settings.overlayFile && !isHtml(settings.entry)) {
     // The overlay module sits beside the entry and has the entry's language, so a TypeScript

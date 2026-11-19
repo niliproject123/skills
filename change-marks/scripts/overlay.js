@@ -70,6 +70,14 @@
     badge.setAttribute('aria-expanded', 'true');
   }
 
+  /** True when what is on top at the element's middle belongs to neither it nor its children. */
+  function coveredByAnother(host, rect) {
+    const x = Math.min(Math.max(rect.left + rect.width / 2, 0), window.innerWidth - 1);
+    const y = Math.min(Math.max(rect.top + rect.height / 2, 0), window.innerHeight - 1);
+    const onTop = document.elementFromPoint(x, y);
+    return Boolean(onTop) && !host.contains(onTop) && !onTop.contains(host);
+  }
+
   /** Put every badge back over its element. Called on draw, on scroll and on resize. */
   function place() {
     for (const badge of theLayer().querySelectorAll('.change-badge')) {
@@ -79,8 +87,10 @@
         continue;
       }
       const rect = host.getBoundingClientRect();
-      // An element scrolled out of view, or drawn with no box, gets no badge over the wrong place.
-      const visible = rect.width > 0 && rect.height > 0 && rect.bottom > 0 && rect.top < window.innerHeight;
+      // An element scrolled out of view, drawn with no box, or covered (a dialog over it) gets no
+      // badge over the wrong place.
+      const visible = rect.width > 0 && rect.height > 0 && rect.bottom > 0 && rect.top < window.innerHeight
+        && !coveredByAnother(host, rect);
       badge.hidden = !visible;
       if (!visible) continue;
       badge.style.top = `${rect.top - 7}px`;
@@ -117,11 +127,15 @@
   }
 
   // The app re-renders as a person moves through it, so the badges are redrawn whenever the tree
-  // changes. Cheap: `draw` skips any element that already has one. The observer watches the app
-  // root when there is one, so the layer's own writes cannot feed back into it.
+  // changes. Cheap: `draw` skips any element that already has one. The app root is watched, and so
+  // is everything else on <body>: dialogs and menus (MUI portals) render outside the root. Changes
+  // inside the layer itself are skipped, so its own writes cannot feed back into it.
   const watch = () => {
-    const root = document.getElementById(APP_ROOT_ID) || document.body;
-    new MutationObserver(draw).observe(root, { childList: true, subtree: true });
+    const root = document.getElementById(APP_ROOT_ID);
+    const outsideLayer = (records) => records.some((record) => !theLayer().contains(record.target));
+    new MutationObserver((records) => { if (outsideLayer(records)) draw(); })
+      .observe(document.body, { childList: true, subtree: true });
+    if (!root) console.warn(`change-marks: no element with id "${APP_ROOT_ID}" - watching the whole page`);
     draw();
   };
 

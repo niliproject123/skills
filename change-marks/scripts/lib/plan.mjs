@@ -136,7 +136,8 @@ function planFile(settings, path, counter) {
   const source = readFileSync(path, 'utf8');
   const lines = source.split('\n');
   const commented = commentedLines(source, kind);
-  const { extents, offsets } = elementExtents(source, commented);
+  const reaching = kind === 'jsx' ? settings.componentsThatReachTheDom : [];
+  const { extents, offsets } = elementExtents(source, commented, reaching);
   const { extents: components } = componentExtents(source, commented);
   const shown = shownPath(path);
 
@@ -211,7 +212,7 @@ function planFromNotes(settings) {
       const kind = kindOf(path);
       const source = readFileSync(path, 'utf8');
       const commented = commentedLines(source, kind);
-      read.set(path, { source, commented, ...elementExtentsAnywhere(source, commented, kind), byElement: new Map() });
+      read.set(path, { source, commented, ...elementExtentsAnywhere(source, commented, kind, settings.componentsThatReachTheDom), byElement: new Map() });
     }
     return read.get(path);
   };
@@ -252,7 +253,7 @@ function planFromNotes(settings) {
       }
       const element = innermost(file.extents, found[0]);
       if (!element) {
-        failures.push(`${label}: inside no plain HTML element (a prop of a component never reaches the page)`);
+        failures.push(`${label}: inside no plain HTML element and no component listed in "componentsThatReachTheDom"`);
         continue;
       }
       // Keyed by where the element opens, not its line: two elements can open on one line.

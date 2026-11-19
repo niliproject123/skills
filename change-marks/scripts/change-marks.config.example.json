@@ -4,6 +4,7 @@
   "stylesheet": "src/index.css",
   "entry": "src/main.tsx",
   "appRootId": "root",
+  "componentsThatReachTheDom": [],
   "check": ["npx", "tsc", "--noEmit"],
   "howToRun": "npm run marks",
   "labels": {

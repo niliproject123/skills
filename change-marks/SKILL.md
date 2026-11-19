@@ -33,7 +33,8 @@ to). `scripts/change-marks.config.example.json` is a starting point.
 | `stylesheet` | — **required** | `.css` file the outline block is appended to, or an `.html` page (appended inside `<style>`) |
 | `entry` | — **required** | the module that loads the overlay (`src/main.tsx` …: one `import` line is prepended and `change-marks-overlay.ts/.js` is written beside it), or an `.html` page (the overlay is appended inline in `<script>`) |
 | `overlayFile` | beside `entry` | where the overlay module is written (module entries only) |
-| `appRootId` | `root` | element id the overlay watches for re-renders; `document.body` when absent |
+| `appRootId` | `root` | the app's root element; the overlay watches all of `<body>` for re-renders (dialogs and menus render outside the root) and warns in the console when no element has this id |
+| `componentsThatReachTheDom` | `[]` | capitalised components that pass `data-*` props through to their DOM element (MUI: `Box`, `Stack`, `Chip`, `Tab`, `Button` …). Listed ones are marked like plain elements; check each one renders the attribute |
 | `check` | `null` | a command, as a word list, that must pass after marking or the marks are taken back out — e.g. `["npx","tsc","--noEmit","-p","tsconfig.json"]`. `null` → the run says the marked source was not checked |
 | `howToRun` | `node <this skill>/scripts/change-marks.mjs` | how the messages tell the reader to run `off` |
 | `labels` | English | `notCommitted`, `panelHeading`, `badgeHint` — the words shown in the page (set Hebrew ones for an RTL app) |
@@ -90,7 +91,8 @@ text found **exactly once** in its file; the badge carries the item's number, th
 - `n` whole number, `note` non-empty and without ` · ` (the panel's separator). `file` is relative
   to the project folder and has one of the configured extensions.
 - An item with no anchors must say why in `offScreen`; it is listed, not drawn.
-- Every anchor that is missing, found twice, inside a comment, or inside no plain HTML element is a
+- Every anchor that is missing, found twice, inside a comment, or inside no plain HTML element (or
+  listed `componentsThatReachTheDom` component) is a
   failure, and **nothing is written**. Two items on one element share its badge (first item's number).
 
 ## What it refuses, and says so
@@ -107,7 +109,10 @@ text found **exactly once** in its file; the badge carries the item's number, th
 
 ## Limits
 
-- Only plain lower-case elements are outlined; changes in logic, imports and props of components
+- Only plain lower-case elements, and the components in `componentsThatReachTheDom`, are outlined.
+  The outline is `!important` and drawn inside the element's box, so a library's `outline: 0` or a
+  parent's `overflow: hidden` cannot hide it. A badge is hidden while its element is covered (a dialog
+  over it). Changes in logic, imports and props of components
   are listed, not drawn. In diff mode an element is found only when its tag opens a line; `--notes`
   finds elements opening anywhere on a line.
 - `.html` comments are `<!-- -->`; JSX comments are `//`, `/* */`, `{/* */}`. Nothing else is parsed:

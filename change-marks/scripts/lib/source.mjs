@@ -46,8 +46,12 @@ export function commentedLines(source, kind = 'jsx') {
  * props reach the DOM, so an attribute put on one may never appear in the browser, and a mark you
  * cannot see is worse than no mark. A change inside a component is therefore drawn on the nearest
  * real element around it, which is the box a person can actually see.
+ *
+ * `reachingComponents` names the components a project knows pass `data-*` attributes on to the
+ * element they draw (MUI's `Box`, `Stack`, `Chip` …) — config `componentsThatReachTheDom`. Those
+ * count as elements; every other capitalised tag is still left out.
  */
-export function elementExtents(source, commented, first = /^([ \t]*)<([a-z][a-z0-9]*)\b/) {
+export function elementExtents(source, commented, reachingComponents = [], first = openerAtLineStart(reachingComponents)) {
   const lines = source.split('\n');
   const offsets = [0];
   for (const line of lines) offsets.push(offsets[offsets.length - 1] + line.length + 1);
@@ -71,11 +75,20 @@ export function elementExtents(source, commented, first = /^([ \t]*)<([a-z][a-z0
 
 /** The same, for custom components (`<Action …>`) — only to name them when a change is a prop. */
 export const componentExtents = (source, commented) =>
-  elementExtents(source, commented, /^([ \t]*)<([A-Z][A-Za-z0-9]*)\b/);
+  elementExtents(source, commented, [], /^([ \t]*)<([A-Z][A-Za-z0-9]*)\b/);
+
+/** The tag names that count as elements: plain lower-case ones, plus the configured components. */
+const tagNames = (reachingComponents) =>
+  ['[a-z][a-z0-9]*', ...reachingComponents.map((name) => name.replace(/[^A-Za-z0-9]/g, ''))].join('|');
+
+// `(?![\w.])` ends the name, so `<Box>` never matches `<BoxGrid>` or `<Stack.Item>`.
+const NAME_ENDS = '(?![\\w.])';
+const openerAtLineStart = (reachingComponents) =>
+  new RegExp(`^([ \\t]*)<(${tagNames(reachingComponents)})${NAME_ENDS}`);
 
 /** Where `</tag>` balances the opening one, so an element's span is the tree and not the indent. */
 export function closingTagEnd(source, from, tag) {
-  const finder = new RegExp(`<(/?)${tag}\\b`, 'g');
+  const finder = new RegExp(`<(/?)${tag}${NAME_ENDS}`, 'g');
   finder.lastIndex = from;
   let depth = 1;
   let match;
@@ -139,11 +152,12 @@ export function lineIndexOf(offsets, at) {
  * mid-line. A tag counts only after a space, `>`, `(`, `{`, `?`, `:`, `&` or `|` — what JSX puts
  * before one — so `useState<string>` or a `'<p>'` inside a string is never taken for an element.
  */
-export function elementExtentsAnywhere(source, commented, kind = 'jsx') {
+export function elementExtentsAnywhere(source, commented, kind = 'jsx', reachingComponents = []) {
   const { offsets } = elementExtents(source, commented);
   const lines = source.split('\n');
   const extents = [];
-  const opener = /(^|[\s>({?:&|])<([a-z][a-z0-9]*)\b/gm;
+  const names = tagNames(kind === 'jsx' ? reachingComponents : []);
+  const opener = new RegExp(`(^|[\\s>({?:&|])<(${names})${NAME_ENDS}`, 'gm');
   let match;
   while ((match = opener.exec(source))) {
     const start = match.index + match[1].length;

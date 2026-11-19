@@ -18,12 +18,16 @@ const lineEnding = (text) => (text.includes('\r\n') ? '\r\n' : '\n');
 
 const CSS = [
   '[data-change] {',
-  '  outline: 2px solid #d92c2c;',
-  '  outline-offset: 1px;',
+  // !important: a component library's own `outline: 0` (MUI ButtonBase: chips, tabs, buttons) is
+  // as specific as this selector and injected later, so without it those marks draw no outline
+  '  outline: 2px solid #d92c2c !important;',
+  // inside the element's own box: a parent with overflow:hidden (MUI's tab strip) clips an outline
+  // drawn outside it, and a clipped mark looks like no mark
+  '  outline-offset: -2px !important;',
   '  position: relative;',
   '}',
   '[data-change]:hover {',
-  '  outline-color: #ff6a6a;',
+  '  outline-color: #ff6a6a !important;',
   '}',
   '/* the badges live in one fixed layer over the page: a mark can land on a <select> or an',
   '   <input>, and those render no children, so a badge inside one is invisible. */',
