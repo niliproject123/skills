@@ -1,0 +1,98 @@
+/* Orbit — a made-up sprint app for the screen-fit showcase, mobile first.
+   This file carries layout bugs ON PURPOSE (each marked "BUG n"); fixes.css undoes them. */
+* { box-sizing: border-box; }
+html, body { margin: 0; }
+body { font: 15px/1.4 "Segoe UI", system-ui, sans-serif; color: #1d2433; background: #f2f3f7; }
+button { font: inherit; cursor: pointer; border-radius: 10px; border: 1px solid #d5d9e4; background: #fff; color: #1d2433; }
+
+/* app bar + tabs (changes 8, 15 — fine) */
+.appbar { display: flex; align-items: center; justify-content: space-between; padding: 10px 16px; background: #151a2d; color: #fff; }
+.brand { display: flex; align-items: center; gap: 8px; font-weight: 700; font-size: 20px; }
+.logo-dot { width: 14px; height: 14px; border-radius: 50%; background: #7c9cff; box-shadow: 0 0 0 4px rgba(124,156,255,.25); }
+.new-task { height: 44px; padding: 0 16px; background: #4c6fff; border-color: #4c6fff; color: #fff; font-weight: 600; }
+.tabs { display: flex; background: #151a2d; padding: 0 8px; }
+.tabs a { flex: 1; text-align: center; padding: 12px 0 10px; color: #aab3d1; text-decoration: none; font-weight: 600; border-bottom: 3px solid transparent; }
+.tabs a.on { color: #fff; border-bottom-color: #7c9cff; }
+
+main { padding: 16px; max-width: 900px; margin: 0 auto; }
+section > * + * { margin-top: 14px; }
+h1 { font-size: 20px; margin: 0; }
+h2 { font-size: 13px; margin: 0 0 10px; color: #5a6180; text-transform: uppercase; letter-spacing: .5px; }
+.card, .sprint, .kpi, .task { background: #fff; border: 1px solid #e3e6ee; border-radius: 14px; }
+
+/* change 1: sprint summary (fine) */
+.sprint { padding: 14px 16px; }
+.sprint-row { display: flex; justify-content: space-between; gap: 12px; font-weight: 600; }
+.sprint-left { color: #c25a00; font-size: 14px; }
+.progress { height: 8px; background: #e7eaf3; border-radius: 99px; margin: 10px 0 8px; }
+.progress-fill { width: 72%; height: 100%; background: #18a57b; border-radius: 99px; }
+.sprint-caption { color: #69718a; font-size: 13px; }
+
+/* change 2 — BUG 2 (EDGE): three fixed 132px columns need 448px; a 390px phone has 390 */
+.kpis { display: grid; grid-template-columns: repeat(3, 132px); gap: 10px; }
+/* one element per tile: the label is its text, the number is drawn from data-value */
+.kpi { padding: 10px 12px; color: #69718a; font-size: 13px; }
+.kpi::after { content: attr(data-value); display: block; color: #1d2433; font-size: 24px; font-weight: 700; }
+
+/* change 3 — BUG 3 (CLIPPED): fixed-width search in a row that hides its overflow cuts the Share button off */
+.toolbar { display: flex; gap: 8px; overflow: hidden; }
+.search { flex: 0 0 250px; height: 44px; border: 1px solid #d5d9e4; border-radius: 10px; padding: 0 12px; font: inherit; }
+.share { flex: none; min-width: 120px; height: 44px; font-weight: 600; }
+
+/* change 4 — BUG 4 (SMALL): 30px chips, under the 44px tap target */
+.chips { display: flex; gap: 8px; flex-wrap: wrap; }
+.chip { height: 30px; padding: 0 14px; border-radius: 99px; font-size: 14px; }
+.chip.on { background: #1d2433; color: #fff; border-color: #1d2433; }
+
+/* task cards: change 5 (pill), 6 (avatar), 7 (two columns from 600px — fine) */
+.tasks { display: grid; grid-template-columns: minmax(0, 1fr); gap: 10px; }
+@media (min-width: 600px) { .tasks { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+.task { display: block; padding: 12px 14px; color: inherit; text-decoration: none; }
+.task-head { display: flex; align-items: flex-start; gap: 8px; }
+/* BUG 5 (OVERLAP): the title is kept on one line, so a long one runs under the status pill */
+.task-title { flex: 1; min-width: 0; font-weight: 600; white-space: nowrap; }
+.pill { flex: none; font-size: 12px; font-weight: 600; padding: 2px 9px; border-radius: 99px; }
+.pill.review { background: #efe7ff; color: #6a3fd6; } .pill.doing { background: #e3f2ff; color: #1769c2; }
+.pill.blocked { background: #ffe8e8; color: #c22c2c; } .pill.todo { background: #eef0f5; color: #555d75; }
+.task-foot { display: flex; align-items: center; gap: 8px; margin-top: 10px; font-size: 13px; color: #69718a; }
+.avatar { width: 28px; height: 28px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center;
+  font-size: 11px; font-weight: 700; color: #fff; flex: none; }
+.c1 { background: #4c6fff; } .c2 { background: #18a57b; } .c3 { background: #e0622a; } .c4 { background: #9b51e0; }
+.pts { margin-left: auto; font-weight: 600; color: #1d2433; }
+
+/* change 12 — BUG 12 (SPILL): a 96px button cannot hold "Export as CSV" on one line */
+.report-head { display: flex; align-items: center; gap: 24px; }
+.report-head h1 { flex: 1; }
+.export { width: 70px; height: 44px; display: flex; align-items: center; justify-content: center; padding: 0; white-space: nowrap; font-weight: 600; }
+
+.card { padding: 14px 16px; }
+/* change 11: velocity chart (fine) */
+.chart { display: block; width: 100%; height: 130px; }
+.chart-caption { margin-top: 8px; font-size: 13px; color: #69718a; }
+
+/* change 13 — BUG 13 (sideways SCROLL): a desktop-width table in a phone card */
+.table-wrap { overflow-x: auto; background: #fff; margin-top: 20px; }
+table { border-collapse: collapse; min-width: 600px; width: 100%; font-size: 14px; }
+th, td { text-align: left; padding: 8px 10px; border-bottom: 1px solid #eef0f5; white-space: nowrap; }
+th { font-size: 12px; color: #69718a; font-weight: 600; }
+
+/* change 14 — BUG 14 (HOLE): the panel is held at 300px whatever it holds */
+.blocked-panel { min-height: 300px; }
+/* the row itself holds the text, so the space under the last row belongs to it */
+.blocked-row { display: flex; align-items: center; gap: 10px; padding: 6px 0; font-size: 14px; }
+.blocked-row:last-child { padding-bottom: 20px; }
+
+/* change 9 — BUG 9 (does not fit): a fixed 560px dialog on a 320–375px tall landscape phone */
+.modal { position: fixed; inset: 0; background: rgba(15, 19, 35, .55); display: none; align-items: center; justify-content: center; }
+.modal.open { display: flex; }
+.dialog { width: min(480px, calc(100vw - 24px)); height: 560px; background: #fff; border-radius: 16px; padding: 18px 20px;
+  box-shadow: 0 20px 60px rgba(0,0,0,.3); flex: none; }
+.dialog h3 { margin: 0 0 6px; font-size: 19px; }
+.dialog label { display: block; font-size: 13px; color: #69718a; margin: 8px 0 4px; }
+.dialog input { width: 100%; height: 40px; border: 1px solid #d5d9e4; border-radius: 8px; padding: 0 10px; font: inherit; }
+/* change 10 — BUG 10 (hidden inside): six rows in a 96px box that hides the rest */
+.checklist { max-height: 96px; overflow: hidden; }
+.checklist div { padding: 5px 0; border-bottom: 1px solid #eef0f5; font-size: 14px; }
+.dialog .actions { display: flex; gap: 10px; justify-content: flex-end; margin-top: 14px; }
+.dialog .actions button { height: 44px; min-width: 100px; }
+.dialog .actions .primary { background: #4c6fff; color: #fff; border-color: #4c6fff; }

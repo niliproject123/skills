@@ -1,0 +1,17 @@
+
+=== MODAL FIT AUDIT ===
+web: http://127.0.0.1:4517
+screenshots: C:\dev\skills\screen-fit\demo\out\mobile\before\modal-fit
+
+[SCROLL/CLIP] new-task-dialog            320x568              vh=568 cardTop=4 cardBottom=564 cardH=560 innerOverflow=88 overlayScrolls=false
+[SCROLL/CLIP] new-task-dialog            360x640              vh=640 cardTop=40 cardBottom=600 cardH=560 innerOverflow=88 overlayScrolls=false
+[SCROLL/CLIP] new-task-dialog            568x320              vh=320 cardTop=-120 cardBottom=440 cardH=560 innerOverflow=88 overlayScrolls=true
+[SCROLL/CLIP] new-task-dialog            667x375              vh=375 cardTop=-92 cardBottom=468 cardH=560 innerOverflow=88 overlayScrolls=true
+
+0/4 fit cleanly.
+
+4 PROBLEM CASES:
+  - new-task-dialog @ 320x568 → new-task-dialog__320x568.png
+  - new-task-dialog @ 360x640 → new-task-dialog__360x640.png
+  - new-task-dialog @ 568x320 → new-task-dialog__568x320.png
+  - new-task-dialog @ 667x375 → new-task-dialog__667x375.png

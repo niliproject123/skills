@@ -1,0 +1,1 @@
+[{ "id": "new-task-dialog", "path": "/board.html?fixed", "click": ["[data-testid=btn-new-task]"], "overlay": ".modal.open", "card": ".dialog" }]

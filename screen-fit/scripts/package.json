@@ -1,0 +1,16 @@
+{
+  "name": "screen-fit",
+  "private": true,
+  "type": "module",
+  "description": "Deterministic layout grading of a running page: clipped, spilled, overlapping and off-edge elements.",
+  "scripts": {
+    "check": "tsx screen-fit.ts",
+    "typecheck": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.62.1",
+    "@types/node": "^26.3.0",
+    "tsx": "^4.19.2",
+    "typescript": "^5.7.2"
+  }
+}

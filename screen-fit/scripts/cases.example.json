@@ -1,0 +1,33 @@
+[
+  {
+    "id": "topbar-details-popover",
+    "path": "/web/index.html",
+    "click": [".topbar-info-button"],
+    "overlay": ".topbar-info-popover"
+  },
+  {
+    "id": "node-details-card",
+    "path": "/web/index.html",
+    "click": [
+      ".diagram-surface g.node[data-node-id]",
+      ".viewport-toolbar button[aria-label=\"Show details for the selection\"]"
+    ],
+    "overlay": ".diagram-details-card"
+  },
+  {
+    "id": "connection-details-card",
+    "path": "/web/index.html",
+    "click": [
+      ".diagram-surface .cochart-edge-label",
+      ".viewport-toolbar button[aria-label=\"Show details for the selection\"]"
+    ],
+    "overlay": ".diagram-edge-details"
+  },
+  {
+    "id": "legend-open",
+    "path": "/web/index.html",
+    "click": [".diagram-legend-toggle"],
+    "waitFor": ".diagram-legend.is-open",
+    "overlay": ".diagram-legend"
+  }
+]

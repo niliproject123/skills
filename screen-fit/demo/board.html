@@ -1,0 +1,163 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Orbit — Sprint 42</title>
+<link rel="stylesheet" href="app.css">
+<script>
+  // ?fixed loads fixes.css, which undoes every layout bug in app.css.
+  if (new URLSearchParams(location.search).has('fixed')) document.write('<link rel="stylesheet" href="fixes.css">');
+</script>
+</head>
+<body>
+<!-- change 8: "+ New task" in the app bar -->
+<header class="appbar">
+  <div class="brand"><span class="logo-dot"></span>Orbit</div>
+  <button class="new-task" data-testid="btn-new-task" onclick="openDialog()">+ New task</button>
+</header>
+
+<!-- change 15: Board / Reports tabs under the app bar -->
+<nav class="tabs" data-testid="tabbar">
+  <a href="?tab=board" data-tab="board">Board</a>
+  <a href="?tab=reports" data-tab="reports">Reports</a>
+</nav>
+
+<main>
+<section class="panel-board" data-panel="board">
+  <!-- change 1: sprint summary card -->
+  <div class="sprint" data-testid="sprint">
+    <div class="sprint-row"><span class="sprint-name">Sprint 42 · Checkout</span><span class="sprint-left">6 days left</span></div>
+    <div class="progress"><div class="progress-fill"></div></div>
+    <div class="sprint-caption">38 of 53 points done</div>
+  </div>
+
+  <!-- change 2: three KPI tiles -->
+  <div class="kpis" data-testid="kpis">
+    <div class="kpi" data-testid="kpi-done" data-value="14">Done</div>
+    <div class="kpi" data-testid="kpi-progress" data-value="7">In progress</div>
+    <div class="kpi" data-testid="kpi-blocked" data-value="2">Blocked</div>
+  </div>
+
+  <!-- change 3: search with a Share button beside it -->
+  <div class="toolbar" data-testid="toolbar">
+    <input class="search" data-testid="search" placeholder="Search tasks">
+    <button class="share" data-testid="btn-share">Share board</button>
+  </div>
+
+  <!-- change 4: filter chips -->
+  <div class="chips" data-testid="chips">
+    <button class="chip on" data-testid="chip-all">All</button>
+    <button class="chip" data-testid="chip-mine">Mine</button>
+    <button class="chip" data-testid="chip-blocked">Blocked</button>
+    <button class="chip" data-testid="chip-review">In review</button>
+  </div>
+
+  <!-- change 5: status pill on each card; change 6: owner avatar; change 7: two columns on wider screens -->
+  <div class="tasks" data-testid="tasks">
+    <a class="task" href="#" data-testid="task-1">
+      <div class="task-head"><div class="task-title"><span>Move the billing webhooks onto the queue</span></div><span class="pill review">In review</span></div>
+      <div class="task-foot"><span class="avatar c1">DK</span><span class="owner">Dana K.</span><span class="pts">5 pts</span></div>
+    </a>
+    <a class="task" href="#" data-testid="task-2">
+      <div class="task-head"><div class="task-title"><span>Saved cards</span></div><span class="pill doing">Doing</span></div>
+      <div class="task-foot"><span class="avatar c2">SL</span><span class="owner">Sam L.</span><span class="pts">8 pts</span></div>
+    </a>
+    <a class="task" href="#" data-testid="task-3">
+      <div class="task-head"><div class="task-title"><span>Push alerts for every delayed order</span></div><span class="pill blocked">Blocked</span></div>
+      <div class="task-foot"><span class="avatar c3">RM</span><span class="owner">Rita M.</span><span class="pts">3 pts</span></div>
+    </a>
+    <a class="task" href="#" data-testid="task-4">
+      <div class="task-head"><div class="task-title"><span>Rate-limit search</span></div><span class="pill doing">Doing</span></div>
+      <div class="task-foot"><span class="avatar c1">DK</span><span class="owner">Dana K.</span><span class="pts">2 pts</span></div>
+    </a>
+    <a class="task" href="#" data-testid="task-5">
+      <div class="task-head"><div class="task-title"><span>Order history a11y</span></div><span class="pill todo">To do</span></div>
+      <div class="task-foot"><span class="avatar c4">JO</span><span class="owner">Jo O.</span><span class="pts">5 pts</span></div>
+    </a>
+    <a class="task" href="#" data-testid="task-6">
+      <div class="task-head"><div class="task-title"><span>Churn export</span></div><span class="pill todo">To do</span></div>
+      <div class="task-foot"><span class="avatar c2">SL</span><span class="owner">Sam L.</span><span class="pts">3 pts</span></div>
+    </a>
+  </div>
+</section>
+
+<section class="panel-reports" data-panel="reports">
+  <!-- change 12: Export button in the report header -->
+  <div class="report-head">
+    <h1>Sprint 42 report</h1>
+    <button class="export" data-testid="btn-export"><span>Export as CSV</span></button>
+  </div>
+
+  <!-- change 11: velocity chart -->
+  <div class="card" data-testid="velocity">
+    <h2>Velocity, last 6 sprints</h2>
+    <svg class="chart" viewBox="0 0 300 120" preserveAspectRatio="none" role="img" aria-label="Velocity">
+      <rect x="8" y="50" width="34" height="62" rx="4" fill="#c7d2ff"/><rect x="58" y="38" width="34" height="74" rx="4" fill="#c7d2ff"/>
+      <rect x="108" y="56" width="34" height="56" rx="4" fill="#c7d2ff"/><rect x="158" y="30" width="34" height="82" rx="4" fill="#c7d2ff"/>
+      <rect x="208" y="34" width="34" height="78" rx="4" fill="#c7d2ff"/><rect x="258" y="20" width="34" height="92" rx="4" fill="#4c6fff"/>
+      <line x1="0" y1="112" x2="300" y2="112" stroke="#d5d9e4"/>
+    </svg>
+    <div class="chart-caption">41 points this sprint · average 36</div>
+  </div>
+
+  <!-- change 14: blocked-work panel -->
+  <div class="card blocked-panel" data-testid="blocked-panel">
+    <h2>Blocked work</h2>
+    <div class="blocked-row"><span class="avatar c3">RM</span>Push alerts — waiting on the APNs key</div>
+    <div class="blocked-row"><span class="avatar c2">SL</span>Payout retries — bank API sandbox down</div>
+  </div>
+
+  <!-- change 13: team workload table -->
+  <div class="card" data-testid="workload">
+    <h2>Team workload</h2>
+    <div class="table-wrap" data-testid="workload-scroll">
+      <table>
+        <thead><tr><th>Person</th><th>Open</th><th>Review</th><th>Blocked</th><th>Done</th><th>Load</th></tr></thead>
+        <tbody>
+          <tr><td>Dana K.</td><td>3</td><td>1</td><td>0</td><td>6</td><td>92%</td></tr>
+          <tr><td>Sam L.</td><td>2</td><td>2</td><td>1</td><td>4</td><td>80%</td></tr>
+          <tr><td>Rita M.</td><td>1</td><td>0</td><td>1</td><td>3</td><td>55%</td></tr>
+          <tr><td>Jo O.</td><td>2</td><td>1</td><td>0</td><td>1</td><td>60%</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+</section>
+</main>
+
+<!-- change 9: the New task dialog; change 10: the checklist inside it -->
+<div class="modal" data-testid="modal">
+  <div class="dialog" data-testid="dialog" role="dialog" aria-label="New task">
+    <h3>New task</h3>
+    <form onsubmit="return false">
+      <div class="fields">
+        <label>Title</label><input value="Retry failed payouts">
+        <label>Due</label><input value="Fri, 4 Dec">
+      </div>
+      <div class="check-block">
+        <label>Checklist</label>
+        <div class="checklist" data-testid="checklist">
+          <div>☐ Write the retry policy</div><div>☐ Add a dead-letter queue</div><div>☐ Alert after 3 failures</div>
+          <div>☐ Backfill last week's failures</div><div>☐ Dashboard tile</div><div>☐ Runbook entry</div>
+        </div>
+      </div>
+      <div class="actions"><button type="button" data-testid="dlg-cancel" onclick="closeDialog()">Cancel</button><button type="button" class="primary" data-testid="dlg-create">Create task</button></div>
+    </form>
+  </div>
+</div>
+
+<script>
+  const params = new URLSearchParams(location.search);
+  const tab = params.get('tab') === 'reports' ? 'reports' : 'board';
+  document.querySelector(`[data-panel="${tab === 'reports' ? 'board' : 'reports'}"]`).remove();
+  for (const link of document.querySelectorAll('.tabs a')) {
+    if (link.dataset.tab === tab) link.classList.add('on');
+    if (params.has('fixed')) link.href += '&fixed';
+  }
+  function openDialog() { document.querySelector('.modal').classList.add('open'); }
+  function closeDialog() { document.querySelector('.modal').classList.remove('open'); }
+</script>
+</body>
+</html>

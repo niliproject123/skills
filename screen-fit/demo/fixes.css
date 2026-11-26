@@ -1,0 +1,36 @@
+/* The fix for every layout bug in app.css. Loaded when the page URL has ?fixed. */
+
+/* 2: three tiles share the row */
+.kpis { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+
+/* 3: the search takes what is left; nothing is hidden */
+.toolbar { overflow: visible; }
+.search { flex: 1 1 auto; min-width: 0; }
+
+/* 4: 44px tap targets */
+.chip { height: 44px; }
+
+/* 5: long titles wrap instead of running under the pill */
+.task-title { white-space: normal; }
+
+/* 12: the button is as wide as its label */
+.export { width: auto; padding: 0 16px; }
+
+/* 13: the table takes the card's width */
+table { min-width: 0; }
+th, td { padding: 8px 6px; }
+
+/* 14: the panel is as tall as what it holds */
+.blocked-panel { min-height: 0; }
+
+/* 9: the dialog is as tall as its content; on short screens two columns */
+.dialog { height: auto; }
+/* 10: every checklist row shows */
+.checklist { max-height: none; overflow: visible; }
+@media (max-height: 480px) {
+  .dialog { padding: 12px 18px; width: min(560px, calc(100vw - 24px)); }
+  .dialog form { display: grid; grid-template-columns: 1fr 1fr; gap: 0 18px; }
+  .dialog label { margin-top: 4px; }
+  .checklist div { padding: 3px 0; }
+  .dialog .actions { grid-column: 1 / -1; margin-top: 10px; }
+}

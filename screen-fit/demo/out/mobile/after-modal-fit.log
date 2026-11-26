@@ -1,0 +1,11 @@
+
+=== MODAL FIT AUDIT ===
+web: http://127.0.0.1:4517
+screenshots: C:\dev\skills\screen-fit\demo\out\mobile\after\modal-fit
+
+[OK ] new-task-dialog            320x568              vh=568 cardTop=47 cardBottom=521 cardH=475 innerOverflow=0 overlayScrolls=false
+[OK ] new-task-dialog            360x640              vh=640 cardTop=83 cardBottom=557 cardH=475 innerOverflow=0 overlayScrolls=false
+[OK ] new-task-dialog            568x320              vh=320 cardTop=12 cardBottom=308 cardH=296 innerOverflow=0 overlayScrolls=false
+[OK ] new-task-dialog            667x375              vh=375 cardTop=39 cardBottom=336 cardH=296 innerOverflow=0 overlayScrolls=false
+
+4/4 fit cleanly.
